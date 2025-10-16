@@ -2,6 +2,15 @@ package com.twojz.y_kit.user.dto.request;
 
 import com.twojz.y_kit.user.entity.Gender;
 
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+@Getter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class UserRegisterRequest {
     private Gender gender;
     private Long regionId;
@@ -9,32 +18,5 @@ public class UserRegisterRequest {
     private String email;
     private String password;
     private String name;
-
-    public UserRegisterRequest() {
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public Gender getGender() {
-        return gender;
-    }
-
-    public Long getRegionId() {
-        return regionId;
-    }
-
-    public Integer getAge() {
-        return age;
-    }
 }
 

@@ -6,27 +6,21 @@ import com.twojz.y_kit.user.entity.User;
 import com.twojz.y_kit.user.dto.request.UserLoginRequest;
 import com.twojz.y_kit.user.dto.request.UserRegisterRequest;
 import com.twojz.y_kit.user.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired; // Autowired 추가
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
-    @Autowired
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
-
-    // 회원가입 로직
     @Transactional
     public User registerUser(UserRegisterRequest requestDto) {
-
         if (userRepository.existsByEmail(requestDto.getEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }

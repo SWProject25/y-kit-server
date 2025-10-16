@@ -3,10 +3,8 @@ package com.twojz.y_kit.user.entity;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
 import java.time.LocalDateTime;
@@ -16,7 +14,6 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 @AllArgsConstructor
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
     @Id
@@ -55,16 +52,6 @@ public class User {
     @UpdateTimestamp
     private LocalDateTime updatedAt;
 
-
-    @Builder
-    public User(String email, String password, String name, Role role, LoginProvider loginProvider, Integer age, Gender gender, Long regionId) {
-        this.email = email;
-        this.password = password;
-        this.name = name;
-        this.role = role;
-        this.loginProvider = loginProvider;
-        this.age = age;
-        this.gender = gender;
-        this.regionId = regionId;
+    protected User() {
     }
 }
