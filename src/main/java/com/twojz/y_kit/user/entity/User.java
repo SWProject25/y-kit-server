@@ -1,29 +1,21 @@
 package com.twojz.y_kit.user.entity;
 
+import com.twojz.y_kit.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.AllArgsConstructor;
 
-import java.time.LocalDateTime;
-
-@Entity
-@Table(name = "user")
 @Getter
-@Builder
-@AllArgsConstructor
-public class User {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Entity
+@Table(name = "users")
+public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true)
     private String email;
 
-    @Column(nullable = false)
     private String password;
 
     @Enumerated(EnumType.STRING)
@@ -33,7 +25,7 @@ public class User {
     private String socialId;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "login_provider", nullable = false)
+    @Column(nullable = false)
     private LoginProvider loginProvider;
 
     @Column(nullable = false)
@@ -44,14 +36,16 @@ public class User {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    private Long regionId;
-
-    @CreationTimestamp
-    private LocalDateTime createdAt;
-
-    @UpdateTimestamp
-    private LocalDateTime updatedAt;
-
-    protected User() {
+    @Builder
+    public User(String email, String password, Role role, LoginProvider loginProvider,
+                String name, String socialId, Integer age, Gender gender) {
+        this.email = email;
+        this.password = password;
+        this.role = role != null ? role : Role.USER;
+        this.socialId = socialId;
+        this.loginProvider = loginProvider;
+        this.name = name;
+        this.age = age;
+        this.gender = gender;
     }
 }

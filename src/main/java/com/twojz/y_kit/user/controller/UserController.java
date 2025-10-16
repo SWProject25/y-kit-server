@@ -1,5 +1,6 @@
 package com.twojz.y_kit.user.controller;
 
+import com.twojz.y_kit.user.dto.response.UserResponse;
 import com.twojz.y_kit.user.entity.User;
 import com.twojz.y_kit.user.service.UserService;
 import com.twojz.y_kit.user.dto.request.UserLoginRequest;
@@ -27,7 +28,7 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody UserLoginRequest requestDto) {
         User user = userService.login(requestDto);
-        return ResponseEntity.ok("로그인 성공! 사용자 ID: " + user.getId());
+        return ResponseEntity.status(HttpStatus.OK).body("로그인 성공! 사용자 ID: " + UserResponse.from(user).getId());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -39,7 +40,7 @@ public class UserController {
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<String> handleAllExceptions(Exception e) {
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다.");
+    public ResponseEntity<String> handleException(Exception e) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("서버 오류가 발생했습니다." + e.getMessage());
     }
 }

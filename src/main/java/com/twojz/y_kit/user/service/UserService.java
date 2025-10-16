@@ -20,31 +20,31 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public User registerUser(UserRegisterRequest requestDto) {
+    public void registerUser(UserRegisterRequest requestDto) {
         if (userRepository.existsByEmail(requestDto.getEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
 
         String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
 
-        User newUser = User.builder()
+        userRepository.save(User.builder()
                 .email(requestDto.getEmail())
                 .password(encodedPassword)
                 .name(requestDto.getName())
                 .role(Role.USER)
                 .loginProvider(LoginProvider.LOCAL)
-                .build();
-
-        return userRepository.save(newUser);
+                .build());
     }
 
     @Transactional(readOnly = true)
     public User login(UserLoginRequest requestDto) {
-        User user = userRepository.findByEmail(requestDto.getEmail()).orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다."));
+        User user = userRepository.findByEmail(requestDto.getEmail())
+                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다."));
 
         if (!passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
             throw new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다.");
         }
+
         return user;
     }
 }
