@@ -10,7 +10,6 @@ import lombok.Getter;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-@Table(name = "users")
 public class User extends BaseEntity {
 
     @Column(nullable = false, unique = true)

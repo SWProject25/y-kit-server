@@ -10,6 +10,5 @@ public class UserRegisterRequest {
     private String name;
     private Integer age;
     private Gender gender;
-    private Long regionId;
 }
 
