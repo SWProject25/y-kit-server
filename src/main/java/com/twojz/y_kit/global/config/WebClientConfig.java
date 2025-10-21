@@ -13,6 +13,11 @@ public class WebClientConfig {
         return createWebClient(policyUrl);
     }
 
+    @Bean
+    public WebClient vWorldClient(@Value("${vworld.api.url}") String vWorldUrl) {
+        return createWebClient(vWorldUrl);
+    }
+
     private WebClient createWebClient(String baseUrl) {
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(configurer -> configurer.defaultCodecs()
