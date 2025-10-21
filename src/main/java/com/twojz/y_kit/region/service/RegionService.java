@@ -71,7 +71,8 @@ public class RegionService {
     private int saveRegions(List<VWorldRegionItem> regionInfos, RegionLevel level, Map<String, Region> regionMap) {
         List<Region> entities = regionInfos.stream()
                 .map(info -> {
-                    Region parent = info.getAdmCode() != null ? regionMap.get(info.getAdmCode()) : null;
+                    String parentCode = getParentCode(info.getAdmCode(), level);
+                    Region parent = parentCode != null ? regionMap.get(parentCode) : null;
                     return toEntity(info, level, parent);
                 })
                 .toList();
@@ -81,6 +82,17 @@ public class RegionService {
 
         log.info("{} {}건 저장 완료", level.getDescription(), savedRegions.size());
         return savedRegions.size();
+    }
+
+    private String getParentCode(String admCode, RegionLevel level) {
+        if (admCode == null) return null;
+
+        return switch (level) {
+            case SIDO -> null;
+            case SIGUNGU -> admCode.substring(0, 2);
+            case DONG -> admCode.substring(0, 5);
+            case REE -> admCode.substring(0, 8);
+        };
     }
 
     private Region toEntity(VWorldRegionItem item, RegionLevel level, Region parent) {
