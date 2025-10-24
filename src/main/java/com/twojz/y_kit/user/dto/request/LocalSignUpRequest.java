@@ -4,11 +4,11 @@ import com.twojz.y_kit.user.entity.Gender;
 import lombok.Getter;
 
 @Getter
-public class UserRegisterRequest {
+public class LocalSignUpRequest {
     private String email;
     private String password;
     private String name;
-    private Integer age;
+    private int age;
     private Gender gender;
 }
 
