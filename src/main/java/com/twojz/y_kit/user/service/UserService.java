@@ -1,5 +1,6 @@
 package com.twojz.y_kit.user.service;
 
+import com.twojz.y_kit.user.auth.OAuth2Attributes;
 import com.twojz.y_kit.user.entity.LoginProvider;
 import com.twojz.y_kit.user.entity.Role;
 import com.twojz.y_kit.user.entity.UserEntity;
@@ -18,10 +19,8 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public void localSignUp(LocalSignUpRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
-        }
+    public void saveLocalUser(LocalSignUpRequest request) {
+        validateEmailNotExists(request.getEmail());
 
         userRepository.save(UserEntity.builder()
                 .email(request.getEmail())
@@ -33,4 +32,23 @@ public class UserService {
                 .loginProvider(LoginProvider.LOCAL)
                 .build());
     }
+
+    @Transactional
+    public UserEntity saveSocialUser(OAuth2Attributes attributes) {
+        return userRepository.findBySocialIdAndLoginProvider(
+                        attributes.getSocialId(),
+                        attributes.getLoginProvider()
+                )
+                .orElseGet(() -> {
+                    validateEmailNotExists(attributes.getEmail());
+                    return userRepository.save(attributes.toEntity());
+                });
+    }
+
+    private void validateEmailNotExists(String email) {
+        if (userRepository.existsByEmail(email)) {
+            throw new IllegalArgumentException("이미 가입된 이메일입니다.");
+        }
+    }
+
 }
