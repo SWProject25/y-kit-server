@@ -10,8 +10,8 @@ import lombok.Getter;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
-public class User extends BaseEntity {
-
+@Table(name = "user")
+public class UserEntity extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String email;
 
@@ -30,14 +30,14 @@ public class User extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    private Integer age;
+    private int age;
 
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
     @Builder
-    public User(String email, String password, Role role, LoginProvider loginProvider,
-                String name, String socialId, Integer age, Gender gender) {
+    public UserEntity(String email, String password, Role role, LoginProvider loginProvider,
+                      String name, String socialId, Integer age, Gender gender) {
         this.email = email;
         this.password = password;
         this.role = role != null ? role : Role.USER;

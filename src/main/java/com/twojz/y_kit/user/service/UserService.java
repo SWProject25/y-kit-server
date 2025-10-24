@@ -2,9 +2,8 @@ package com.twojz.y_kit.user.service;
 
 import com.twojz.y_kit.user.entity.LoginProvider;
 import com.twojz.y_kit.user.entity.Role;
-import com.twojz.y_kit.user.entity.User;
-import com.twojz.y_kit.user.dto.request.UserLoginRequest;
-import com.twojz.y_kit.user.dto.request.UserRegisterRequest;
+import com.twojz.y_kit.user.entity.UserEntity;
+import com.twojz.y_kit.user.dto.request.LocalSignUpRequest;
 import com.twojz.y_kit.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -15,36 +14,23 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class UserService {
-
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
 
     @Transactional
-    public void registerUser(UserRegisterRequest requestDto) {
-        if (userRepository.existsByEmail(requestDto.getEmail())) {
+    public void localSignUp(LocalSignUpRequest request) {
+        if (userRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("이미 사용 중인 이메일입니다.");
         }
 
-        String encodedPassword = passwordEncoder.encode(requestDto.getPassword());
-
-        userRepository.save(User.builder()
-                .email(requestDto.getEmail())
-                .password(encodedPassword)
-                .name(requestDto.getName())
+        userRepository.save(UserEntity.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .name(request.getName())
+                .age(request.getAge())
+                .gender(request.getGender())
                 .role(Role.USER)
                 .loginProvider(LoginProvider.LOCAL)
                 .build());
-    }
-
-    @Transactional(readOnly = true)
-    public User login(UserLoginRequest requestDto) {
-        User user = userRepository.findByEmail(requestDto.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다."));
-
-        if (!passwordEncoder.matches(requestDto.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("이메일 또는 비밀번호가 일치하지 않습니다.");
-        }
-
-        return user;
     }
 }

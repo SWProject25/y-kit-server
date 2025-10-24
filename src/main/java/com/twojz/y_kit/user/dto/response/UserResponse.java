@@ -2,7 +2,7 @@ package com.twojz.y_kit.user.dto.response;
 
 import com.twojz.y_kit.user.entity.Role;
 import com.twojz.y_kit.user.entity.Gender;
-import com.twojz.y_kit.user.entity.User;
+import com.twojz.y_kit.user.entity.UserEntity;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -17,7 +17,7 @@ public class UserResponse {
     private final Integer age;
     private final Gender gender;
 
-    public static UserResponse from(User user) {
+    public static UserResponse from(UserEntity user) {
         return UserResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
