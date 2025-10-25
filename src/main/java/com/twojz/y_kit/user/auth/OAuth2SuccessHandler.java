@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -19,7 +18,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
 @Component
-@Slf4j
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
     private final JwtTokenProvider jwtTokenProvider;
@@ -38,7 +36,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isEmpty()) {
-            log.error("OAuth2 로그인 성공 후 사용자 정보를 찾을 수 없습니다: {}", email);
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "사용자 정보를 찾을 수 없습니다.");
             return;
         }
@@ -48,8 +45,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // JWT 생성
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
-
-        log.info("✅ OAuth2 로그인 성공 - email: {}, userId: {}", email, user.getId());
 
         // 쿼리 파라미터로 토큰 전달
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)

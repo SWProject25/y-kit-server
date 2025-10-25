@@ -1,4 +1,4 @@
-package com.twojz.y_kit.global.config;
+package com.twojz.y_kit.global.security;
 
 import com.twojz.y_kit.user.auth.JwtTokenProvider;
 import jakarta.servlet.FilterChain;

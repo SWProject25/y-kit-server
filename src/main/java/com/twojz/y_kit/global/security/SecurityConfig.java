@@ -1,6 +1,6 @@
-package com.twojz.y_kit.global.config;
+package com.twojz.y_kit.global.security;
 
-import com.twojz.y_kit.user.auth.CustomOAuth2UserService;
+import com.twojz.y_kit.user.service.CustomOAuth2UserService;
 import com.twojz.y_kit.user.auth.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -9,8 +9,6 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration

@@ -1,7 +1,7 @@
-package com.twojz.y_kit.user.auth;
+package com.twojz.y_kit.user.service;
 
+import com.twojz.y_kit.user.auth.OAuth2Attributes;
 import com.twojz.y_kit.user.entity.UserEntity;
-import com.twojz.y_kit.user.service.UserService;
 import java.util.Collections;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;

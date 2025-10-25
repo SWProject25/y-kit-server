@@ -1,4 +1,4 @@
-package com.twojz.y_kit.global.config;
+package com.twojz.y_kit.global.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
