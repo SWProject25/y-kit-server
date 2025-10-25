@@ -30,7 +30,7 @@ public class UserEntity extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    private int age;
+    private Integer age;
 
     @Enumerated(EnumType.STRING)
     private Gender gender;

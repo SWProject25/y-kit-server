@@ -1,4 +1,4 @@
-package com.twojz.y_kit.global.config;
+package com.twojz.y_kit.global.security;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
