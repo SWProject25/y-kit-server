@@ -1,5 +1,11 @@
 language: "ko-KR"
 early_access: false
+
+trigger:
+  pull_request:
+    target_branches:
+      - dev
+
 reviews:
   profile: "chill"
   request_changes_workflow: false
