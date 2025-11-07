@@ -1,4 +1,4 @@
-package com.twojz.y_kit.policy.entity;
+package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -8,9 +8,7 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "policy_keyword", indexes = {
-        @Index(name = "idx_keyword", columnList = "keyword")
-})
+@Table(name = "policy_keyword")
 @Entity
 public class PolicyKeywordEntity extends BaseEntity {
     @Column(name = "keyword", unique = true, nullable = false)
@@ -22,5 +20,11 @@ public class PolicyKeywordEntity extends BaseEntity {
 
     public void increaseUsageCount() {
         this.usageCount++;
+    }
+
+    public void decreaseUsageCount() {
+        if(this.usageCount > 0) {
+            this.usageCount--;
+        }
     }
 }

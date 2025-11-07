@@ -1,16 +1,17 @@
-package com.twojz.y_kit.policy.entity;
+package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
-import com.twojz.y_kit.policy.entity.enums.ApplicationPeriodType;
+import com.twojz.y_kit.policy.domain.enumType.ApplicationPeriodType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
-import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
+import java.time.LocalDate;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,30 +22,26 @@ import lombok.NoArgsConstructor;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "policy_application", indexes = {
-        @Index(name = "idx_policy_id", columnList = "policy_id")
-})
+@Table(name = "policy_application")
 @Entity
 public class PolicyApplicationEntity extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "policy_id", unique = true)
     private PolicyEntity policy;
 
-    private String sprtSclLmttYn;
+    private String sprtSclLmtYn;                    // 지원규모제한여부
 
-    private String sprtArvlSqncYn;
+    private String sprtArvlSqncYn;                  // 지원도착순서여부
 
     @Enumerated(EnumType.STRING)
-    private ApplicationPeriodType aplyPrdSeCd;
+    private ApplicationPeriodType aplyPrdSeCd;      // 신청기간구분코드
 
-    private String aplyYmd;
+    private LocalDate aplyBgngYmd;                     // 신청시작일자
+    private LocalDate aplyEndYmd;                      // 신청종료일자
 
     @Column(columnDefinition = "TEXT")
-    private String plcyAplyMthdCn;
+    private String plcyAplyMthdCn;                  // 정책신청방법내용
 
     @Column(length = 1000)
-    private String aplyUrlAddr;
-
-    @Column(columnDefinition = "TEXT")
-    private String scrnMthdCn;
+    private String aplyUrlAddr;                     // 신청 URL
 }

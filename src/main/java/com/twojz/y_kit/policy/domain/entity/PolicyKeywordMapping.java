@@ -1,19 +1,14 @@
-package com.twojz.y_kit.policy.entity;
+package com.twojz.y_kit.policy.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 
-@Entity
-@Table(name = "policy_keyword_mapping", indexes = {
-        @Index(name = "idx_policy_keyword", columnList = "policy_id, keyword_id", unique = true),
-        @Index(name = "idx_keyword_id", columnList = "keyword_id")
-})
 @Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 @Builder
-
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Table(name = "policy_keyword_mapping")
+@Entity
 public class PolicyKeywordMapping {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

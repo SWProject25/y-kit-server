@@ -1,4 +1,4 @@
-package com.twojz.y_kit.policy.entity.enums;
+package com.twojz.y_kit.policy.domain.enumType;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
