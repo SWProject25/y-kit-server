@@ -1,6 +1,7 @@
 package com.twojz.y_kit.user.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
+import com.twojz.y_kit.region.entity.Region;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -35,9 +36,13 @@ public class UserEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "region_id")
+    private Region region;
+
     @Builder
     public UserEntity(String email, String password, Role role, LoginProvider loginProvider,
-                      String name, String socialId, Integer age, Gender gender) {
+                      String name, String socialId, Integer age, Gender gender, Region region) {
         this.email = email;
         this.password = password;
         this.role = role != null ? role : Role.USER;
@@ -46,5 +51,6 @@ public class UserEntity extends BaseEntity {
         this.name = name;
         this.age = age;
         this.gender = gender;
+        this.region = region;
     }
 }

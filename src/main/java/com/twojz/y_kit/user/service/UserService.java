@@ -30,6 +30,7 @@ public class UserService {
                 .gender(request.getGender())
                 .role(Role.USER)
                 .loginProvider(LoginProvider.LOCAL)
+                .region(request.getRegion())
                 .build());
     }
 
