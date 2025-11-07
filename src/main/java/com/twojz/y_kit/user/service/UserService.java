@@ -1,5 +1,8 @@
 package com.twojz.y_kit.user.service;
 
+import com.twojz.y_kit.region.entity.Region;
+import com.twojz.y_kit.region.repository.RegionRepository;
+import com.twojz.y_kit.region.service.RegionService;
 import com.twojz.y_kit.user.auth.OAuth2Attributes;
 import com.twojz.y_kit.user.entity.LoginProvider;
 import com.twojz.y_kit.user.entity.Role;
@@ -17,10 +20,16 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RegionService regionService;
 
     @Transactional
     public void saveLocalUser(LocalSignUpRequest request) {
         validateEmailNotExists(request.getEmail());
+
+        Region region = null;
+        if(request.getRegion() != null) {
+            region = regionService.findRegionName(request.getRegion());
+        }
 
         userRepository.save(UserEntity.builder()
                 .email(request.getEmail())
@@ -30,6 +39,7 @@ public class UserService {
                 .gender(request.getGender())
                 .role(Role.USER)
                 .loginProvider(LoginProvider.LOCAL)
+                .region(region)
                 .build());
     }
 
