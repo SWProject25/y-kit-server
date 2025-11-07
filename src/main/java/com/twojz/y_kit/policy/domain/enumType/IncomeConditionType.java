@@ -1,26 +1,26 @@
-package com.twojz.y_kit.policy.entity.enums;
+package com.twojz.y_kit.policy.domain.enumType;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
- * 신청기간 구분 코드
+ * 소득 조건 구분 코드
  */
 @Getter
 @RequiredArgsConstructor
-public enum ApplicationPeriodType {
-    CODE_57001("57001", "특정기간"),
-    CODE_57002("57002", "상시"),
-    CODE_57003("57003", "마감");
+public enum IncomeConditionType {
+    CODE_43001("43001", "무관"),
+    CODE_43002("43002", "연소득"),
+    CODE_43003("43003", "기타");
 
     private final String code;
     private final String description;
 
-    public static ApplicationPeriodType fromCode(String code) {
+    public static IncomeConditionType fromCode(String code) {
         if (code == null || code.trim().isEmpty()) {
             return null;
         }
-        for (ApplicationPeriodType type : values()) {
+        for (IncomeConditionType type : values()) {
             if (type.code.equals(code)) {
                 return type;
             }

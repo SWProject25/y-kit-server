@@ -1,4 +1,4 @@
-package com.twojz.y_kit.policy.entity;
+package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
 import jakarta.persistence.*;
@@ -11,11 +11,7 @@ import java.util.ArrayList;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "policy_category", indexes = {
-        @Index(name = "idx_parent_id", columnList = "parent_id"),
-        @Index(name = "idx_name", columnList = "name"),
-        @Index(name = "idx_level", columnList = "level")
-})
+@Table(name = "policy_category")
 @Entity
 public class PolicyCategoryEntity extends BaseEntity {
     @Column(unique = true, nullable = false)

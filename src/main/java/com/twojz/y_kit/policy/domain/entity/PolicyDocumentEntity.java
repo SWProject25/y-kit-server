@@ -1,17 +1,14 @@
-package com.twojz.y_kit.policy.entity;
+package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
 import jakarta.persistence.*;
-import java.util.List;
 import lombok.*;
 
 @Getter
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Table(name = "policy_document", indexes = {
-        @Index(name = "idx_policy_id", columnList = "policy_id")
-})
+@Table(name = "policy_document")
 @Entity
 public class PolicyDocumentEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)

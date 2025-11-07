@@ -2,29 +2,41 @@ package com.twojz.y_kit.policy.service;
 
 import com.twojz.y_kit.external.policy.client.YouthPolicyClient;
 import com.twojz.y_kit.external.policy.dto.YouthPolicy;
-import com.twojz.y_kit.policy.entity.*;
-import com.twojz.y_kit.policy.entity.enums.*;
+import com.twojz.y_kit.policy.domain.entity.*;
+import com.twojz.y_kit.policy.domain.enumType.*;
 import com.twojz.y_kit.policy.repository.*;
 import com.twojz.y_kit.region.repository.RegionRepository;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class PolicySyncService {
-
     private final YouthPolicyClient youthPolicyClient;
     private final PolicyRepository policyRepository;
     private final PolicyDetailRepository policyDetailRepository;
+    private final PolicyApplicationRepository policyApplicationRepository;
+    private final PolicyQualificationRepository policyQualificationRepository;
+    private final PolicyDocumentRepository policyDocumentRepository;
     private final PolicyCategoryRepository policyCategoryRepository;
+    private final PolicyCategoryMappingRepository policyCategoryMappingRepository;
     private final PolicyKeywordRepository policyKeywordRepository;
+    private final PolicyKeywordMappingRepository policyKeywordMappingRepository;
+    private final PolicyRegionRepository policyRegionRepository;
     private final RegionRepository regionRepository;
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
@@ -67,58 +79,107 @@ public class PolicySyncService {
     public void saveOrUpdatePolicy(YouthPolicy apiPolicy) {
         PolicyEntity policy = findOrCreatePolicy(apiPolicy);
 
+        if (policy.getId() != null) {
+            policyDetailRepository.deleteByPolicy(policy);
+            policyApplicationRepository.deleteByPolicy(policy);
+            policyQualificationRepository.deleteByPolicy(policy);
+
+            policyDocumentRepository.deleteByPolicy(policy);
+            policyCategoryMappingRepository.deleteByPolicy(policy);
+
+            policyKeywordMappingRepository.findByPolicyWithKeyword(policy).forEach(km -> {
+                km.getKeyword().decreaseUsageCount();
+            });
+            policyKeywordMappingRepository.deleteByPolicy(policy);
+
+            policyRegionRepository.deleteByPolicy(policy);
+        }
+
         PolicyDetailEntity detail = buildPolicyDetail(apiPolicy, policy);
-        PolicyQualificationEntity qualification = buildQualification(apiPolicy, policy);
+        policyDetailRepository.save(detail);
+
         PolicyApplicationEntity application = buildApplication(apiPolicy, policy);
+        policyApplicationRepository.save(application);
 
-        policy.setDetail(detail);
-        policy.setQualification(qualification);
-        policy.setApplication(application);
+        PolicyQualificationEntity qualification = buildQualification(apiPolicy, policy);
+        policyQualificationRepository.save(qualification);
 
-        mapRegions(apiPolicy, policy);
-        mapDocuments(apiPolicy, policy);
-        mapCategories(apiPolicy, policy);
-        mapKeywords(apiPolicy, policy);
+        buildDocuments(apiPolicy, policy);
+
+        mappingCategories(apiPolicy, policy);
+
+        mappingKeywords(apiPolicy, policy);
+
+        mappingRegions(apiPolicy, policy);
 
         policyRepository.save(policy);
         log.debug("정책 저장 완료: {}", apiPolicy.getPlcyNo());
     }
 
     private PolicyEntity findOrCreatePolicy(YouthPolicy apiPolicy) {
-        return policyDetailRepository.findByPlcyNo(apiPolicy.getPlcyNo())
-                .map(PolicyDetailEntity::getPolicy)
-                .orElseGet(() -> PolicyEntity.builder()
-                        .policyNo(apiPolicy.getPlcyNo())
-                        .viewCount(parseIntOrDefault(apiPolicy.getInqCnt(), 0))
-                        .isActive(true)
-                        .build());
+        return policyRepository.findByPolicyNo(apiPolicy.getPlcyNo())
+                .orElseGet(() -> {
+                    PolicyEntity newPolicy = PolicyEntity.builder()
+                            .policyNo(apiPolicy.getPlcyNo())
+                            .isActive(true)
+                            .build();
+                    return policyRepository.save(newPolicy);
+                });
     }
 
     private PolicyDetailEntity buildPolicyDetail(YouthPolicy apiPolicy, PolicyEntity policy) {
         return PolicyDetailEntity.builder()
                 .policy(policy)
-                .plcyNo(apiPolicy.getPlcyNo())
                 .plcyNm(apiPolicy.getPlcyNm())
                 .plcyExplnCn(apiPolicy.getPlcyExplnCn())
-                .plcySprtCn(apiPolicy.getPlcySprtCn())
+                .plcyAprvSttsCd(PolicyApprovalStatus.fromCode(apiPolicy.getPlcyAprvSttsCd()))
+                .plcyPvsnMthdCd(PolicyProvisionMethod.fromCode(apiPolicy.getPlcyPvsnMthdCd()))
                 .sprvsnInstCdNm(apiPolicy.getSprvsnInstCdNm())
                 .operInstCdNm(apiPolicy.getOperInstCdNm())
+                .plcySprtCn(apiPolicy.getPlcySprtCn())
                 .sprtSclCnt(apiPolicy.getSprtSclCnt())
-                .bizPrdSeCd(apiPolicy.getBizPrdSeCd())
+                .srngMthdCn(apiPolicy.getSrngMthdCn())
+                .bizPrdSeCd(BusinessPeriodType.fromCode(apiPolicy.getBizPrdSeCd()))
                 .bizPrdBgngYmd(parseDate(apiPolicy.getBizPrdBgngYmd()))
                 .bizPrdEndYmd(parseDate(apiPolicy.getBizPrdEndYmd()))
                 .bizPrdEtcCn(apiPolicy.getBizPrdEtcCn())
                 .etcMttrCn(apiPolicy.getEtcMttrCn())
                 .refUrlAddr1(apiPolicy.getRefUrlAddr1())
                 .refUrlAddr2(apiPolicy.getRefUrlAddr2())
-                .prtcpSgstTrgtCn(apiPolicy.getPtcpPrpTrgtCn())
+                .ptcpPrpTrgtCn(apiPolicy.getPtcpPrpTrgtCn())
+                .build();
+    }
+
+    private PolicyApplicationEntity buildApplication(YouthPolicy apiPolicy, PolicyEntity policy) {
+        LocalDate startDate = null;
+        LocalDate endDate = null;
+
+        if (StringUtils.hasText(apiPolicy.getAplyYmd())) {
+            String[] aplyYmd = apiPolicy.getAplyYmd().split("~");
+            if (aplyYmd.length >= 1) {
+                startDate = parseDate(aplyYmd[0]);
+            }
+            if (aplyYmd.length >= 2) {
+                endDate = parseDate(aplyYmd[1]);
+            }
+        }
+
+        return PolicyApplicationEntity.builder()
+                .policy(policy)
+                .sprtSclLmtYn(apiPolicy.getSprtSclLmtYn())
+                .sprtArvlSqncYn(apiPolicy.getSprtArvlSeqYn())
+                .aplyPrdSeCd(ApplicationPeriodType.fromCode(apiPolicy.getAplyPrdSeCd()))
+                .aplyBgngYmd(startDate)
+                .aplyEndYmd(endDate)
+                .plcyAplyMthdCn(apiPolicy.getPlcyAplyMthdCn())
+                .aplyUrlAddr(apiPolicy.getAplyUrlAddr())
                 .build();
     }
 
     private PolicyQualificationEntity buildQualification(YouthPolicy apiPolicy, PolicyEntity policy) {
         return PolicyQualificationEntity.builder()
                 .policy(policy)
-                .sprtTrgtAgeLmttYn(apiPolicy.getSprtTrgtAgeLmtYn())
+                .sprtTrgtAgeLmtYn(apiPolicy.getSprtTrgtAgeLmtYn())
                 .sprtTrgtMinAge(parseIntOrNull(apiPolicy.getSprtTrgtMinAge()))
                 .sprtTrgtMaxAge(parseIntOrNull(apiPolicy.getSprtTrgtMaxAge()))
                 .earnCndSeCd(IncomeConditionType.fromCode(apiPolicy.getEarnCndSeCd()))
@@ -130,75 +191,54 @@ public class PolicySyncService {
                 .jobCd(EmploymentStatus.fromCode(apiPolicy.getJobCd()))
                 .plcyMajorCd(MajorField.fromCode(apiPolicy.getPlcyMajorCd()))
                 .sbizCd(SpecializedRequirement.fromCode(apiPolicy.getSBizCd()))
-                .addAplyQlfcnCn(apiPolicy.getAddAplyQlfcCndCn())
+                .addAplyQlfcCndCn(apiPolicy.getAddAplyQlfcCndCn())
                 .build();
     }
 
-    private PolicyApplicationEntity buildApplication(YouthPolicy apiPolicy, PolicyEntity policy) {
-        return PolicyApplicationEntity.builder()
+    private void buildDocuments(YouthPolicy apiPolicy, PolicyEntity policy) {
+        policyDocumentRepository.save(PolicyDocumentEntity.builder()
                 .policy(policy)
-                .sprtSclLmttYn(apiPolicy.getSprtSclLmtYn())
-                .sprtArvlSqncYn(apiPolicy.getSprtArvlSeqYn())
-                .aplyPrdSeCd(ApplicationPeriodType.fromCode(apiPolicy.getAplyPrdSeCd()))
-                .aplyYmd(apiPolicy.getAplyYmd())
-                .plcyAplyMthdCn(apiPolicy.getPlcyAplyMthdCn())
-                .aplyUrlAddr(apiPolicy.getAplyUrlAddr())
-                .scrnMthdCn(apiPolicy.getSrngMthdCn())
-                .build();
+                .documentsOriginal(apiPolicy.getSbmsnDcmntCn())
+                .isRequired(true)
+                .build());
     }
 
-    private void mapRegions(YouthPolicy apiPolicy, PolicyEntity policy) {
-        policy.getPolicyRegions().clear();
-        if (apiPolicy.getZipCd() == null || apiPolicy.getZipCd().isBlank()) return;
+    private void mappingCategories(YouthPolicy apiPolicy, PolicyEntity policy) {
+        policy.getCategoryMappings().clear();
 
-        for (String zip : apiPolicy.getZipCd().split(",")) {
-            String trimmed = zip.trim();
-            if (!trimmed.isEmpty()) {
-                regionRepository.findById(trimmed)
-                        .ifPresent(region -> policy.getPolicyRegions().add(
-                                PolicyRegion.builder().policy(policy).region(region).build()
-                        ));
+        Function<String, Set<String>> parseCategories = (text) -> Arrays.stream(
+                        text.split("\\s*(,|및)\\s*")
+                )
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+
+        if (apiPolicy.getLclsfNm() != null && !apiPolicy.getLclsfNm().isBlank()) {
+            Set<String> mainCategories = parseCategories.apply(apiPolicy.getLclsfNm());
+            for (String mainName : mainCategories) {
+                PolicyCategoryEntity main = findOrCreateCategory(mainName, 1, null);
+                policy.getCategoryMappings().add(
+                        PolicyCategoryMapping.builder().policy(policy).category(main).build()
+                );
             }
         }
-    }
 
-    private void mapDocuments(YouthPolicy apiPolicy, PolicyEntity policy) {
-        policy.getDocuments().clear();
-        if (apiPolicy.getSbmsnDcmntCn() == null || apiPolicy.getSbmsnDcmntCn().isBlank()) return;
-
-        for (String doc : apiPolicy.getSbmsnDcmntCn().split("\n")) {
-            String trimmed = doc.trim();
-            if (!trimmed.isEmpty()) {
-                policy.getDocuments().add(
-                        PolicyDocumentEntity.builder()
-                                .policy(policy)
-                                .documentsOriginal(trimmed)
-                                .isRequired(true)
-                                .build()
+        if (apiPolicy.getMclsfNm() != null && !apiPolicy.getMclsfNm().isBlank()) {
+            Set<String> subCategories = parseCategories.apply(apiPolicy.getMclsfNm());
+            PolicyCategoryEntity mainParent = null;
+            if (!policy.getCategoryMappings().isEmpty()) {
+                mainParent = policy.getCategoryMappings().iterator().next().getCategory();
+            }
+            for (String subName : subCategories) {
+                PolicyCategoryEntity sub = findOrCreateCategory(subName, 2, mainParent);
+                policy.getCategoryMappings().add(
+                        PolicyCategoryMapping.builder().policy(policy).category(sub).build()
                 );
             }
         }
     }
 
-    private void mapCategories(YouthPolicy apiPolicy, PolicyEntity policy) {
-        policy.getCategoryMappings().clear();
-
-        if (apiPolicy.getLclsfNm() == null || apiPolicy.getLclsfNm().isBlank()) return;
-
-        PolicyCategoryEntity main = findOrCreateCategory(apiPolicy.getLclsfNm().trim(), 1, null);
-        policy.getCategoryMappings().add(
-                PolicyCategoryMapping.builder().policy(policy).category(main).build()
-        );
-
-        if (apiPolicy.getMclsfNm() != null && !apiPolicy.getMclsfNm().isBlank()) {
-            PolicyCategoryEntity sub = findOrCreateCategory(apiPolicy.getMclsfNm().trim(), 2, main);
-            policy.getCategoryMappings().add(
-                    PolicyCategoryMapping.builder().policy(policy).category(sub).build()
-            );
-        }
-    }
-
-    private void mapKeywords(YouthPolicy apiPolicy, PolicyEntity policy) {
+    private void mappingKeywords(YouthPolicy apiPolicy, PolicyEntity policy) {
         policy.getKeywordMappings().clear();
         if (apiPolicy.getPlcyKywdNm() == null || apiPolicy.getPlcyKywdNm().isBlank()) return;
 
@@ -210,6 +250,27 @@ public class PolicySyncService {
                         PolicyKeywordMapping.builder().policy(policy).keyword(keyword).build()
                 );
             }
+        }
+    }
+
+    private void mappingRegions(YouthPolicy apiPolicy, PolicyEntity policy) {
+        if (!StringUtils.hasText(apiPolicy.getZipCd())) {
+            return;
+        }
+
+        List<String> regionCodes = Arrays.stream(apiPolicy.getZipCd().split("[,;]"))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .toList();
+
+        for (String regionCode : regionCodes) {
+            regionRepository.findByCode(regionCode).ifPresent(region -> {
+                PolicyRegion policyRegion = PolicyRegion.builder()
+                        .policy(policy)
+                        .region(region)
+                        .build();
+                policyRegionRepository.save(policyRegion);
+            });
         }
     }
 
@@ -253,11 +314,6 @@ public class PolicySyncService {
             log.warn("숫자 파싱 실패: {}", value);
             return null;
         }
-    }
-
-    private Integer parseIntOrDefault(String value, int defaultValue) {
-        Integer parsed = parseIntOrNull(value);
-        return parsed != null ? parsed : defaultValue;
     }
 
     private BigDecimal parseBigDecimalOrNull(String value) {
