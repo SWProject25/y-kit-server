@@ -5,7 +5,6 @@ import com.twojz.y_kit.user.entity.Gender;
 import lombok.Getter;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Getter;
 
 @Getter
 public class LocalSignUpRequest {
@@ -25,6 +24,6 @@ public class LocalSignUpRequest {
     private Gender gender;
 
     @Schema(description = "사용자 지역")
-    private Region region;
+    private String region;
 }
 
