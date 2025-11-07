@@ -14,7 +14,7 @@ import java.util.ArrayList;
 @Table(name = "policy_category")
 @Entity
 public class PolicyCategoryEntity extends BaseEntity {
-    @Column(unique = true, nullable = false)
+    @Column(nullable = false)
     private String name;
 
     @Column(nullable = false)

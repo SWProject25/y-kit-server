@@ -10,7 +10,6 @@ import java.util.List;
 import lombok.*;
 
 @Getter
-@Builder
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "policies")
@@ -44,19 +43,15 @@ public class PolicyEntity extends BaseEntity {
     private PolicyQualificationEntity qualification;
 
     @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<PolicyDocumentEntity> documents = new ArrayList<>();
 
     @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<PolicyCategoryMapping> categoryMappings = new ArrayList<>();
 
     @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<PolicyKeywordMapping> keywordMappings = new ArrayList<>();
 
     @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<PolicyRegion> regions = new ArrayList<>();
 
     @Builder

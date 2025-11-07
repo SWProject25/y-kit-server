@@ -23,6 +23,8 @@ public class PolicyKeywordEntity extends BaseEntity {
     }
 
     public void decreaseUsageCount() {
-        this.usageCount--;
+        if(this.usageCount > 0) {
+            this.usageCount--;
+        }
     }
 }

@@ -9,5 +9,4 @@ import java.util.Optional;
 @Repository
 public interface PolicyCategoryRepository extends JpaRepository<PolicyCategoryEntity, Long> {
     Optional<PolicyCategoryEntity> findByNameAndLevel(String name, Integer level);
-    Optional<PolicyCategoryEntity> findByName(String name);
 }

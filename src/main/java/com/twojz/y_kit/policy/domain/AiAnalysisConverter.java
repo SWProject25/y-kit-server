@@ -9,7 +9,7 @@ import jakarta.persistence.Converter;
 @Converter
 public class AiAnalysisConverter implements AttributeConverter<AiAnalysis, String> {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public String convertToDatabaseColumn(AiAnalysis attribute) {
