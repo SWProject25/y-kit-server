@@ -47,7 +47,7 @@ public class CommunityController {
     public ResponseEntity<CommunityDetailResponse> getCommunityDetail(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long communityId,
             Authentication authentication) {
-        Long userId = authentication != null ? Long.parseLong(authentication.getName()) : null;
+        Long userId = extractUserId(authentication);
         CommunityDetailResponse response = communityService.getCommunityDetail(communityId, userId);
         return ResponseEntity.ok(response);
     }
@@ -62,7 +62,7 @@ public class CommunityController {
     public ResponseEntity<Long> createCommunity(
             Authentication authentication,
             @Valid @RequestBody CommunityCreateRequest request) {
-        Long userId = Long.parseLong(authentication.getName());
+        Long userId = extractUserId(authentication);
         Long communityId = communityService.createCommunity(userId, request);
         return ResponseEntity.ok(communityId);
     }
@@ -83,7 +83,7 @@ public class CommunityController {
             @PathVariable Long communityId,
             Authentication authentication,
             @Valid @RequestBody CommunityUpdateRequest request) {
-        Long userId = Long.parseLong(authentication.getName());
+        Long userId = extractUserId(authentication);
         communityService.updateCommunity(communityId, userId, request);
         return ResponseEntity.ok().build();
     }
@@ -93,7 +93,7 @@ public class CommunityController {
     public ResponseEntity<Void> deleteCommunity(
             @PathVariable Long communityId,
             Authentication authentication) {
-        Long userId = Long.parseLong(authentication.getName());
+        Long userId = extractUserId(authentication);
         communityService.deleteCommunity(communityId, userId);
         return ResponseEntity.ok().build();
     }
@@ -103,7 +103,7 @@ public class CommunityController {
     public ResponseEntity<Void> toggleLike(
             @PathVariable Long communityId,
             Authentication authentication) {
-        Long userId = Long.parseLong(authentication.getName());
+        Long userId = extractUserId(authentication);
         communityService.toggleLike(communityId, userId);
         return ResponseEntity.ok().build();
     }
@@ -113,7 +113,7 @@ public class CommunityController {
     public ResponseEntity<Void> toggleBookmark(
             @PathVariable Long communityId,
             Authentication authentication) {
-        Long userId = Long.parseLong(authentication.getName());
+        Long userId = extractUserId(authentication);
         communityService.toggleBookmark(communityId, userId);
         return ResponseEntity.ok().build();
     }
@@ -124,7 +124,7 @@ public class CommunityController {
             @PathVariable Long communityId,
             Authentication authentication,
             @Valid @RequestBody CommentCreateRequest request) {
-        Long userId = Long.parseLong(authentication.getName());
+        Long userId = extractUserId(authentication);
         Long commentId = communityService.createComment(communityId, userId, request);
         return ResponseEntity.ok(commentId);
     }
@@ -141,8 +141,19 @@ public class CommunityController {
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long commentId,
             Authentication authentication) {
-        Long userId = Long.parseLong(authentication.getName());
+        Long userId = extractUserId(authentication);
         communityService.deleteComment(commentId, userId);
         return ResponseEntity.ok().build();
+    }
+
+    private Long extractUserId(Authentication authentication) {
+        if (authentication == null) {
+            throw new IllegalArgumentException("인증이 필요합니다.");
+        }
+        try {
+            return Long.parseLong(authentication.getName());
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("잘못된 사용자 정보입니다.", e);
+        }
     }
 }

@@ -10,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import java.time.LocalDateTime;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -20,7 +21,10 @@ import org.hibernate.annotations.CreationTimestamp;
 
 @Getter
 @Builder
-@Table(name = "community_likes")
+@Table(
+        name = "community_likes",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"community_id", "user_id"})
+)
 @AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity

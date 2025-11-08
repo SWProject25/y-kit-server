@@ -23,6 +23,6 @@ public enum CommunityCategory {
                 return category;
             }
         }
-        return null;
+        throw new IllegalArgumentException("유효하지 않은 카테고리입니다: " + description);
     }
 }
