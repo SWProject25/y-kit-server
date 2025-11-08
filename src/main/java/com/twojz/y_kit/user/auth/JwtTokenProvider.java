@@ -84,14 +84,34 @@ public class JwtTokenProvider {
                 .parseSignedClaims(token)
                 .getPayload();
 
-        String email = claims.getSubject();
+        String userId = claims.getSubject();
         String role = claims.get("role", String.class);
 
         return new UsernamePasswordAuthenticationToken(
-                email,
+                userId,
                 null,
                 Collections.singleton(new SimpleGrantedAuthority(role))
         );
+    }
+
+    public Long getUserIdFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return Long.parseLong(claims.getSubject());
+    }
+
+    public String getEmailFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return claims.get("email", String.class);
     }
 
     public String resolveToken(HttpServletRequest request) {
