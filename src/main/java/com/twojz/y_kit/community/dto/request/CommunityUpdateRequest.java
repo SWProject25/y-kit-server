@@ -2,7 +2,6 @@ package com.twojz.y_kit.community.dto.request;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,6 +19,6 @@ public class CommunityUpdateRequest {
     private String content;
 
     @Schema(description = "카테고리", example = "POLICY_REVIEW", required = true)
-    @NotNull(message = "카테고리는 필수입니다.")
+    @NotBlank(message = "카테고리는 필수입니다.")
     private String category;
 }
