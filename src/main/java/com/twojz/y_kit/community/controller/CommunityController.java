@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -70,7 +71,7 @@ public class CommunityController {
     @Operation(summary = "게시글 검색", description = "제목 또는 내용으로 게시글을 검색합니다.")
     @GetMapping("/search")
     public ResponseEntity<PageResponse<CommunityListResponse>> searchCommunities(
-            @RequestParam String keyword,
+            @RequestParam @Size(min = 2, message = "검색어는 최소 2자 이상이어야 합니다") String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
         PageResponse<CommunityListResponse> page = communityService.searchCommunities(keyword, pageable);
