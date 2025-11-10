@@ -3,7 +3,6 @@ package com.twojz.y_kit.external.openai.dto.response;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.List;
 import lombok.Builder;
-import lombok.Data;
 import lombok.Getter;
 
 @Getter
