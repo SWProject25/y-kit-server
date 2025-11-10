@@ -18,6 +18,16 @@ public class WebClientConfig {
         return createWebClient(vWorldUrl);
     }
 
+    @Bean
+    public WebClient openAIClient(@Value("${openai.api.base-url}") String openAIUrl,
+                                  @Value("${openai.api.key}") String apiKey) {
+        WebClient baseClient = createWebClient(openAIUrl);
+        return baseClient.mutate()
+                .defaultHeader("Authorization", "Bearer " + apiKey)
+                .defaultHeader("Content-Type", "application/json")
+                .build();
+    }
+
     private WebClient createWebClient(String baseUrl) {
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(configurer -> configurer.defaultCodecs()
