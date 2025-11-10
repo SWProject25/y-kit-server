@@ -1,12 +1,14 @@
 package com.twojz.y_kit.external.openai.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 
 @Getter
 @Builder
+@JsonDeserialize(builder = OpenAIResponse.OpenAIResponseBuilder.class)
 public class OpenAIResponse {
     private String id;
     private String object;
