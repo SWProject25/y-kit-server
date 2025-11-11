@@ -14,12 +14,20 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class WebClientConfig {
     @Bean
     public WebClient policyClient(@Value("${policy.api.url}") String policyUrl) {
-        return createWebClient(policyUrl);
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000)
+                .responseTimeout(Duration.ofSeconds(60));
+        
+        return createWebClient(policyUrl).mutate().clientConnector(new ReactorClientHttpConnector(httpClient)).build();
     }
 
     @Bean
     public WebClient vWorldClient(@Value("${vworld.api.url}") String vWorldUrl) {
-        return createWebClient(vWorldUrl);
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000)
+                .responseTimeout(Duration.ofSeconds(60));
+
+        return createWebClient(vWorldUrl).mutate().clientConnector(new ReactorClientHttpConnector(httpClient)).build();
     }
 
     @Bean

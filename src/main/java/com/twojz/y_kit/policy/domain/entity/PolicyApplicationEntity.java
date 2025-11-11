@@ -2,6 +2,7 @@ package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
 import com.twojz.y_kit.policy.domain.enumType.ApplicationPeriodType;
+import com.twojz.y_kit.policy.dto.request.PolicyApplicationUpdateRequest;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -44,4 +45,14 @@ public class PolicyApplicationEntity extends BaseEntity {
 
     @Column(length = 1000)
     private String aplyUrlAddr;                     // 신청 URL
+
+    public void updateFromApi(PolicyApplicationUpdateRequest dto) {
+        this.sprtSclLmtYn = dto.getSprtSclLmtYn();
+        this.sprtArvlSqncYn = dto.getSprtArvlSqncYn();
+        this.aplyPrdSeCd = dto.getAplyPrdSeCd();
+        this.aplyBgngYmd = dto.getAplyBgngYmd();
+        this.aplyEndYmd = dto.getAplyEndYmd();
+        this.plcyAplyMthdCn = dto.getPlcyAplyMthdCn();
+        this.aplyUrlAddr = dto.getAplyUrlAddr();
+    }
 }

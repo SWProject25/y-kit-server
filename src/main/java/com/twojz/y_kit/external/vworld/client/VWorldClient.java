@@ -2,6 +2,7 @@ package com.twojz.y_kit.external.vworld.client;
 
 import com.twojz.y_kit.external.vworld.dto.VWorldRegionApiResponse;
 import com.twojz.y_kit.external.vworld.dto.VWorldRegionApiResponse.VWorldRegionItem;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.util.UriComponentsBuilder;
+import reactor.util.retry.Retry;
 
 @Component
 @RequiredArgsConstructor
@@ -67,6 +69,8 @@ public class VWorldClient {
                 .uri(uriBuilder.toUriString())
                 .retrieve()
                 .bodyToMono(VWorldRegionApiResponse.class)
+                .retryWhen(Retry.backoff(3, Duration.ofSeconds(1))
+                        .filter(throwable -> throwable instanceof java.io.IOException))
                 .block();
     }
 }
