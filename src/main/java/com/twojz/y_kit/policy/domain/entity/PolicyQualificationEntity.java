@@ -2,6 +2,7 @@ package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
 import com.twojz.y_kit.policy.domain.enumType.*;
+import com.twojz.y_kit.policy.domain.dto.PolicyQualificationDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -56,4 +57,47 @@ public class PolicyQualificationEntity extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String addAplyQlfcCndCn;                            // 추가신청자격조건내용
+
+    public void updateFromApi(PolicyQualificationDto dto) {
+        this.sprtTrgtAgeLmtYn = dto.getSprtTrgtAgeLmtYn();
+        this.sprtTrgtMinAge = dto.getSprtTrgtMinAge();
+        this.sprtTrgtMaxAge = dto.getSprtTrgtMaxAge();
+        this.earnCndSeCd = dto.getEarnCndSeCd();
+        this.earnMinAmt = dto.getEarnMinAmt();
+        this.earnMaxAmt = dto.getEarnMaxAmt();
+        this.earnEtcCn = dto.getEarnEtcCn();
+        this.mrgSttsCd = dto.getMrgSttsCd();
+        this.schoolCd = dto.getSchoolCd();
+        this.jobCd = dto.getJobCd();
+        this.plcyMajorCd = dto.getPlcyMajorCd();
+        this.sbizCd = dto.getSBizCd();
+        this.addAplyQlfcCndCn = dto.getAddAplyQlfcCndCn();
+    }
+
+    // 비즈니스 메서드
+    public boolean isAgeEligible(int age) {
+        if (sprtTrgtMinAge == null && sprtTrgtMaxAge == null) {
+            return true;
+        }
+        if (sprtTrgtMinAge != null && age < sprtTrgtMinAge) {
+            return false;
+        }
+        if (sprtTrgtMaxAge != null && age > sprtTrgtMaxAge) {
+            return false;
+        }
+        return true;
+    }
+
+    public boolean isIncomeEligible(BigDecimal income) {
+        if (earnMinAmt == null && earnMaxAmt == null) {
+            return true;
+        }
+        if (earnMinAmt != null && income.compareTo(earnMinAmt) < 0) {
+            return false;
+        }
+        if (earnMaxAmt != null && income.compareTo(earnMaxAmt) > 0) {
+            return false;
+        }
+        return true;
+    }
 }

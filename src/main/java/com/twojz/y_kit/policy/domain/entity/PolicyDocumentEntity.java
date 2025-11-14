@@ -18,6 +18,14 @@ public class PolicyDocumentEntity extends BaseEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String documentsOriginal;
 
-    @Builder.Default
-    private Boolean isRequired = true;
+    @Column(columnDefinition = "JSON")
+    private String documentsParsed;
+
+    public void updateOriginal(String documentsOriginal) {
+        this.documentsOriginal = documentsOriginal;
+    }
+
+    public void updateParsed(String documentsParsed) {
+        this.documentsParsed = documentsParsed;
+    }
 }

@@ -2,13 +2,13 @@ package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
 import com.twojz.y_kit.policy.domain.enumType.ApplicationPeriodType;
+import com.twojz.y_kit.policy.domain.dto.PolicyApplicationDto;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
@@ -44,4 +44,14 @@ public class PolicyApplicationEntity extends BaseEntity {
 
     @Column(length = 1000)
     private String aplyUrlAddr;                     // 신청 URL
+
+    public void updateFromApi(PolicyApplicationDto dto) {
+        this.sprtSclLmtYn = dto.getSprtSclLmtYn();
+        this.sprtArvlSqncYn = dto.getSprtArvlSqncYn();
+        this.aplyPrdSeCd = dto.getAplyPrdSeCd();
+        this.aplyBgngYmd = dto.getAplyBgngYmd();
+        this.aplyEndYmd = dto.getAplyEndYmd();
+        this.plcyAplyMthdCn = dto.getPlcyAplyMthdCn();
+        this.aplyUrlAddr = dto.getAplyUrlAddr();
+    }
 }

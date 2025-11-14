@@ -4,6 +4,7 @@ import com.twojz.y_kit.global.entity.BaseEntity;
 import com.twojz.y_kit.policy.domain.enumType.BusinessPeriodType;
 import com.twojz.y_kit.policy.domain.enumType.PolicyApprovalStatus;
 import com.twojz.y_kit.policy.domain.enumType.PolicyProvisionMethod;
+import com.twojz.y_kit.policy.domain.dto.PolicyDetailDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -68,4 +69,24 @@ public class PolicyDetailEntity extends BaseEntity {
 
     @Column(length = 1000)
     private String refUrlAddr2;                         // 참고 URL2
+
+    public void updateFromApi(PolicyDetailDto dto) {
+        this.plcyNm = dto.getPlcyNm();
+        this.plcyExplnCn = dto.getPlcyExplnCn();
+        this.plcyAprvSttsCd = dto.getPlcyAprvSttsCd();
+        this.plcyPvsnMthdCd = dto.getPlcyPvsnMthdCd();
+        this.sprvsnInstCdNm = dto.getSprvsnInstCdNm();
+        this.operInstCdNm = dto.getOperInstCdNm();
+        this.plcySprtCn = dto.getPlcySprtCn();
+        this.sprtSclCnt = dto.getSprtSclCnt();
+        this.srngMthdCn = dto.getSrngMthdCn();
+        this.bizPrdSeCd = dto.getBizPrdSeCd();
+        this.bizPrdBgngYmd = dto.getBizPrdBgngYmd();
+        this.bizPrdEndYmd = dto.getBizPrdEndYmd();
+        this.bizPrdEtcCn = dto.getBizPrdEtcCn();
+        this.etcMttrCn = dto.getEtcMttrCn();
+        this.refUrlAddr1 = dto.getRefUrlAddr1();
+        this.refUrlAddr2 = dto.getRefUrlAddr2();
+        this.ptcpPrpTrgtCn = dto.getPtcpPrpTrgtCn();
+    }
 }

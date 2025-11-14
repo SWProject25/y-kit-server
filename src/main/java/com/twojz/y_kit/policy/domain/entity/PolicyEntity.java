@@ -80,4 +80,9 @@ public class PolicyEntity extends BaseEntity {
             this.bookmarkCount--;
         }
     }
+
+    public void updateAiAnalysis(AiAnalysis aiAnalysis) {
+        this.aiAnalysis = aiAnalysis;
+        this.aiGeneratedAt = LocalDateTime.now();
+    }
 }
