@@ -1,7 +1,6 @@
 package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
-import com.twojz.y_kit.policy.dto.request.PolicyDocumentUpdateRequest;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -20,23 +19,12 @@ public class PolicyDocumentEntity extends BaseEntity {
     private String documentsOriginal;
 
     @Column(columnDefinition = "JSON")
-    private String documentsParsed;  // JSON 또는 줄바꿈 구분
-
-    @Builder.Default
-    private Boolean isRequired = true;
-
-    public void updateFromApi(PolicyDocumentUpdateRequest dto) {
-        this.documentsOriginal = dto.getDocumentsOriginal();
-        this.isRequired = dto.isRequired();
-    }
+    private String documentsParsed;
 
     public void updateOriginal(String documentsOriginal) {
         this.documentsOriginal = documentsOriginal;
     }
 
-    /**
-     * AI 파싱 결과 업데이트 (별도 메서드)
-     */
     public void updateParsed(String documentsParsed) {
         this.documentsParsed = documentsParsed;
     }

@@ -1,8 +1,10 @@
 package com.twojz.y_kit.policy.service;
 
 import com.twojz.y_kit.external.policy.dto.YouthPolicy;
+import com.twojz.y_kit.policy.domain.dto.PolicyApplicationDto;
+import com.twojz.y_kit.policy.domain.dto.PolicyDetailDto;
+import com.twojz.y_kit.policy.domain.dto.PolicyQualificationDto;
 import com.twojz.y_kit.policy.domain.enumType.*;
-import com.twojz.y_kit.policy.dto.request.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -17,8 +19,8 @@ public class PolicyMapper {
 
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
-    public PolicyDetailUpdateRequest toDetailRequest(YouthPolicy src) {
-        return PolicyDetailUpdateRequest.builder()
+    public PolicyDetailDto toDetailRequest(YouthPolicy src) {
+        return PolicyDetailDto.builder()
                 .plcyNm(src.getPlcyNm())
                 .plcyExplnCn(src.getPlcyExplnCn())
                 .sprvsnInstCdNm(src.getSprvsnInstCdNm())
@@ -39,7 +41,7 @@ public class PolicyMapper {
                 .build();
     }
 
-    public PolicyApplicationUpdateRequest toApplicationRequest(YouthPolicy src) {
+    public PolicyApplicationDto toApplicationRequest(YouthPolicy src) {
         LocalDate startDate = null, endDate = null;
         if (StringUtils.hasText(src.getAplyYmd())) {
             String[] parts = src.getAplyYmd().split("~");
@@ -47,7 +49,7 @@ public class PolicyMapper {
             if (parts.length > 1) endDate = parseDate(parts[1]);
         }
 
-        return PolicyApplicationUpdateRequest.builder()
+        return PolicyApplicationDto.builder()
                 .sprtSclLmtYn(src.getSprtSclLmtYn())
                 .sprtArvlSqncYn(src.getSprtArvlSeqYn())
                 .aplyPrdSeCd(ApplicationPeriodType.fromCode(src.getAplyPrdSeCd()))
@@ -58,8 +60,8 @@ public class PolicyMapper {
                 .build();
     }
 
-    public PolicyQualificationUpdateRequest toQualificationRequest(YouthPolicy src) {
-        return PolicyQualificationUpdateRequest.builder()
+    public PolicyQualificationDto toQualificationRequest(YouthPolicy src) {
+        return PolicyQualificationDto.builder()
                 .sprtTrgtAgeLmtYn(src.getSprtTrgtAgeLmtYn())
                 .sprtTrgtMinAge(parseIntOrNull(src.getSprtTrgtMinAge()))
                 .sprtTrgtMaxAge(parseIntOrNull(src.getSprtTrgtMaxAge()))
@@ -76,14 +78,6 @@ public class PolicyMapper {
                 .build();
     }
 
-    public PolicyDocumentUpdateRequest toDocumentRequest(YouthPolicy src) {
-        return PolicyDocumentUpdateRequest.builder()
-                .documentsOriginal(src.getSbmsnDcmntCn())
-                .isRequired(true)
-                .build();
-    }
-
-    // ===== Util =====
     private LocalDate parseDate(String dateStr) {
         if (!StringUtils.hasText(dateStr)) return null;
         try {

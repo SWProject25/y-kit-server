@@ -2,7 +2,7 @@ package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
 import com.twojz.y_kit.policy.domain.enumType.*;
-import com.twojz.y_kit.policy.dto.request.PolicyQualificationUpdateRequest;
+import com.twojz.y_kit.policy.domain.dto.PolicyQualificationDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -58,7 +58,7 @@ public class PolicyQualificationEntity extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String addAplyQlfcCndCn;                            // 추가신청자격조건내용
 
-    public void updateFromApi(PolicyQualificationUpdateRequest dto) {
+    public void updateFromApi(PolicyQualificationDto dto) {
         this.sprtTrgtAgeLmtYn = dto.getSprtTrgtAgeLmtYn();
         this.sprtTrgtMinAge = dto.getSprtTrgtMinAge();
         this.sprtTrgtMaxAge = dto.getSprtTrgtMaxAge();

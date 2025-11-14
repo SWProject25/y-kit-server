@@ -3,10 +3,9 @@ package com.twojz.y_kit.policy.service;
 import com.twojz.y_kit.external.policy.client.YouthPolicyClient;
 import com.twojz.y_kit.external.policy.dto.YouthPolicy;
 import com.twojz.y_kit.policy.domain.entity.*;
-import com.twojz.y_kit.policy.dto.request.PolicyApplicationUpdateRequest;
-import com.twojz.y_kit.policy.dto.request.PolicyDetailUpdateRequest;
-import com.twojz.y_kit.policy.dto.request.PolicyDocumentUpdateRequest;
-import com.twojz.y_kit.policy.dto.request.PolicyQualificationUpdateRequest;
+import com.twojz.y_kit.policy.domain.dto.PolicyApplicationDto;
+import com.twojz.y_kit.policy.domain.dto.PolicyDetailDto;
+import com.twojz.y_kit.policy.domain.dto.PolicyQualificationDto;
 import com.twojz.y_kit.policy.repository.*;
 import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.region.repository.RegionRepository;
@@ -125,22 +124,21 @@ public class PolicySyncService {
                         .build())
         );
 
-        PolicyDetailUpdateRequest detailReq = mapper.toDetailRequest(apiPolicy);
-        PolicyApplicationUpdateRequest appReq = mapper.toApplicationRequest(apiPolicy);
-        PolicyQualificationUpdateRequest qualReq = mapper.toQualificationRequest(apiPolicy);
-        PolicyDocumentUpdateRequest docReq = mapper.toDocumentRequest(apiPolicy);
+        PolicyDetailDto detailReq = mapper.toDetailRequest(apiPolicy);
+        PolicyApplicationDto appReq = mapper.toApplicationRequest(apiPolicy);
+        PolicyQualificationDto qualReq = mapper.toQualificationRequest(apiPolicy);
 
         updateOrCreateDetail(policy, detailReq);
         updateOrCreateApplication(policy, appReq);
         updateOrCreateQualification(policy, qualReq);
-        updateOrCreateDocument(policy, docReq);
+        updateOrCreateDocument(policy, apiPolicy.getSbmsnDcmntCn());
 
         updateCategoryMappings(apiPolicy, policy, categoryCache);
         updateKeywordMappings(apiPolicy, policy, keywordCache);
         updateRegionMappings(apiPolicy, policy);
     }
 
-    private void updateOrCreateDetail(PolicyEntity policy, PolicyDetailUpdateRequest dto) {
+    private void updateOrCreateDetail(PolicyEntity policy, PolicyDetailDto dto) {
         PolicyDetailEntity detail = policyDetailRepository.findByPolicy(policy)
                 .orElseGet(() -> PolicyDetailEntity.builder().policy(policy).build());
 
@@ -150,7 +148,7 @@ public class PolicySyncService {
         }
     }
 
-    private void updateOrCreateApplication(PolicyEntity policy, PolicyApplicationUpdateRequest dto) {
+    private void updateOrCreateApplication(PolicyEntity policy, PolicyApplicationDto dto) {
         PolicyApplicationEntity app = policyApplicationRepository.findByPolicy(policy)
                 .orElseGet(() -> PolicyApplicationEntity.builder().policy(policy).build());
 
@@ -160,7 +158,7 @@ public class PolicySyncService {
         }
     }
 
-    private void updateOrCreateQualification(PolicyEntity policy, PolicyQualificationUpdateRequest dto) {
+    private void updateOrCreateQualification(PolicyEntity policy, PolicyQualificationDto dto) {
         PolicyQualificationEntity qual = policyQualificationRepository.findByPolicy(policy)
                 .orElseGet(() -> PolicyQualificationEntity.builder().policy(policy).build());
 
@@ -170,17 +168,15 @@ public class PolicySyncService {
         }
     }
 
-    private void updateOrCreateDocument(PolicyEntity policy, PolicyDocumentUpdateRequest dto) {
-        String original = dto.getDocumentsOriginal();
+    private void updateOrCreateDocument(PolicyEntity policy, String original) {
         if (isEmptyDocument(original)) return;
 
         PolicyDocumentEntity doc = policyDocumentRepository.findByPolicy(policy)
                 .orElseGet(() -> PolicyDocumentEntity.builder()
                         .policy(policy)
-                        .isRequired(dto.isRequired())
                         .build());
 
-        doc.updateOriginal(dto.getDocumentsOriginal());
+        doc.updateOriginal(original);
         if (doc.getId() == null) {
             policyDocumentRepository.save(doc);
         }

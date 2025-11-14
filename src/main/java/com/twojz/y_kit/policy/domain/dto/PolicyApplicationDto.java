@@ -1,4 +1,4 @@
-package com.twojz.y_kit.policy.dto.request;
+package com.twojz.y_kit.policy.domain.dto;
 
 import com.twojz.y_kit.policy.domain.enumType.ApplicationPeriodType;
 import java.time.LocalDate;
@@ -7,7 +7,7 @@ import lombok.Getter;
 
 @Getter
 @Builder
-public class PolicyApplicationUpdateRequest {
+public class PolicyApplicationDto {
     private String sprtSclLmtYn;
     private String sprtArvlSqncYn;
     private ApplicationPeriodType aplyPrdSeCd;

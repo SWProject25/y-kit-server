@@ -4,7 +4,7 @@ import com.twojz.y_kit.global.entity.BaseEntity;
 import com.twojz.y_kit.policy.domain.enumType.BusinessPeriodType;
 import com.twojz.y_kit.policy.domain.enumType.PolicyApprovalStatus;
 import com.twojz.y_kit.policy.domain.enumType.PolicyProvisionMethod;
-import com.twojz.y_kit.policy.dto.request.PolicyDetailUpdateRequest;
+import com.twojz.y_kit.policy.domain.dto.PolicyDetailDto;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -70,7 +70,7 @@ public class PolicyDetailEntity extends BaseEntity {
     @Column(length = 1000)
     private String refUrlAddr2;                         // 참고 URL2
 
-    public void updateFromApi(PolicyDetailUpdateRequest dto) {
+    public void updateFromApi(PolicyDetailDto dto) {
         this.plcyNm = dto.getPlcyNm();
         this.plcyExplnCn = dto.getPlcyExplnCn();
         this.plcyAprvSttsCd = dto.getPlcyAprvSttsCd();

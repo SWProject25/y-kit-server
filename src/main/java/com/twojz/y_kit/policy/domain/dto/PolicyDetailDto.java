@@ -1,4 +1,4 @@
-package com.twojz.y_kit.policy.dto.request;
+package com.twojz.y_kit.policy.domain.dto;
 
 import com.twojz.y_kit.policy.domain.enumType.*;
 import lombok.Builder;
@@ -8,7 +8,7 @@ import java.time.LocalDate;
 
 @Getter
 @Builder
-public class PolicyDetailUpdateRequest {
+public class PolicyDetailDto {
     private String plcyNm;
     private String plcyExplnCn;
     private String sprvsnInstCdNm;
