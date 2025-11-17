@@ -66,10 +66,10 @@ public class BadgeCommandService {
     }
 
     public void revokeBadge(Long userId, Long badgeId) {
-        userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
+        UserBadgeEntity userBadge = userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
                 .orElseThrow(() -> new IllegalArgumentException("보유하지 않은 뱃지입니다."));
 
-        userBadgeRepository.deleteByUserIdAndBadgeId(userId, badgeId);
+        userBadgeRepository.delete(userBadge);
     }
 
     public void revokeBadgeIfExists(Long userId, Long badgeId) {

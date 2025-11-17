@@ -19,6 +19,4 @@ public interface UserBadgeRepository extends JpaRepository<UserBadgeEntity, Long
             "WHERE ub.user.id = :userId " +
             "ORDER BY ub.acquiredAt DESC")
     List<UserBadgeEntity> findAllByUserIdWithBadge(@Param("userId") Long userId);
-
-    List<UserBadgeEntity> findAllByUserId(Long userId);
 }
