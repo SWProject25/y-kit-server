@@ -89,7 +89,7 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
         CASE WHEN EXISTS(SELECT 1 FROM GroupPurchaseBookmarkEntity b WHERE b.groupPurchase = g AND b.user.id = :userId) THEN true ELSE false END
     )
     FROM GroupPurchaseEntity g
-    WHERE g.title LIKE %:keyword%
+    WHERE g.title LIKE CONCAT('%', :keyword, '%')
     ORDER BY g.createdAt DESC
     """)
     Page<GroupPurchaseWithCountsDto> findGroupPurchasesWithCountsByKeyword(
