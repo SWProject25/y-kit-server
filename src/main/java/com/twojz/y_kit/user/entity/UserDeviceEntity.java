@@ -55,9 +55,8 @@ public class UserDeviceEntity {
         this.lastLogin = lastLogin;
     }
 
-    public void updateLoginInfo(String deviceName, String deviceToken) {
+    public void updateLoginInfo(String deviceName) {
         this.deviceName = deviceName;
-        this.deviceToken = deviceToken;
         this.isActive = true;
         this.lastLogin = LocalDateTime.now();
     }

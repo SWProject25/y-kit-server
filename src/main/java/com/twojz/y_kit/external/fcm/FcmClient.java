@@ -46,8 +46,12 @@ public class FcmClient {
      */
     public BatchResponse sendToTokens(List<String> tokens, FcmMessage fcmMessage) {
         if (tokens == null || tokens.isEmpty()) {
-            log.warn("전송할 토큰이 없습니다.");
-            return null;
+            throw new IllegalArgumentException("전송할 토큰이 없습니다.");
+        }
+
+        if (tokens.size() > 500) {
+            throw new IllegalArgumentException(
+                    String.format("토큰 개수가 최대 제한(500개)을 초과했습니다: %d개", tokens.size()));
         }
 
         try {
@@ -67,7 +71,6 @@ public class FcmClient {
                     response.getSuccessCount(),
                     response.getFailureCount());
 
-            // 실패한 토큰 로깅
             if (response.getFailureCount() > 0) {
                 logFailedTokens(tokens, response);
             }

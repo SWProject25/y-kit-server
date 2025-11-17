@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @Tag(name = "회원관리 API")
 @RequestMapping("/api/v1/user")
@@ -47,7 +49,7 @@ public class UserController {
     @PostMapping("/device/register")
     public ResponseEntity<Void> registerDeviceToken(
             Authentication authentication,
-            @RequestBody DeviceTokenRequest request) {
+            @Valid @RequestBody DeviceTokenRequest request) {
 
         Long userId = extractUserId(authentication);
         userDeviceService.registerOrUpdateDevice(
@@ -64,19 +66,22 @@ public class UserController {
             @ApiResponse(responseCode = "200", description = "토큰 비활성화 성공")
     })
     @PostMapping("/device/deactivate")
-    public ResponseEntity<Void> deactivateDeviceToken(@RequestBody DeviceTokenRequest request) {
-        userDeviceService.deactivateDevice(request.getDeviceToken());
+    public ResponseEntity<Void> deactivateDeviceToken(
+            Authentication authentication,
+            @RequestBody DeviceTokenRequest request) {
+        Long userId = extractUserId(authentication);
+        userDeviceService.deactivateDevice(userId, request.getDeviceToken());
         return ResponseEntity.ok().build();
     }
 
     private Long extractUserId(Authentication authentication) {
         if (authentication == null) {
-            throw new IllegalArgumentException("인증이 필요합니다.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.");
         }
         try {
             return Long.parseLong(authentication.getName());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("잘못된 사용자 정보입니다.", e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 사용자 정보입니다.", e);
         }
     }
 }

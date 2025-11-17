@@ -24,33 +24,36 @@ public class UserDeviceService {
      * 디바이스 토큰 등록/업데이트 (로그인 시)
      */
     public void registerOrUpdateDevice(Long userId, String deviceName, String deviceToken) {
-        try {
-            userDeviceRepository.findByDeviceToken(deviceToken)
-                    .ifPresentOrElse(
-                            device -> device.updateLoginInfo(deviceName, deviceToken),
-                            () -> {
-                                UserEntity user = userFindService.findUser(userId);
-                                userDeviceRepository.save(UserDeviceEntity.builder()
-                                        .user(user)
-                                        .deviceName(deviceName)
-                                        .deviceToken(deviceToken)
-                                        .isActive(true)
-                                        .lastLogin(LocalDateTime.now())
-                                        .build());
-                            }
-                    );
-        } catch (DataIntegrityViolationException e) {
-            userDeviceRepository.findByDeviceToken(deviceToken)
-                    .orElseThrow(() -> new IllegalStateException("디바이스 등록 실패", e));
+        UserDeviceEntity device = userDeviceRepository.findByDeviceToken(deviceToken)
+                .orElseGet(() -> {
+                    UserEntity user = userFindService.findUser(userId);
+                    return userDeviceRepository.save(UserDeviceEntity.builder()
+                            .user(user)
+                            .deviceName(deviceName)
+                            .deviceToken(deviceToken)
+                            .isActive(true)
+                            .lastLogin(LocalDateTime.now())
+                            .build());
+                });
+
+        if (!device.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("다른 사용자의 디바이스 토큰입니다.");
         }
+        device.updateLoginInfo(deviceName);
     }
 
     /**
      * 디바이스 비활성화 (로그아웃 시)
      */
-    public void deactivateDevice(String deviceToken) {
-        userDeviceRepository.findByDeviceToken(deviceToken)
-                .ifPresent(UserDeviceEntity::deactivate);
+    public void deactivateDevice(Long userId, String deviceToken) {
+        UserDeviceEntity device = userDeviceRepository.findByDeviceToken(deviceToken)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 디바이스 토큰입니다."));
+
+        if (!device.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("다른 사용자의 디바이스 토큰입니다.");
+        }
+
+        device.deactivate();
     }
 
     /**
