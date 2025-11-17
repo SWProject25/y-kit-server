@@ -4,10 +4,10 @@ import com.twojz.y_kit.community.domain.vo.CommunityCategory;
 import com.twojz.y_kit.community.dto.request.CommentCreateRequest;
 import com.twojz.y_kit.community.dto.request.CommunityCreateRequest;
 import com.twojz.y_kit.community.dto.request.CommunityUpdateRequest;
-import com.twojz.y_kit.community.dto.response.CommentResponse;
 import com.twojz.y_kit.community.dto.response.CommunityDetailResponse;
 import com.twojz.y_kit.community.dto.response.CommunityListResponse;
-import com.twojz.y_kit.community.service.CommunityService;
+import com.twojz.y_kit.community.service.CommunityCommandService;
+import com.twojz.y_kit.community.service.CommunityFindService;
 import com.twojz.y_kit.global.dto.PageResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -31,7 +31,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class CommunityController {
 
-    private final CommunityService communityService;
+    private final CommunityCommandService communityCommandService;
+    private final CommunityFindService communityFindService;
 
     @Operation(summary = "게시글 목록 조회")
     @GetMapping
@@ -39,7 +40,7 @@ public class CommunityController {
             @RequestParam(required = false) CommunityCategory category,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        PageResponse<CommunityListResponse> page = communityService.getCommunityList(category, pageable);
+        PageResponse<CommunityListResponse> page = communityFindService.getCommunityList(category, pageable);
         return ResponseEntity.ok(page);
     }
 
@@ -48,8 +49,11 @@ public class CommunityController {
     public ResponseEntity<CommunityDetailResponse> getCommunityDetail(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long communityId,
             Authentication authentication) {
+
+        communityCommandService.increaseViewCount(communityId);
+
         Long userId = extractUserId(authentication);
-        CommunityDetailResponse response = communityService.getCommunityDetail(communityId, userId);
+        CommunityDetailResponse response = communityFindService.getCommunityDetail(communityId, userId);
         return ResponseEntity.ok(response);
     }
 
@@ -63,8 +67,9 @@ public class CommunityController {
     public ResponseEntity<Long> createCommunity(
             Authentication authentication,
             @Valid @RequestBody CommunityCreateRequest request) {
+
         Long userId = extractUserId(authentication);
-        Long communityId = communityService.createCommunity(userId, request);
+        Long communityId = communityCommandService.createCommunity(userId, request);
         return ResponseEntity.ok(communityId);
     }
 
@@ -74,7 +79,7 @@ public class CommunityController {
             @RequestParam @Size(min = 2, message = "검색어는 최소 2자 이상이어야 합니다") String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        PageResponse<CommunityListResponse> page = communityService.searchCommunities(keyword, pageable);
+        PageResponse<CommunityListResponse> page = communityFindService.searchCommunities(keyword, pageable);
         return ResponseEntity.ok(page);
     }
 
@@ -84,8 +89,9 @@ public class CommunityController {
             @PathVariable Long communityId,
             Authentication authentication,
             @Valid @RequestBody CommunityUpdateRequest request) {
+
         Long userId = extractUserId(authentication);
-        communityService.updateCommunity(communityId, userId, request);
+        communityCommandService.updateCommunity(communityId, userId, request);
         return ResponseEntity.ok().build();
     }
 
@@ -94,8 +100,9 @@ public class CommunityController {
     public ResponseEntity<Void> deleteCommunity(
             @PathVariable Long communityId,
             Authentication authentication) {
+
         Long userId = extractUserId(authentication);
-        communityService.deleteCommunity(communityId, userId);
+        communityCommandService.deleteCommunity(communityId, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -104,8 +111,9 @@ public class CommunityController {
     public ResponseEntity<Void> toggleLike(
             @PathVariable Long communityId,
             Authentication authentication) {
+
         Long userId = extractUserId(authentication);
-        communityService.toggleLike(communityId, userId);
+        communityCommandService.toggleLike(communityId, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -114,8 +122,9 @@ public class CommunityController {
     public ResponseEntity<Void> toggleBookmark(
             @PathVariable Long communityId,
             Authentication authentication) {
+
         Long userId = extractUserId(authentication);
-        communityService.toggleBookmark(communityId, userId);
+        communityCommandService.toggleBookmark(communityId, userId);
         return ResponseEntity.ok().build();
     }
 
@@ -125,16 +134,10 @@ public class CommunityController {
             @PathVariable Long communityId,
             Authentication authentication,
             @Valid @RequestBody CommentCreateRequest request) {
-        Long userId = extractUserId(authentication);
-        Long commentId = communityService.createComment(communityId, userId, request);
-        return ResponseEntity.ok(commentId);
-    }
 
-    @Operation(summary = "댓글 목록 조회")
-    @GetMapping("/{communityId}/comments")
-    public ResponseEntity<List<CommentResponse>> getComments(@PathVariable Long communityId) {
-        List<CommentResponse> response = communityService.getComments(communityId);
-        return ResponseEntity.ok(response);
+        Long userId = extractUserId(authentication);
+        Long commentId = communityCommandService.createComment(communityId, userId, request);
+        return ResponseEntity.ok(commentId);
     }
 
     @Operation(summary = "댓글 삭제")
@@ -142,9 +145,29 @@ public class CommunityController {
     public ResponseEntity<Void> deleteComment(
             @PathVariable Long commentId,
             Authentication authentication) {
+
         Long userId = extractUserId(authentication);
-        communityService.deleteComment(commentId, userId);
+        communityCommandService.deleteComment(commentId, userId);
         return ResponseEntity.ok().build();
+    }
+
+    @Operation(summary = "내가 작성한 게시글 목록")
+    @GetMapping("/my-posts")
+    public ResponseEntity<PageResponse<CommunityListResponse>> getMyPosts(
+            Authentication authentication,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Long userId = extractUserId(authentication);
+        PageResponse<CommunityListResponse> page = communityFindService.getMyPosts(userId, pageable);
+        return ResponseEntity.ok(page);
+    }
+
+    @Operation(summary = "내가 북마크한 게시글 목록")
+    @GetMapping("/my-bookmarks")
+    public ResponseEntity<List<CommunityListResponse>> getMyBookmarks(Authentication authentication) {
+        Long userId = extractUserId(authentication);
+        List<CommunityListResponse> bookmarks = communityFindService.getMyBookmarks(userId);
+        return ResponseEntity.ok(bookmarks);
     }
 
     private Long extractUserId(Authentication authentication) {

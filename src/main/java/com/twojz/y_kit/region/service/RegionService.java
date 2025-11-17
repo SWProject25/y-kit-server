@@ -54,11 +54,6 @@ public class RegionService {
         log.info("🎉 행정구역 데이터 총 {}건 저장 완료!", totalCount);
     }
 
-    public Region findRegionName(String name) {
-        return regionRepository.findByName(name)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역입니다."));
-    }
-
     private List<VWorldRegionItem> fetchRegions(String endpoint, List<VWorldRegionItem> parentList) {
         if (parentList == null) {
             return vWorldClient.fetchRegions(endpoint, null);

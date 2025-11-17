@@ -1,8 +1,7 @@
 package com.twojz.y_kit.user.service;
 
 import com.twojz.y_kit.region.entity.Region;
-import com.twojz.y_kit.region.repository.RegionRepository;
-import com.twojz.y_kit.region.service.RegionService;
+import com.twojz.y_kit.region.service.RegionFindService;
 import com.twojz.y_kit.user.auth.OAuth2Attributes;
 import com.twojz.y_kit.user.entity.LoginProvider;
 import com.twojz.y_kit.user.entity.Role;
@@ -20,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final RegionService regionService;
+    private final RegionFindService regionFindService;
 
     @Transactional
     public void saveLocalUser(LocalSignUpRequest request) {
@@ -28,7 +27,7 @@ public class UserService {
 
         Region region = null;
         if(request.getRegion() != null) {
-            region = regionService.findRegionName(request.getRegion());
+            region = regionFindService.findRegionName(request.getRegion());
         }
 
         userRepository.save(UserEntity.builder()
@@ -55,17 +54,9 @@ public class UserService {
                 });
     }
 
-    @Transactional(readOnly = true)
-    public UserEntity findUser(Long userId) {
-       return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 유저입니다."));
-
-    }
-
     private void validateEmailNotExists(String email) {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
     }
-
 }

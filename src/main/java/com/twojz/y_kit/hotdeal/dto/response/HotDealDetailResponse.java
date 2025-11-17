@@ -1,5 +1,6 @@
 package com.twojz.y_kit.hotdeal.dto.response;
 
+import com.twojz.y_kit.hotdeal.domain.dto.HotDealWithCountsDto;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.List;
@@ -46,6 +47,23 @@ public class HotDealDetailResponse {
     @Schema(description = "댓글 목록")
     private List<HotDealCommentResponse> comments;
 
+    public static HotDealDetailResponse fromDto(HotDealWithCountsDto dto, List<HotDealCommentResponse> comments) {
+        return HotDealDetailResponse.builder()
+                .id(dto.hotDealId())
+                .title(dto.title())
+                .placeName(dto.placeName())
+                .address(dto.address())
+                .url(dto.url())
+                .latitude(dto.latitude())
+                .longitude(dto.longitude())
+                .isLiked(dto.isLiked())
+                .isBookmarked(dto.isBookmarked())
+                .likeCount(dto.likeCount())
+                .commentCount(dto.commentCount())
+                .comments(comments)
+                .build();
+    }
+
     public static HotDealDetailResponse from(HotDealEntity hotDeal, boolean isLiked, boolean isBookmarked, long likeCount, long commentCount, List<HotDealCommentResponse> comments) {
         return HotDealDetailResponse.builder()
                 .id(hotDeal.getId())
@@ -62,4 +80,5 @@ public class HotDealDetailResponse {
                 .comments(comments)
                 .build();
     }
+
 }
