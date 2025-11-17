@@ -186,36 +186,31 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
 
     @Query("""
     SELECT new com.twojz.y_kit.group.domain.dto.GroupPurchaseWithCountsDto(
-        gp.id,
-        gp.title,
-        gp.productName,
-        gp.productLink,
-        gp.price,
-        gp.minParticipants,
-        gp.maxParticipants,
-        gp.currentParticipants,
-        gp.deadline,
-        gp.status,
-        gp.region.code,
-        gp.region.name,
-        COUNT(DISTINCT gpl.id),
-        COUNT(DISTINCT gpc.id),
-        CASE WHEN SUM(CASE WHEN gpl.user.id = :userId THEN 1 ELSE 0 END) > 0 THEN true ELSE false END,
-        CASE WHEN SUM(CASE WHEN gpb.user.id = :userId THEN 1 ELSE 0 END) > 0 THEN true ELSE false END
+        g.id,
+        g.title,
+        g.productName,
+        g.productLink,
+        g.price,
+        g.minParticipants,
+        g.maxParticipants,
+        g.currentParticipants,
+        g.deadline,
+        g.status,
+        g.region.code,
+        g.region.name,
+        (SELECT COUNT(l2) FROM GroupPurchaseLikeEntity l2 WHERE l2.groupPurchase = g),
+        (SELECT COUNT(c2) FROM GroupPurchaseCommentEntity c2 WHERE c2.groupPurchase = g),
+        CASE WHEN EXISTS(SELECT 1 FROM GroupPurchaseLikeEntity l WHERE l.groupPurchase = g AND l.user.id = :userId) THEN true ELSE false END,
+        CASE WHEN EXISTS(SELECT 1 FROM GroupPurchaseBookmarkEntity b WHERE b.groupPurchase = g AND b.user.id = :userId) THEN true ELSE false END
     )
-    FROM GroupPurchaseEntity gp
-    LEFT JOIN GroupPurchaseLikeEntity gpl ON gpl.groupPurchase.id = gp.id
-    LEFT JOIN GroupPurchaseCommentEntity gpc ON gpc.groupPurchase.id = gp.id
-    LEFT JOIN GroupPurchaseBookmarkEntity gpb ON gpb.groupPurchase.id = gp.id
-    WHERE gp.status = :status
-      AND gp.region.code = :regionCode
-    GROUP BY gp.id, gp.region.code, gp.region.name
-    ORDER BY gp.createdAt DESC
+    FROM GroupPurchaseEntity g
+    WHERE g.status = :status
+      AND g.region.code = :regionCode
+    ORDER BY g.createdAt DESC
     """)
     Page<GroupPurchaseWithCountsDto> findGroupPurchasesWithCountsByStatusAndRegionCode(
             @Param("status") GroupPurchaseStatus status,
             @Param("regionCode") String regionCode,
             @Param("userId") Long userId,
-            Pageable pageable
-    );
+            Pageable pageable);
 }
