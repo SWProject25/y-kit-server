@@ -27,7 +27,7 @@ public class UserService {
 
         Region region = null;
         if(request.getRegion() != null) {
-            region = regionFindService.findRegion(request.getRegion());
+            region = regionFindService.findRegionName(request.getRegion());
         }
 
         userRepository.save(UserEntity.builder()

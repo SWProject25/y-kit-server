@@ -33,7 +33,7 @@ public class HotDealCommandService {
 
     public Long createHotDeal(Long userId, HotDealCreateRequest request) {
         UserEntity user = userFindService.findUser(userId);
-        Region region = regionFindService.findRegion(request.getRegionCode());
+        Region region = regionFindService.findRegionCode(request.getRegionCode());
 
         HotDealEntity hotDeal = HotDealEntity.builder()
                 .user(user)
@@ -58,7 +58,7 @@ public class HotDealCommandService {
             throw new IllegalArgumentException("수정 권한이 없습니다.");
         }
 
-        Region region = regionFindService.findRegion(request.getRegionCode());
+        Region region = regionFindService.findRegionCode(request.getRegionCode());
 
         hotDeal.update(
                 request.getTitle(),
