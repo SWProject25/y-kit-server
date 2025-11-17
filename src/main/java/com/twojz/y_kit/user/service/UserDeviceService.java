@@ -29,21 +29,16 @@ public class UserDeviceService {
             Optional<UserDeviceEntity> existingDevice = userDeviceRepository.findByDeviceToken(deviceToken);
 
             if (existingDevice.isPresent()) {
-                // 기존 디바이스가 있는 경우
                 UserDeviceEntity device = existingDevice.get();
 
-                // 소유권 검증
                 if (!device.getUser().getId().equals(userId)) {
                     throw new IllegalArgumentException("다른 사용자의 디바이스 토큰입니다.");
                 }
 
-                // 로그인 정보 업데이트
                 device.updateLoginInfo(deviceName, deviceToken);
-
             } else {
-                // 새로운 디바이스 등록
                 UserEntity user = userFindService.findUser(userId);
-                userDeviceRepository.save(UserDeviceEntity.builder()
+                userDeviceRepository.saveAndFlush(UserDeviceEntity.builder()
                         .user(user)
                         .deviceName(deviceName)
                         .deviceToken(deviceToken)
@@ -59,12 +54,10 @@ public class UserDeviceService {
             UserDeviceEntity device = userDeviceRepository.findByDeviceToken(deviceToken)
                     .orElseThrow(() -> new IllegalStateException("디바이스 등록 실패", e));
 
-            // 소유권 검증
             if (!device.getUser().getId().equals(userId)) {
                 throw new IllegalArgumentException("다른 사용자의 디바이스 토큰입니다.");
             }
 
-            // 로그인 정보 업데이트
             device.updateLoginInfo(deviceName, deviceToken);
         }
     }
