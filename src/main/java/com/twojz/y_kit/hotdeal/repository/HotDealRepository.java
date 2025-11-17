@@ -1,14 +1,10 @@
 package com.twojz.y_kit.hotdeal.repository;
 
-import com.twojz.y_kit.community.domain.entity.CommunityEntity;
-import com.twojz.y_kit.community.domain.vo.CommunityCategory;
-import com.twojz.y_kit.hotdeal.domain.entity.DealType;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealEntity;
 import com.twojz.y_kit.user.entity.UserEntity;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;

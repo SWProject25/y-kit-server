@@ -17,7 +17,6 @@ import com.twojz.y_kit.hotdeal.repository.HotDealLikeRepository;
 import com.twojz.y_kit.hotdeal.repository.HotDealRepository;
 import com.twojz.y_kit.hotdeal.repository.HotDealSpecification;
 import com.twojz.y_kit.region.entity.Region;
-import com.twojz.y_kit.region.repository.RegionRepository;
 import com.twojz.y_kit.region.service.RegionService;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.UserService;
