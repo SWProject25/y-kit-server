@@ -29,15 +29,12 @@ public class GroupPurchaseFindService {
     }
 
     public GroupPurchaseDetailResponse getGroupPurchaseDetail(Long gpId, Long userId) {
-        // 1. DTO로 공동구매 정보 + 카운트 + 좋아요/북마크 여부 조회
         GroupPurchaseWithCountsDto dto = groupPurchaseRepository
                 .findGroupPurchaseWithCountsById(gpId, userId)
                 .orElseThrow(() -> new IllegalArgumentException("공동구매를 찾을 수 없습니다."));
 
-        // 2. Entity 조회 (댓글 조회를 위해 필요)
         GroupPurchaseEntity gp = findById(gpId);
 
-        // 3. 댓글 목록 조회
         List<GroupPurchaseCommentResponse> comments = commentRepository
                 .findByGroupPurchaseOrderByCreatedAtDesc(gp)
                 .stream()
@@ -89,7 +86,6 @@ public class GroupPurchaseFindService {
         return new PageResponse<>(dtos.map(GroupPurchaseListResponse::fromDto));
     }
 
-    @Transactional(readOnly = true)
     public PageResponse<GroupPurchaseListResponse> getGroupPurchasesByStatusAndRegion(
             GroupPurchaseStatus status,
             String regionCode,

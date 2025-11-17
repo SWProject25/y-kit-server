@@ -10,6 +10,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
@@ -163,12 +165,12 @@ public class GroupPurchaseController {
 
     private Long extractUserId(Authentication authentication) {
         if (authentication == null) {
-            throw new IllegalArgumentException("인증이 필요합니다.");
+            throw new AuthenticationCredentialsNotFoundException("인증이 필요합니다.");
         }
         try {
             return Long.parseLong(authentication.getName());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("잘못된 사용자 정보입니다.", e);
+            throw new AuthenticationServiceException("잘못된 사용자 정보입니다.", e);
         }
     }
 }

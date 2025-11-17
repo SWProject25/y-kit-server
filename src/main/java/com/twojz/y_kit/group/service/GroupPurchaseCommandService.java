@@ -5,6 +5,7 @@ import com.twojz.y_kit.group.domain.entity.GroupPurchaseCommentEntity;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseEntity;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseLikeEntity;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseParticipantEntity;
+import com.twojz.y_kit.group.domain.entity.GroupPurchaseStatus;
 import com.twojz.y_kit.group.dto.request.GroupPurchaseCommentCreateRequest;
 import com.twojz.y_kit.group.dto.request.GroupPurchaseCreateRequest;
 import com.twojz.y_kit.group.dto.request.GroupPurchaseUpdateRequest;
@@ -17,6 +18,7 @@ import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.region.service.RegionFindService;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.UserFindService;
+import java.time.LocalDateTime;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -159,13 +161,23 @@ public class GroupPurchaseCommandService {
         GroupPurchaseEntity gp = groupPurchaseFindService.findById(gpId);
         UserEntity user = userFindService.findUser(userId);
 
-        // 이미 참여 중인지 확인
+        if (gp.getStatus() != GroupPurchaseStatus.OPEN) {
+            throw new IllegalArgumentException("모집이 마감된 공동구매입니다.");
+        }
+
+        if (LocalDateTime.now().isAfter(gp.getDeadline())) {
+            throw new IllegalArgumentException("마감일이 지난 공동구매입니다.");
+        }
+
+        if (gp.getCurrentParticipants() >= gp.getMaxParticipants()) {
+            throw new IllegalArgumentException("참여 인원이 모두 찼습니다.");
+        }
+
         boolean alreadyJoined = participantRepository.findByGroupPurchaseAndUser(gp, user).isPresent();
         if (alreadyJoined) {
             throw new IllegalArgumentException("이미 참여했습니다.");
         }
 
-        // 참여자 등록
         participantRepository.save(
                 GroupPurchaseParticipantEntity.builder()
                         .groupPurchase(gp)
@@ -173,7 +185,6 @@ public class GroupPurchaseCommandService {
                         .build()
         );
 
-        // 참여자 수 증가
         gp.increaseParticipants();
     }
 }
