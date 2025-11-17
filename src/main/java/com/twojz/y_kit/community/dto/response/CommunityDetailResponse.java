@@ -4,6 +4,7 @@ import com.twojz.y_kit.community.domain.entity.CommunityEntity;
 import com.twojz.y_kit.community.domain.vo.CommunityCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -46,13 +47,23 @@ public class CommunityDetailResponse {
     @Schema(description = "내가 북마크 했는지 여부", example = "false")
     private boolean isBookmarked;
 
+    @Schema(description = "댓글 목록")
+    private List<CommentResponse> comments;
+
     @Schema(description = "작성일시", example = "2024-11-08T10:30:00")
     private LocalDateTime createdAt;
 
     @Schema(description = "수정일시", example = "2024-11-08T11:00:00")
     private LocalDateTime updatedAt;
 
-    public static CommunityDetailResponse from(CommunityEntity entity, boolean isLiked, boolean isBookmarked, long likeCount, long commentCount) {
+    public static CommunityDetailResponse from(
+            CommunityEntity entity,
+            boolean isLiked,
+            boolean isBookmarked,
+            long likeCount,
+            long commentCount,
+            List<CommentResponse> comments
+    ) {
         return CommunityDetailResponse.builder()
                 .id(entity.getId())
                 .title(entity.getTitle())
@@ -66,6 +77,7 @@ public class CommunityDetailResponse {
                 .commentCount(commentCount)
                 .isLiked(isLiked)
                 .isBookmarked(isBookmarked)
+                .comments(comments)
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

@@ -1,5 +1,6 @@
 package com.twojz.y_kit.hotdeal.dto.response;
 
+import com.twojz.y_kit.hotdeal.domain.dto.HotDealWithCountsDto;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -44,6 +45,19 @@ public class HotDealListResponse {
                 .regionCode(hotDeal.getRegion().getCode())
                 .likeCount(likeCount)
                 .commentCount(commentCount)
+                .build();
+    }
+
+    public static HotDealListResponse fromDto(HotDealWithCountsDto dto) {
+        return HotDealListResponse.builder()
+                .id(dto.hotDealId())
+                .title(dto.title())
+                .placeName(dto.placeName())
+                .address(dto.address())
+                .url(dto.url())
+                .regionCode(dto.regionCode())
+                .likeCount(dto.likeCount())
+                .commentCount(dto.commentCount())
                 .build();
     }
 }
