@@ -51,6 +51,12 @@ public class GroupPurchaseController {
     ) {
         Long userId = extractUserId(authentication);
 
+        if (status != null && regionCode != null) {
+            return groupPurchaseFindService.getGroupPurchasesByStatusAndRegion(
+                    status, regionCode, userId, pageable
+            );
+        }
+
         if (status != null) {
             return groupPurchaseFindService.getGroupPurchasesByStatus(status, userId, pageable);
         }

@@ -183,4 +183,40 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
             @Param("userId") Long userId,
             Pageable pageable
     );
+
+    @Query("""
+    SELECT new com.twojz.y_kit.group.domain.dto.GroupPurchaseWithCountsDto(
+        gp.id,
+        gp.title,
+        gp.productName,
+        gp.productLink,
+        gp.price,
+        gp.minParticipants,
+        gp.maxParticipants,
+        gp.currentParticipants,
+        gp.deadline,
+        gp.status,
+        gp.region.regionCode,
+        gp.region.regionName,
+        COUNT(DISTINCT gpl.id),
+        COUNT(DISTINCT gpc.id),
+        CASE WHEN SUM(CASE WHEN gpl.user.id = :userId THEN 1 ELSE 0 END) > 0 THEN true ELSE false END,
+        CASE WHEN SUM(CASE WHEN gpb.user.id = :userId THEN 1 ELSE 0 END) > 0 THEN true ELSE false END
+    )
+    FROM GroupPurchaseEntity gp
+    LEFT JOIN gp.region r
+    LEFT JOIN GroupPurchaseLikeEntity gpl ON gpl.groupPurchase.id = gp.id
+    LEFT JOIN GroupPurchaseCommentEntity gpc ON gpc.groupPurchase.id = gp.id
+    LEFT JOIN GroupPurchaseBookmarkEntity gpb ON gpb.groupPurchase.id = gp.id
+    WHERE gp.status = :status
+      AND gp.region.code = :regionCode
+    GROUP BY gp.id, r.code, r.name
+    ORDER BY gp.createdAt DESC
+    """)
+    Page<GroupPurchaseWithCountsDto> findGroupPurchasesWithCountsByStatusAndRegionCode(
+            @Param("status") GroupPurchaseStatus status,
+            @Param("regionCode") String regionCode,
+            @Param("userId") Long userId,
+            Pageable pageable
+    );
 }

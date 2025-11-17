@@ -10,5 +10,6 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface GroupPurchaseLikeRepository extends JpaRepository<GroupPurchaseLikeEntity, Long> {
     Optional<GroupPurchaseLikeEntity> findByGroupPurchaseAndUser(GroupPurchaseEntity gp, UserEntity user);
+    void deleteByGroupPurchase(GroupPurchaseEntity gp);
 }
 

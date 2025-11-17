@@ -88,4 +88,17 @@ public class GroupPurchaseFindService {
                 .findGroupPurchasesWithCountsByUserId(userId, pageable);
         return new PageResponse<>(dtos.map(GroupPurchaseListResponse::fromDto));
     }
+
+    @Transactional(readOnly = true)
+    public PageResponse<GroupPurchaseListResponse> getGroupPurchasesByStatusAndRegion(
+            GroupPurchaseStatus status,
+            String regionCode,
+            Long userId,
+            Pageable pageable
+    ) {
+        Page<GroupPurchaseWithCountsDto> page = groupPurchaseRepository
+                .findGroupPurchasesWithCountsByStatusAndRegionCode(status, regionCode, userId, pageable);
+
+        return new PageResponse<>(page.map(GroupPurchaseListResponse::fromDto));
+    }
 }

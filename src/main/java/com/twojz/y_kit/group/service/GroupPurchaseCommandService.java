@@ -38,6 +38,10 @@ public class GroupPurchaseCommandService {
         UserEntity user = userFindService.findUser(userId);
         Region region = regionFindService.findRegionCode(request.getRegionCode());
 
+        if (request.getMinParticipants() > request.getMaxParticipants()) {
+            throw new IllegalArgumentException("최소 참여 인원은 최대 참여 인원보다 클 수 없습니다.");
+        }
+
         GroupPurchaseEntity gp = GroupPurchaseEntity.builder()
                 .user(user)
                 .title(request.getTitle())
@@ -61,6 +65,10 @@ public class GroupPurchaseCommandService {
             throw new IllegalArgumentException("수정 권한이 없습니다.");
         }
 
+        if (request.getMinParticipants() > request.getMaxParticipants()) {
+            throw new IllegalArgumentException("최소 참여 인원은 최대 참여 인원보다 클 수 없습니다.");
+        }
+
         Region region = regionFindService.findRegionCode(request.getRegionCode());
 
         gp.update(
@@ -82,6 +90,11 @@ public class GroupPurchaseCommandService {
         if (!gp.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("삭제 권한이 없습니다.");
         }
+
+        likeRepository.deleteByGroupPurchase(gp);
+        bookmarkRepository.deleteByGroupPurchase(gp);
+        commentRepository.deleteByGroupPurchase(gp);
+        participantRepository.deleteByGroupPurchase(gp);
 
         groupPurchaseRepository.delete(gp);
     }

@@ -6,16 +6,19 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Getter
 @Builder
 @AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "group_purchase_comments")
 @Entity
-@Getter
-@NoArgsConstructor
 public class GroupPurchaseCommentEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private GroupPurchaseEntity groupPurchase;
@@ -23,6 +26,6 @@ public class GroupPurchaseCommentEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     private UserEntity user;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 500)
     private String content;
 }

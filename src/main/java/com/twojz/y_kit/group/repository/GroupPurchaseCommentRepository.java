@@ -9,4 +9,5 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface GroupPurchaseCommentRepository extends JpaRepository<GroupPurchaseCommentEntity, Long> {
     List<GroupPurchaseCommentEntity> findByGroupPurchaseOrderByCreatedAtDesc(GroupPurchaseEntity gp);
+    void deleteByGroupPurchase(GroupPurchaseEntity gp);
 }

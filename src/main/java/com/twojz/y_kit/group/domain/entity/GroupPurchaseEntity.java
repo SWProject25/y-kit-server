@@ -1,5 +1,6 @@
 package com.twojz.y_kit.group.domain.entity;
 
+import com.twojz.y_kit.global.entity.BaseEntity;
 import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.user.entity.UserEntity;
 import jakarta.persistence.*;
@@ -10,14 +11,9 @@ import java.time.LocalDateTime;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@Table(name = "group_purchase")
 @Entity
-public class GroupPurchaseEntity {
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-
-    // 모집자
+public class GroupPurchaseEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private UserEntity user;
@@ -53,9 +49,6 @@ public class GroupPurchaseEntity {
     @JoinColumn(name = "region_id")
     private Region region;
 
-    private LocalDateTime createdAt = LocalDateTime.now();
-    private LocalDateTime updatedAt = LocalDateTime.now();
-
     @Builder
     public GroupPurchaseEntity(UserEntity user, String title, String productName, String productLink,
                                BigDecimal price, Integer minParticipants, Integer maxParticipants,
@@ -86,7 +79,7 @@ public class GroupPurchaseEntity {
         this.minParticipants = minParticipants;
         this.maxParticipants = maxParticipants;
         this.deadline = deadline;
-        this.status = status;
+        this.status = (status != null) ? status : this.status;
         this.region = region;
     }
 }
