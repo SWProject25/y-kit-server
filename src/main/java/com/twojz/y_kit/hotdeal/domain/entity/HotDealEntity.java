@@ -10,8 +10,10 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -32,24 +34,35 @@ public class HotDealEntity extends BaseEntity {
     @Column(name = "place_name", nullable = false)
     private String placeName;
 
+    @Column(nullable = false)
     private String url;
 
+    @Column(nullable = false)
     private Double latitude;
+
+    @Column(nullable = false)
     private Double longitude;
 
+    @Column(nullable = false)
     private String address;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "region_id")
+    @JoinColumn(name = "region_id", nullable = false)
     private Region region;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
     private LocalDateTime expiresAt;
 
     private int viewCount = 0;
+
+    @OneToMany(mappedBy = "hotDeal")
+    private List<HotDealCommentEntity> comments;
+
+    @OneToMany(mappedBy = "hotDeal")
+    private List<HotDealLikeEntity> likes;
 
     @Builder
     public HotDealEntity(UserEntity user, String title, String placeName, String url, Double latitude, Double longitude, String address, DealType dealType, Region region, LocalDateTime expiresAt) {

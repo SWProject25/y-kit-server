@@ -3,9 +3,16 @@ package com.twojz.y_kit.hotdeal.dto.request;
 import com.twojz.y_kit.hotdeal.domain.entity.DealType;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 @Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
+@Builder
 public class HotDealCreateRequest {
     @Schema(description = "핫딜 제목", example = "파리바게트 빵 50% 할인")
     private String title;

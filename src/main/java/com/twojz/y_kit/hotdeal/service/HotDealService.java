@@ -64,8 +64,6 @@ public class HotDealService {
         HotDealEntity hotDeal = hotdealRepository.findById(hotDealId)
                 .orElseThrow(() -> new IllegalArgumentException("핫딜을 찾을 수 없습니다."));
 
-        hotDeal.increaseViewCount();
-
         UserEntity user = userId != null ? userService.findUser(userId) : null;
 
         boolean isLiked = user != null && hotdealLikeRepository.existsByHotDealAndUser(hotDeal, user);
@@ -83,27 +81,39 @@ public class HotDealService {
         return HotDealDetailResponse.from(hotDeal, isLiked, isBookmarked, likeCount, commentCount, comments);
     }
 
+    @Transactional
+    public void increaseViewCount(Long hotDealId) {
+        HotDealEntity hotDeal = hotdealRepository.findById(hotDealId)
+                .orElseThrow(() -> new IllegalArgumentException("핫딜을 찾을 수 없습니다."));
+        hotDeal.increaseViewCount();
+    }
+
     @Transactional(readOnly = true)
     public PageResponse<HotDealListResponse> getHotDealList(HotDealSearchFilter filter, Pageable pageable) {
         Page<HotDealEntity> hotDeals =
                 hotdealRepository.findAll(HotDealSpecification.search(filter), pageable);
 
-        return new PageResponse<>(hotDeals.map(hotDeal -> {
-            long likeCount = hotdealLikeRepository.countByHotDeal(hotDeal);
-            long commentCount = hotdealCommentRepository.countByHotDeal(hotDeal);
-            return HotDealListResponse.from(hotDeal, likeCount, commentCount);
-        }));
+        return new PageResponse<>(
+                hotDeals.map(h -> {
+                    long likeCount = hotdealLikeRepository.countByHotDeal(h);
+                    long commentCount = hotdealCommentRepository.countByHotDeal(h);
+                    return HotDealListResponse.from(h, likeCount, commentCount);
+                })
+        );
     }
 
+    @Transactional(readOnly = true)
     public PageResponse<HotDealListResponse> searchHotDeals(String keyword, Pageable pageable) {
         Page<HotDealEntity> hotDeals =
                 hotdealRepository.findByTitleContaining(keyword, pageable);
 
-        return new PageResponse<>(hotDeals.map(hotDeal -> {
-            long likeCount = hotdealLikeRepository.countByHotDeal(hotDeal);
-            long commentCount = hotdealCommentRepository.countByHotDeal(hotDeal);
-            return HotDealListResponse.from(hotDeal, likeCount, commentCount);
-        }));
+        return new PageResponse<>(
+                hotDeals.map(h -> {
+                    long likeCount = hotdealLikeRepository.countByHotDeal(h);
+                    long commentCount = hotdealCommentRepository.countByHotDeal(h);
+                    return HotDealListResponse.from(h, likeCount, commentCount);
+                })
+        );
     }
 
     @Transactional
@@ -203,31 +213,5 @@ public class HotDealService {
         }
 
         hotdealCommentRepository.delete(comment);
-    }
-
-    public PageResponse<HotDealListResponse> getMyHotDeals(Long userId, Pageable pageable) {
-        UserEntity user = userService.findUser(userId);
-
-        Page<HotDealEntity> hotDeals = hotdealRepository.findByUser(user, pageable);
-
-        return new PageResponse<>(hotDeals.map(hotDeal -> {
-            long likeCount = hotdealLikeRepository.countByHotDeal(hotDeal);
-            long commentCount = hotdealCommentRepository.countByHotDeal(hotDeal);
-            return HotDealListResponse.from(hotDeal, likeCount, commentCount);
-        }));
-    }
-
-    public List<HotDealListResponse> getMyBookmarks(Long userId) {
-        UserEntity user = userService.findUser(userId);
-        List<HotDealBookmarkEntity> bookmarks = hotdealBookmarkRepository.findByUser(user);
-
-        return bookmarks.stream()
-                .map(bookmark -> {
-                    HotDealEntity hotDeal = bookmark.getHotDeal();
-                    long likeCount = hotdealLikeRepository.countByHotDeal(hotDeal);
-                    long commentCount = hotdealCommentRepository.countByHotDeal(hotDeal);
-                    return HotDealListResponse.from(hotDeal, likeCount, commentCount);
-                })
-                .toList();
     }
 }

@@ -8,6 +8,9 @@ public class HotDealSpecification {
 
     public static Specification<HotDealEntity> search(HotDealSearchFilter filter) {
         return (root, query, cb) -> {
+            if (filter == null) {
+                return cb.conjunction();
+            }
 
             var predicate = cb.conjunction();
 
@@ -23,7 +26,7 @@ public class HotDealSpecification {
                 );
             }
 
-            if (filter.getKeyword() != null && !filter.getKeyword().isEmpty()) {
+            if (filter.getKeyword() != null && !filter.getKeyword().isBlank()) {
                 predicate.getExpressions().add(
                         cb.like(root.get("title"), "%" + filter.getKeyword() + "%")
                 );

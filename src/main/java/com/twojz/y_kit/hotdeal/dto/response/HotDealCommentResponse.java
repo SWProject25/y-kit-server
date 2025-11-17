@@ -19,7 +19,6 @@ public class HotDealCommentResponse {
     private String content;
 
     @Schema(description = "작성일", example = "2024-12-01T14:22:00")
-
     private LocalDateTime createdAt;
 
     public static HotDealCommentResponse from(HotDealCommentEntity comment) {
