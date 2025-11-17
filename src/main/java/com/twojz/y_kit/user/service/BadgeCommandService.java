@@ -24,11 +24,6 @@ public class BadgeCommandService {
             UserEntity user = userFindService.findUser(userId);
             BadgeEntity badge = badgeFindService.findBadge(badgeId);
 
-            userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
-                    .ifPresent(existing -> {
-                        throw new IllegalStateException("이미 보유한 뱃지입니다.");
-                    });
-
             UserBadgeEntity userBadge = UserBadgeEntity.builder()
                     .user(user)
                     .badge(badge)
