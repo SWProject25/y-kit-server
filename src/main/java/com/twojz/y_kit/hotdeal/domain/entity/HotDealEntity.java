@@ -3,6 +3,7 @@ package com.twojz.y_kit.hotdeal.domain.entity;
 import com.twojz.y_kit.global.entity.BaseEntity;
 import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.user.entity.UserEntity;
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -58,11 +59,14 @@ public class HotDealEntity extends BaseEntity {
 
     private int viewCount = 0;
 
-    @OneToMany(mappedBy = "hotDeal")
+    @OneToMany(mappedBy = "hotDeal", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HotDealCommentEntity> comments;
 
-    @OneToMany(mappedBy = "hotDeal")
+    @OneToMany(mappedBy = "hotDeal", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<HotDealLikeEntity> likes;
+
+    @OneToMany(mappedBy = "hotDeal", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<HotDealBookmarkEntity> bookmarks;
 
     @Builder
     public HotDealEntity(UserEntity user, String title, String placeName, String url, Double latitude, Double longitude, String address, DealType dealType, Region region, LocalDateTime expiresAt) {

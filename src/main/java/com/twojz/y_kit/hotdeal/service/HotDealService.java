@@ -21,6 +21,8 @@ import com.twojz.y_kit.region.service.RegionService;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.UserService;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -89,30 +91,65 @@ public class HotDealService {
 
     @Transactional(readOnly = true)
     public PageResponse<HotDealListResponse> getHotDealList(HotDealSearchFilter filter, Pageable pageable) {
-        Page<HotDealEntity> hotDeals =
-                hotdealRepository.findAll(HotDealSpecification.search(filter), pageable);
+        Page<HotDealEntity> hotDeals = hotdealRepository.findAll(HotDealSpecification.search(filter), pageable);
 
-        return new PageResponse<>(
-                hotDeals.map(h -> {
-                    long likeCount = hotdealLikeRepository.countByHotDeal(h);
-                    long commentCount = hotdealCommentRepository.countByHotDeal(h);
-                    return HotDealListResponse.from(h, likeCount, commentCount);
-                })
-        );
+        if (hotDeals.isEmpty()) {
+            return new PageResponse<>(hotDeals.map(hotDeal ->
+                    HotDealListResponse.from(hotDeal, 0L, 0L)));
+        }
+
+        List<Long> hotDealIds = hotDeals.getContent().stream()
+                .map(HotDealEntity::getId)
+                .toList();
+
+        Map<Long, Long> likeCounts = hotdealLikeRepository.countByHotDealIdIn(hotDealIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        HotDealLikeRepository.LikeCountProjection::getHotDealId,
+                        HotDealLikeRepository.LikeCountProjection::getCount
+                ));
+
+        Map<Long, Long> commentCounts = hotdealCommentRepository.countByHotDealIdIn(hotDealIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        HotDealCommentRepository.CommentCountProjection::getHotDealId,
+                        HotDealCommentRepository.CommentCountProjection::getCount
+                ));
+
+        return new PageResponse<>(hotDeals.map(hotDeal -> {
+            long likeCount = likeCounts.getOrDefault(hotDeal.getId(), 0L);
+            long commentCount = commentCounts.getOrDefault(hotDeal.getId(), 0L);
+            return HotDealListResponse.from(hotDeal, likeCount, commentCount);
+        }));
     }
 
     @Transactional(readOnly = true)
     public PageResponse<HotDealListResponse> searchHotDeals(String keyword, Pageable pageable) {
-        Page<HotDealEntity> hotDeals =
-                hotdealRepository.findByTitleContaining(keyword, pageable);
+        Page<HotDealEntity> hotDeals = hotdealRepository.findByTitleContaining(keyword, pageable);
 
-        return new PageResponse<>(
-                hotDeals.map(h -> {
-                    long likeCount = hotdealLikeRepository.countByHotDeal(h);
-                    long commentCount = hotdealCommentRepository.countByHotDeal(h);
-                    return HotDealListResponse.from(h, likeCount, commentCount);
-                })
-        );
+        List<Long> hotDealIds = hotDeals.getContent().stream()
+                .map(HotDealEntity::getId)
+                .toList();
+
+        Map<Long, Long> likeCountMap = hotdealLikeRepository.countByHotDealIds(hotDealIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        arr -> (Long) arr[0],
+                        arr -> (Long) arr[1]
+                ));
+
+        Map<Long, Long> commentCountMap = hotdealCommentRepository.countByHotDealIds(hotDealIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        arr -> (Long) arr[0],
+                        arr -> (Long) arr[1]
+                ));
+
+        return new PageResponse<>(hotDeals.map(hotDeal -> {
+            long likeCount = likeCountMap.getOrDefault(hotDeal.getId(), 0L);
+            long commentCount = commentCountMap.getOrDefault(hotDeal.getId(), 0L);
+            return HotDealListResponse.from(hotDeal, likeCount, commentCount);
+        }));
     }
 
     @Transactional
