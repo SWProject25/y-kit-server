@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
@@ -23,6 +24,11 @@ public class BadgeCommandService {
         try {
             UserEntity user = userFindService.findUser(userId);
             BadgeEntity badge = badgeFindService.findBadge(badgeId);
+
+            userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
+                    .ifPresent(existing -> {
+                        throw new IllegalStateException("이미 보유한 뱃지입니다.");
+                    });
 
             UserBadgeEntity userBadge = UserBadgeEntity.builder()
                     .user(user)
@@ -48,7 +54,8 @@ public class BadgeCommandService {
         }
     }
 
-    private UserBadgeEntity createUserBadge(Long userId, Long badgeId) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public UserBadgeEntity createUserBadge(Long userId, Long badgeId) {
         UserEntity user = userFindService.findUser(userId);
         BadgeEntity badge = badgeFindService.findBadge(badgeId);
 
