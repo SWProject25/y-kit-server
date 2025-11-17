@@ -5,9 +5,12 @@ import com.twojz.y_kit.user.entity.UserBadgeEntity;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.repository.UserBadgeRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -16,14 +19,43 @@ public class BadgeCommandService {
     private final UserFindService userFindService;
     private final BadgeFindService badgeFindService;
 
-    public UserBadgeEntity grantBadge(Long userId, Long badgeId) {
+    public void grantBadge(Long userId, Long badgeId) {
+        try {
+            UserEntity user = userFindService.findUser(userId);
+            BadgeEntity badge = badgeFindService.findBadge(badgeId);
+
+            userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
+                    .ifPresent(existing -> {
+                        throw new IllegalStateException("이미 보유한 뱃지입니다.");
+                    });
+
+            UserBadgeEntity userBadge = UserBadgeEntity.builder()
+                    .user(user)
+                    .badge(badge)
+                    .build();
+
+            userBadgeRepository.save(userBadge);
+
+        } catch (DataIntegrityViolationException e) {
+            log.warn("동시성 이슈로 뱃지 부여 실패 - userId: {}, badgeId: {}", userId, badgeId);
+            throw new IllegalStateException("이미 보유한 뱃지입니다.", e);
+        }
+    }
+
+    public UserBadgeEntity grantBadgeIfNotExists(Long userId, Long badgeId) {
+        try {
+            return userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
+                    .orElseGet(() -> createUserBadge(userId, badgeId));
+        } catch (DataIntegrityViolationException e) {
+            log.warn("동시성 이슈 감지 - 재조회 시도. userId: {}, badgeId: {}", userId, badgeId);
+            return userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
+                    .orElseThrow(() -> new IllegalStateException("뱃지 부여 중 오류가 발생했습니다.", e));
+        }
+    }
+
+    private UserBadgeEntity createUserBadge(Long userId, Long badgeId) {
         UserEntity user = userFindService.findUser(userId);
         BadgeEntity badge = badgeFindService.findBadge(badgeId);
-
-        userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
-                .ifPresent(existing -> {
-                    throw new IllegalStateException("이미 보유한 뱃지입니다.");
-                });
 
         UserBadgeEntity userBadge = UserBadgeEntity.builder()
                 .user(user)
@@ -33,20 +65,7 @@ public class BadgeCommandService {
         return userBadgeRepository.save(userBadge);
     }
 
-    public UserBadgeEntity grantBadgeIfNotExists(Long userId, Long badgeId) {
-        return userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
-                .orElseGet(() -> {
-                    UserEntity user = userFindService.findUser(userId);
-                    BadgeEntity badge = badgeFindService.findBadge(badgeId);
-                    return userBadgeRepository.save(UserBadgeEntity.builder()
-                            .user(user)
-                            .badge(badge)
-                            .build());
-                });
-    }
-
     public void revokeBadge(Long userId, Long badgeId) {
-        // 존재 여부 확인이 필요한 경우
         userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
                 .orElseThrow(() -> new IllegalArgumentException("보유하지 않은 뱃지입니다."));
 

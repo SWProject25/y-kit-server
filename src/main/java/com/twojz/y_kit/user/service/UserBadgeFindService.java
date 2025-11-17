@@ -14,6 +14,6 @@ public class UserBadgeFindService {
     private final UserBadgeRepository userBadgeRepository;
 
     public List<UserBadgeEntity> getUserBadges(Long userId) {
-        return userBadgeRepository.findAllByUserId(userId);
+        return userBadgeRepository.findAllByUserIdWithBadge(userId);
     }
 }

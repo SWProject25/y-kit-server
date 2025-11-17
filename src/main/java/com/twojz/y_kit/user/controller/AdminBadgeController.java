@@ -9,6 +9,7 @@ import com.twojz.y_kit.user.service.AdminBadgeService;
 import com.twojz.y_kit.user.service.BadgeCommandService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,9 +18,9 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Tag(name = "관리자 Badge 관리 API")
+@Tag(name = "관리자 뱃지 관리 API")
 @RestController
-@RequestMapping("/admin/v1/badges")
+@RequestMapping("/api/admin/badges")
 @RequiredArgsConstructor
 public class AdminBadgeController {
     private final AdminBadgeService adminBadgeService;
@@ -27,7 +28,7 @@ public class AdminBadgeController {
 
     @Operation(summary = "뱃지 생성")
     @PostMapping
-    public ResponseEntity<BadgeResponse> createBadge(@RequestBody BadgeCreateRequest request) {
+    public ResponseEntity<BadgeResponse> createBadge(@Valid @RequestBody BadgeCreateRequest request) {
         BadgeEntity badge = adminBadgeService.createBadge(
                 request.getName(),
                 request.getDescription(),
@@ -41,7 +42,7 @@ public class AdminBadgeController {
     @PutMapping("/{badgeId}")
     public ResponseEntity<BadgeResponse> updateBadge(
             @PathVariable Long badgeId,
-            @RequestBody BadgeUpdateRequest request) {
+            @Valid @RequestBody BadgeUpdateRequest request) {
         BadgeEntity badge = adminBadgeService.updateBadge(
                 badgeId,
                 request.getName(),
@@ -62,23 +63,26 @@ public class AdminBadgeController {
     @GetMapping
     public ResponseEntity<List<BadgeResponse>> getAllBadges() {
         List<BadgeEntity> badges = adminBadgeService.getAllBadges();
-        List<BadgeResponse> responses = badges.stream()
-                .map(BadgeResponse::from)
-                .collect(Collectors.toList());
-        return ResponseEntity.ok(responses);
+        return ResponseEntity.ok(mapToBadgeResponses(badges));
     }
 
     @Operation(summary = "사용자에게 뱃지 부여")
     @PostMapping("/grant")
-    public ResponseEntity<Void> grantBadgeToUser(@RequestBody UserBadgeGrantRequest request) {
+    public ResponseEntity<Void> grantBadgeToUser(@Valid @RequestBody UserBadgeGrantRequest request) {
         badgeCommandService.grantBadge(request.getUserId(), request.getBadgeId());
         return ResponseEntity.ok().build();
     }
 
     @Operation(summary = "사용자로부터 뱃지 회수")
     @DeleteMapping("/revoke")
-    public ResponseEntity<Void> revokeBadgeFromUser(@RequestBody UserBadgeGrantRequest request) {
+    public ResponseEntity<Void> revokeBadgeFromUser(@Valid @RequestBody UserBadgeGrantRequest request) {
         badgeCommandService.revokeBadge(request.getUserId(), request.getBadgeId());
         return ResponseEntity.noContent().build();
+    }
+
+    private List<BadgeResponse> mapToBadgeResponses(List<BadgeEntity> badges) {
+        return badges.stream()
+                .map(BadgeResponse::from)
+                .collect(Collectors.toList());
     }
 }
