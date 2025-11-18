@@ -3,7 +3,6 @@ package com.twojz.y_kit.user.service;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.apache.catalina.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

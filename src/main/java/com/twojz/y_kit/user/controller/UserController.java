@@ -52,8 +52,13 @@ public class UserController {
     }
 
     @Operation(summary = "로컬 로그인")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @ApiResponse(responseCode = "400", description = "잘못된 요청 데이터", content = @Content(schema = @Schema(hidden = true))),
+            @ApiResponse(responseCode = "401", description = "인증 실패", content = @Content(schema = @Schema(hidden = true)))
+    })
     @PostMapping("/login")
-    public ResponseEntity<Map<String, String>> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<Map<String, String>> login(@Valid @RequestBody LoginRequest request) {
         UserEntity user = userFindService.findUser(request.getEmail());
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
