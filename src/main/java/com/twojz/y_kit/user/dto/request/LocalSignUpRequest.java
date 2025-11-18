@@ -1,6 +1,5 @@
 package com.twojz.y_kit.user.dto.request;
 
-import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.user.entity.Gender;
 import lombok.Getter;
 
