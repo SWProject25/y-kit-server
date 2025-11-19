@@ -1,10 +1,31 @@
 package com.twojz.y_kit.policy.service;
 
+import static com.twojz.y_kit.policy.dto.response.PolicyDetailResponse.toKeywords;
+
 import com.twojz.y_kit.external.policy.dto.YouthPolicy;
 import com.twojz.y_kit.policy.domain.dto.PolicyApplicationDto;
 import com.twojz.y_kit.policy.domain.dto.PolicyDetailDto;
 import com.twojz.y_kit.policy.domain.dto.PolicyQualificationDto;
+import com.twojz.y_kit.policy.domain.entity.PolicyApplicationEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyCategoryEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyCategoryMapping;
+import com.twojz.y_kit.policy.domain.entity.PolicyDetailEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyQualificationEntity;
 import com.twojz.y_kit.policy.domain.enumType.*;
+import com.twojz.y_kit.policy.dto.response.AiAnalysisInfo;
+import com.twojz.y_kit.policy.dto.response.CategoryInfo;
+import com.twojz.y_kit.policy.dto.response.PolicyApplication;
+import com.twojz.y_kit.policy.dto.response.PolicyBasicInfo;
+import com.twojz.y_kit.policy.dto.response.PolicyDetail;
+import com.twojz.y_kit.policy.dto.response.PolicyDetailResponse;
+import com.twojz.y_kit.policy.dto.response.PolicyDocument;
+import com.twojz.y_kit.policy.dto.response.PolicyListResponse;
+import com.twojz.y_kit.policy.dto.response.PolicyQualification;
+import com.twojz.y_kit.policy.dto.response.RegionInfo;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -16,7 +37,6 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 @Component
 public class PolicyMapper {
-
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     public PolicyDetailDto toDetailRequest(YouthPolicy src) {
@@ -76,6 +96,101 @@ public class PolicyMapper {
                 .sBizCd(SpecializedRequirement.fromCode(src.getSBizCd()))
                 .addAplyQlfcCndCn(src.getAddAplyQlfcCndCn())
                 .build();
+    }
+
+    /**
+     * Entity -> 응답 DTO
+     */
+    public PolicyListResponse toListResponse(PolicyEntity entity) {
+        PolicyDetailEntity detail = entity.getDetail();
+        PolicyApplicationEntity application = entity.getApplication();
+        PolicyQualificationEntity qualification = entity.getQualification();
+
+        // 카테고리 추출
+        String largeCategory = null;
+        String mediumCategory = null;
+        if (entity.getCategoryMappings() != null) {
+            for (PolicyCategoryMapping mapping : entity.getCategoryMappings()) {
+                PolicyCategoryEntity category = mapping.getCategory();
+                if (category.getLevel() == 1) {
+                    largeCategory = category.getName();
+                } else if (category.getLevel() == 2) {
+                    mediumCategory = category.getName();
+                }
+            }
+        }
+
+        // 키워드 추출
+        List<String> keywords = entity.getKeywordMappings() != null ?
+                entity.getKeywordMappings().stream()
+                        .map(mapping -> mapping.getKeyword().getKeyword())
+                        .collect(Collectors.toList()) :
+                new ArrayList<>();
+
+        // 지역 추출
+        List<String> regions = entity.getRegions() != null ?
+                entity.getRegions().stream()
+                        .map(policyRegion -> policyRegion.getRegion().getName())
+                        .collect(Collectors.toList()) :
+                new ArrayList<>();
+
+        return PolicyListResponse.builder()
+                .policyId(entity.getId())
+                .policyNo(entity.getPolicyNo())
+                .policyName(detail != null ? detail.getPlcyNm() : null)
+                .summary(detail != null ? truncate(detail.getPlcyExplnCn()) : null)
+                .largeCategory(largeCategory)
+                .mediumCategory(mediumCategory)
+                .isApplicationAvailable(isApplicationAvailable(application))
+                .applicationStartDate(application != null ? application.getAplyBgngYmd() : null)
+                .applicationEndDate(application != null ? application.getAplyEndYmd() : null)
+                .supervisingInstitution(detail != null ? detail.getSprvsnInstCdNm() : null)
+                .minAge(qualification != null ? qualification.getSprtTrgtMinAge() : null)
+                .maxAge(qualification != null ? qualification.getSprtTrgtMaxAge() : null)
+                .keywords(keywords)
+                .regions(regions)
+                .viewCount(entity.getViewCount())
+                .bookmarkCount(entity.getBookmarkCount())
+                .applicationCount(entity.getApplicationCount())
+                .createdAt(entity.getCreatedAt())
+                .build();
+    }
+
+    public PolicyDetailResponse toDetailResponse(PolicyEntity entity) {
+        return PolicyDetailResponse.builder()
+                .basicInfo(PolicyBasicInfo.from(entity))
+                .detail(PolicyDetail.from(entity.getDetail()))
+                .application(PolicyApplication.from(entity.getApplication()))
+                .qualification(PolicyQualification.from(entity.getQualification()))
+                .document(PolicyDocument.from(entity.getDocument()))
+                .categories(CategoryInfo.from(entity.getCategoryMappings()))
+                .keywords(toKeywords(entity.getKeywordMappings()))
+                .regions(RegionInfo.from(entity.getRegions()))
+                .aiAnalysis(AiAnalysisInfo.from(entity))
+                .build();
+    }
+
+
+    /**
+     * Util 메서드
+     */
+    private Boolean isApplicationAvailable(PolicyApplicationEntity application) {
+        if (application == null || application.getAplyBgngYmd() == null || application.getAplyEndYmd() == null) {
+            return false;
+        }
+
+        LocalDate today = LocalDate.now();
+        return !today.isBefore(application.getAplyBgngYmd()) && !today.isAfter(application.getAplyEndYmd());
+    }
+
+    private String truncate(String text) {
+        if (text == null) {
+            return null;
+        }
+        if (text.length() <= 100) {
+            return text;
+        }
+        return text.substring(0, 100) + "...";
     }
 
     private LocalDate parseDate(String dateStr) {

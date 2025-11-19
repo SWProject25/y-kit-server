@@ -11,8 +11,8 @@ import lombok.*;
 @Table(name = "policy_document")
 @Entity
 public class PolicyDocumentEntity extends BaseEntity {
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "policy_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "policy_id", unique = true)
     private PolicyEntity policy;
 
     @Column(nullable = false, columnDefinition = "TEXT")

@@ -42,8 +42,8 @@ public class PolicyEntity extends BaseEntity {
     @OneToOne(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private PolicyQualificationEntity qualification;
 
-    @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PolicyDocumentEntity> documents = new ArrayList<>();
+    @OneToOne(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private PolicyDocumentEntity document;
 
     @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PolicyCategoryMapping> categoryMappings = new ArrayList<>();
