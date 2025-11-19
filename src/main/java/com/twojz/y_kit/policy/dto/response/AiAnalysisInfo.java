@@ -17,7 +17,7 @@ public class AiAnalysisInfo {
     private String  pros;
 
     @Schema(description = "단점")
-    private String corn;
+    private String cons;
 
     @Schema(description = "생성 일시")
     private LocalDateTime generatedAt;
@@ -27,7 +27,7 @@ public class AiAnalysisInfo {
         return AiAnalysisInfo.builder()
                 .summary(entity.getAiAnalysis().getSummary())
                 .pros(entity.getAiAnalysis().getPros())
-                .corn(entity.getAiAnalysis().getCons())
+                .cons(entity.getAiAnalysis().getCons())
                 .generatedAt(entity.getAiGeneratedAt())
                 .build();
     }

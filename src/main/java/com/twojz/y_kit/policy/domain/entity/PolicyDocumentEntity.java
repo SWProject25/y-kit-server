@@ -1,6 +1,8 @@
 package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
+import com.twojz.y_kit.policy.domain.DocumentConverter;
+import com.twojz.y_kit.policy.domain.vo.DocumentParsed;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,13 +21,14 @@ public class PolicyDocumentEntity extends BaseEntity {
     private String documentsOriginal;
 
     @Column(columnDefinition = "JSON")
-    private String documentsParsed;
+    @Convert(converter = DocumentConverter.class)
+    private DocumentParsed documentsParsed;
 
     public void updateOriginal(String documentsOriginal) {
         this.documentsOriginal = documentsOriginal;
     }
 
-    public void updateParsed(String documentsParsed) {
+    public void updateParsed(DocumentParsed documentsParsed) {
         this.documentsParsed = documentsParsed;
     }
 }

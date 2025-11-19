@@ -140,7 +140,7 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
     );
 
     /**
-     * 추천 정책 조회 (나이 + 지역 + 신청가능)
+     * 추천 정책 조회 (나이 + 지역 + 신청가능 + 카테고리)
      */
     @Query("""
                 SELECT DISTINCT p FROM PolicyEntity p
@@ -148,6 +148,7 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
                 LEFT JOIN FETCH p.application a
                 LEFT JOIN FETCH p.qualification q
                 LEFT JOIN p.regions pr
+                LEFT JOIN p.categoryMappings cm
                 WHERE p.isActive = true
                 AND pr.region.code = :regionCode
                 AND (
@@ -156,12 +157,14 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
                 )
                 AND a.aplyBgngYmd <= :today
                 AND a.aplyEndYmd >= :today
+                AND (:categoryId IS NULL OR cm.category.id = :categoryId)
                 ORDER BY p.createdAt DESC
             """)
-    Page<PolicyEntity> findRecommended(
+    Page<PolicyEntity> findRecommendedWithCategory(
             @Param("age") Integer age,
             @Param("regionCode") String regionCode,
             @Param("today") LocalDate today,
+            @Param("categoryId") Long categoryId,
             Pageable pageable
     );
 

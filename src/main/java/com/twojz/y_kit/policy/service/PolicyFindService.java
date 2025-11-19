@@ -1,21 +1,11 @@
 package com.twojz.y_kit.policy.service;
 
-import static org.apache.commons.lang3.StringUtils.truncate;
-
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twojz.y_kit.global.dto.PageResponse;
-import com.twojz.y_kit.policy.domain.entity.PolicyApplicationEntity;
-import com.twojz.y_kit.policy.domain.entity.PolicyCategoryEntity;
-import com.twojz.y_kit.policy.domain.entity.PolicyCategoryMapping;
-import com.twojz.y_kit.policy.domain.entity.PolicyDetailEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
-import com.twojz.y_kit.policy.domain.entity.PolicyQualificationEntity;
-import com.twojz.y_kit.policy.dto.request.PolicySearchRequest;
 import com.twojz.y_kit.policy.dto.response.PolicyDetailResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyListResponse;
 import com.twojz.y_kit.policy.repository.PolicyRepository;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -62,7 +52,7 @@ public class PolicyFindService {
     }
 
     /**
-     * 추천 정책 조회
+     * 추천 정책 조회 - Service
      */
     public PageResponse<PolicyListResponse> getRecommendedPolicies(
             Integer age,
@@ -71,32 +61,28 @@ public class PolicyFindService {
             Pageable pageable
     ) {
         LocalDate today = LocalDate.now();
-        Page<PolicyEntity> policyPage = policyRepository.findRecommended(age, regionCode, today, pageable);
 
-        // 카테고리 필터링 (content 기준으로 필터)
+        // DB에서 나이 + 지역 + 신청 가능 + 카테고리 조건까지 모두 적용
+        Page<PolicyEntity> policyPage = policyRepository.findRecommendedWithCategory(
+                age, regionCode, today, categoryId, pageable
+        );
+
         List<PolicyEntity> policies = policyPage.getContent();
-        if (categoryId != null) {
-            policies = policies.stream()
-                    .filter(p -> p.getCategoryMappings() != null &&
-                            p.getCategoryMappings().stream()
-                                    .anyMatch(cm -> cm.getCategory().getId().equals(categoryId)))
-                    .collect(Collectors.toList());
-        }
 
-        // 컬렉션 일괄 조회
+        // N+1 방지: 컬렉션 일괄 조회
         if (!policies.isEmpty()) {
             policyRepository.findWithCategories(policies);
             policyRepository.findWithKeywords(policies);
             policyRepository.findWithRegions(policies);
         }
 
-        // content -> DTO
+        // DTO로 변환
         List<PolicyListResponse> content = policies.stream()
                 .map(policyMapper::toListResponse)
                 .collect(Collectors.toList());
 
-        // 카테고리 필터로 content가 변경되었으므로 PageImpl로 새 Page 생성 (총개수는 필터 후 사이즈)
-        Page<PolicyListResponse> mappedPage = new PageImpl<>(content, pageable, content.size());
+        // PageImpl로 새 페이지 생성 (totalElements는 DB에서 계산된 값 사용)
+        Page<PolicyListResponse> mappedPage = new PageImpl<>(content, pageable, policyPage.getTotalElements());
 
         return new PageResponse<>(mappedPage);
     }
@@ -105,19 +91,17 @@ public class PolicyFindService {
      * 인기 정책 조회
      */
     public PageResponse<PolicyListResponse> getPopularPolicies(String sortBy, Pageable pageable) {
-        Page<PolicyEntity> policyPage = switch (sortBy) {
-            case "bookmarkCount" -> policyRepository.findPopularByBookmarkCount(pageable);
-            case "applicationCount", "viewCount" -> policyRepository.findPopularByViewCount(pageable);
-            default -> policyRepository.findPopularByViewCount(pageable);
-        };
+        Page<PolicyEntity> policyPage;
+
+        if ("bookmarkCount".equals(sortBy)) {
+            policyPage = policyRepository.findPopularByBookmarkCount(pageable);
+        } else {
+            policyPage = policyRepository.findPopularByViewCount(pageable);
+        }
 
         // 컬렉션 일괄 조회
         List<PolicyEntity> policies = policyPage.getContent();
-        if (!policies.isEmpty()) {
-            policyRepository.findWithCategories(policies);
-            policyRepository.findWithKeywords(policies);
-            policyRepository.findWithRegions(policies);
-        }
+        fetchCollections(policies);
 
         Page<PolicyListResponse> mappedPage = policyPage.map(policyMapper::toListResponse);
 
@@ -133,58 +117,12 @@ public class PolicyFindService {
 
         // 컬렉션 일괄 조회
         List<PolicyEntity> policies = policyPage.getContent();
-        if (!policies.isEmpty()) {
-            policyRepository.findWithCategories(policies);
-            policyRepository.findWithKeywords(policies);
-            policyRepository.findWithRegions(policies);
-        }
-
-        Page<PolicyListResponse> mappedPage = policyPage.map(policyMapper::toListResponse);
-
-        return new PageResponse<>(mappedPage);
-    }
-
-
-    /**
-     * 검색 조건 정책 조회
-     */
-    /*public PageResponse<PolicyListResponse> getSearchPolicies(PolicySearchRequest request, Pageable pageable) {
-        Page<PolicyEntity> policyPage = fetchPoliciesWithFilters(request, pageable);
-
-        List<PolicyEntity> policies = policyPage.getContent();
         fetchCollections(policies);
 
         Page<PolicyListResponse> mappedPage = policyPage.map(policyMapper::toListResponse);
 
         return new PageResponse<>(mappedPage);
     }
-
-    private Page<PolicyEntity> fetchPoliciesWithFilters(PolicySearchRequest request, Pageable pageable) {
-        // 복합 조건
-        if (request.getKeyword() != null && request.getAge() != null) {
-            return policyRepository.findByKeywordAndAge(request.getKeyword(), request.getAge(), pageable);
-        }
-
-        // 단일 조건
-        if (request.getCategoryId() != null) {
-            return policyRepository.findByCategoryId(request.getCategoryId(), pageable);
-        }
-        if (request.getKeyword() != null) {
-            return policyRepository.findByKeyword(request.getKeyword(), pageable);
-        }
-        if (request.getRegionCode() != null) {
-            return policyRepository.findByRegionCode(request.getRegionCode(), pageable);
-        }
-        if (request.getAge() != null) {
-            return policyRepository.findByAge(request.getAge(), pageable);
-        }
-        if (Boolean.TRUE.equals(request.getIsApplicationAvailable())) {
-            return policyRepository.findApplicationAvailable(LocalDate.now(), pageable);
-        }
-
-        // 기본: 전체 조회
-        return policyRepository.findAllWithBasicInfo(pageable);
-    }*/
 
     // 컬렉션 일괄 조회
     private void fetchCollections(List<PolicyEntity> policies) {
