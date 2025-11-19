@@ -1,6 +1,8 @@
 package com.twojz.y_kit.policy.domain.entity;
 
 import com.twojz.y_kit.global.entity.BaseEntity;
+import com.twojz.y_kit.policy.domain.DocumentConverter;
+import com.twojz.y_kit.policy.domain.vo.DocumentParsed;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -11,21 +13,22 @@ import lombok.*;
 @Table(name = "policy_document")
 @Entity
 public class PolicyDocumentEntity extends BaseEntity {
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "policy_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "policy_id", unique = true)
     private PolicyEntity policy;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String documentsOriginal;
 
     @Column(columnDefinition = "JSON")
-    private String documentsParsed;
+    @Convert(converter = DocumentConverter.class)
+    private DocumentParsed documentsParsed;
 
     public void updateOriginal(String documentsOriginal) {
         this.documentsOriginal = documentsOriginal;
     }
 
-    public void updateParsed(String documentsParsed) {
+    public void updateParsed(DocumentParsed documentsParsed) {
         this.documentsParsed = documentsParsed;
     }
 }
