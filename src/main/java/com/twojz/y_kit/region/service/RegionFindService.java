@@ -1,7 +1,10 @@
 package com.twojz.y_kit.region.service;
 
+import com.twojz.y_kit.region.dto.response.RegionResponse;
 import com.twojz.y_kit.region.entity.Region;
+import com.twojz.y_kit.region.entity.RegionLevel;
 import com.twojz.y_kit.region.repository.RegionRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,5 +23,28 @@ public class RegionFindService {
     public Region findRegionCode(String code) {
         return regionRepository.findByCode(code)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역입니다."));
+    }
+
+    public List<RegionResponse> findSido() {
+        return regionRepository.findByLevel(RegionLevel.SIDO)
+                .stream()
+                .map(RegionResponse::from)
+                .toList();
+    }
+
+    public List<RegionResponse> findSigungu(String sidoCode) {
+        return regionRepository.findByParent_Code(sidoCode)
+                .stream()
+                .filter(r -> r.getLevel() == RegionLevel.SIGUNGU)
+                .map(RegionResponse::from)
+                .toList();
+    }
+
+    public List<RegionResponse> findDong(String sigunguCode) {
+        return regionRepository.findByParent_Code(sigunguCode)
+                .stream()
+                .filter(r -> r.getLevel() == RegionLevel.DONG)
+                .map(RegionResponse::from)
+                .toList();
     }
 }
