@@ -12,47 +12,46 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 @Configuration
 public class WebClientConfig {
+
     @Bean
     public WebClient policyClient(@Value("${policy.api.url}") String policyUrl) {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000)
-                .responseTimeout(Duration.ofSeconds(60));
-        
-        return createWebClient(policyUrl).mutate().clientConnector(new ReactorClientHttpConnector(httpClient)).build();
+        return createWebClient(policyUrl);
+    }
+
+    @Bean
+    public WebClient publicWebResourceClient(@Value("${public.resource.api.url}") String url) {
+        return createWebClient(url);
     }
 
     @Bean
     public WebClient vWorldClient(@Value("${vworld.api.url}") String vWorldUrl) {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000)
-                .responseTimeout(Duration.ofSeconds(60));
-
-        return createWebClient(vWorldUrl).mutate().clientConnector(new ReactorClientHttpConnector(httpClient)).build();
+        return createWebClient(vWorldUrl);
     }
 
     @Bean
     public WebClient openAIClient(@Value("${openai.api.base-url}") String openAIUrl,
                                   @Value("${openai.api.key}") String apiKey) {
-        HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000)
-                .responseTimeout(Duration.ofSeconds(60));
-
         return createWebClient(openAIUrl)
                 .mutate()
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .defaultHeader("Content-Type", "application/json")
                 .build();
     }
 
     private WebClient createWebClient(String baseUrl) {
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 15000)
+                .responseTimeout(Duration.ofSeconds(60));
+
         ExchangeStrategies strategies = ExchangeStrategies.builder()
                 .codecs(configurer -> configurer.defaultCodecs()
-                        .maxInMemorySize(16 * 1024 * 1024)).build();
+                        .maxInMemorySize(16 * 1024 * 1024))
+                .build();
 
         return WebClient.builder()
-                .exchangeStrategies(strategies)
                 .baseUrl(baseUrl)
+                .exchangeStrategies(strategies)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
     }
 }
