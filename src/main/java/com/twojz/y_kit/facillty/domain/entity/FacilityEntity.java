@@ -5,16 +5,23 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+@Entity
+@Table(
+        name = "facilities",
+        indexes = {
+                @Index(name = "idx_facility_lat_lng", columnList = "latitude, longitude"),
+                @Index(name = "idx_facility_category", columnList = "category")
+        }
+)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@Entity
-@Table(name= "facilities")
 public class FacilityEntity extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String resourceNo;
