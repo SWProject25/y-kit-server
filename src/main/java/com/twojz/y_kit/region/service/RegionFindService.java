@@ -33,18 +33,18 @@ public class RegionFindService {
     }
 
     public List<RegionResponse> findSigungu(String sidoCode) {
-        return regionRepository.findByParent_Code(sidoCode)
+        return findChildrenByParentAndLevel(sidoCode, RegionLevel.SIGUNGU);
+    }
+
+    public List<RegionResponse> findDong(String sigunguCode) {
+        return findChildrenByParentAndLevel(sigunguCode, RegionLevel.DONG);
+    }
+
+    private List<RegionResponse> findChildrenByParentAndLevel(String parentCode, RegionLevel level) {
+        return regionRepository.findByParent_CodeAndLevel(parentCode, level)
                 .stream()
-                .filter(r -> r.getLevel() == RegionLevel.SIGUNGU)
                 .map(RegionResponse::from)
                 .toList();
     }
 
-    public List<RegionResponse> findDong(String sigunguCode) {
-        return regionRepository.findByParent_Code(sigunguCode)
-                .stream()
-                .filter(r -> r.getLevel() == RegionLevel.DONG)
-                .map(RegionResponse::from)
-                .toList();
-    }
 }
