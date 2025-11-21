@@ -21,8 +21,8 @@ import reactor.core.scheduler.Schedulers;
 @Component
 @RequiredArgsConstructor
 public class PublicResourceClient {
+    public static final int PAGE_SIZE = 100;
     private final WebClient publicWebResourceClient;
-    private static final int PAGE_SIZE = 100;
 
     @Value("${public.resource.api.key}")
     private String apiKey;

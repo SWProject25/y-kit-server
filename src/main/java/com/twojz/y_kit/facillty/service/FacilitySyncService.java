@@ -20,11 +20,8 @@ import reactor.util.function.Tuples;
 @RequiredArgsConstructor
 @Slf4j
 public class FacilitySyncService {
-
     private final PublicResourceClient publicResourceClient;
     private final FacilityRepository facilityRepository;
-
-    private static final int PAGE_SIZE = 1000;
 
     /**
      * 전체 카테고리를 비동기로 병렬 수집
@@ -46,22 +43,23 @@ public class FacilitySyncService {
     /**
      * 특정 카테고리를 비동기로 페이지 전체 수집
      */
-    private Flux<FacilityEntity> fetchCategoryAsync(FacilityCategory category) {
-        log.info("📌 카테고리 처리 시작: {}", category);
+    private Mono<Void> fetchCategoryAsync(FacilityCategory category) {
+        log.info("카테고리 동기화 시작: {}", category.getName());
 
         return fetchPageAsync(category, 1)
                 .expand(tuple -> {
                     boolean hasNext = tuple.getT2();
                     int page = tuple.getT1();
-
                     if (hasNext) {
                         return fetchPageAsync(category, page + 1);
                     }
                     return Mono.empty();
                 })
-                .map(Tuple3::getT3)         // List<FacilityEntity>
+                .map(Tuple3::getT3)
                 .flatMap(Flux::fromIterable)
-                .flatMap(this::saveAsync);
+                .flatMap(this::saveAsync, 20)
+                .then()
+                .doOnSuccess(v -> log.info("카테고리 동기화 완료: {}", category.getName()));
     }
 
 
@@ -85,20 +83,31 @@ public class FacilitySyncService {
                             .filter(e -> e.getLatitude() != 0 && e.getLongitude() != 0)
                             .toList();
 
-                    boolean hasNext = data.size() == PAGE_SIZE;
+                    boolean hasNext = data.size() == PublicResourceClient.PAGE_SIZE;
 
                     return Tuples.of(pageNo, hasNext, entities);
                 })
-                .doOnNext(t -> log.info("📄 {} 페이지 완료 ({}개)", t.getT1(), t.getT3().size()));
+                .doOnNext(t -> log.info("{} 페이지 완료 ({}개)", t.getT1(), t.getT3().size()));
     }
 
 
     /**
      * JPA 저장을 비동기로 실행
      */
-    private Mono<FacilityEntity> saveAsync(FacilityEntity entity) {
-        return Mono.fromCallable(() -> facilityRepository.save(entity))
-                .subscribeOn(Schedulers.boundedElastic());
+    private Mono<Void> saveAsync(FacilityEntity entity) {
+        return Mono.fromCallable(() -> {
+                    facilityRepository.findByResourceNo(entity.getResourceNo())
+                            .ifPresentOrElse(
+                                    existing -> {
+                                        existing.update(entity);
+                                        facilityRepository.save(existing);
+                                    },
+                                    () -> facilityRepository.save(entity)
+                            );
+                    return null;
+                })
+                .subscribeOn(Schedulers.boundedElastic())
+                .then();
     }
 
 

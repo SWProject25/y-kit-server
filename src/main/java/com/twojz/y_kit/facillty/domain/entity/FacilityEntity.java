@@ -54,4 +54,17 @@ public class FacilityEntity extends BaseEntity {
         this.reservationUrl = reservationUrl;
         this.category = category;
     }
+
+    public void update(FacilityEntity source) {
+        this.resourceNo = source.resourceNo;
+        this.name = source.name;
+        this.zipCode = source.zipCode;
+        this.address = source.address;
+        this.detailAddress = source.detailAddress;
+        this.latitude = source.latitude;
+        this.longitude = source.longitude;
+        this.imgUrl = source.imgUrl;
+        this.reservationUrl = source.reservationUrl;
+        this.category = source.category;
+    }
 }
