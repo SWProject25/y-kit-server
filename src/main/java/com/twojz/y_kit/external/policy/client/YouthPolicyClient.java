@@ -17,7 +17,7 @@ import reactor.core.publisher.Mono;
 public class YouthPolicyClient {
     private final WebClient policyClient;
 
-    @Value("${policy.api.key}")
+    @Value("${POLICY_API_KEY}")
     private String apiKey;
 
     public Mono<YouthPolicyResponse> fetchPolicies(int pageNum, int pageSize) {

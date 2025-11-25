@@ -13,7 +13,7 @@ import org.springframework.core.io.ClassPathResource;
 @Configuration
 @Slf4j
 public class FcmConfig {
-    @Value("${firebase.config.path}")
+    @Value("${FIREBASE_CONFIG_PATH}")
     private String firebaseConfigPath;
 
     @PostConstruct

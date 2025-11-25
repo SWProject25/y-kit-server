@@ -1,0 +1,91 @@
+name: Spring Boot Production Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 1. Checkout Code (코드 가져오기)
+        uses: actions/checkout@v4
+
+      - name: 2. Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: 3. Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: 4. Build with Gradle (JAR 파일 생성)
+        run: ./gradlew clean build -x test
+
+      - name: 5. Transfer JAR to KT Cloud VM (JAR 파일 전송)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "./build/libs/y-kit-0.0.1-SNAPSHOT.jar"
+          target: "/home/ubuntu/app/deploy/app.jar"
+
+      - name: 6. Restart Server via SSH (환경 변수 주입 및 서버 재시작)
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+          script: |
+            echo "Deployment started..."
+            
+            # 1. 변수 정의 및 경로 설정
+            COMPOSE_DIR="/home/ubuntu/project_deploy"
+            CONFIG_ENV="$COMPOSE_DIR/config.env"
+            FIREBASE_CONFIG_PATH="$COMPOSE_DIR/service-account.json" 
+            
+            # 2. config.env 파일 동적 생성 및 Secret 주입
+            echo "--- Writing Environment Variables ---"
+
+            # A. DB 및 공통 Secrets (첫 줄은 >로 파일 생성, 나머지는 >>로 추가)
+            echo "SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}" > $CONFIG_ENV
+            echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $CONFIG_ENV
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $CONFIG_ENV
+
+            # B. OAuth & Redirect URL
+            echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> $CONFIG_ENV
+            echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> $CONFIG_ENV
+            echo "APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success" >> $CONFIG_ENV
+            
+            # C. Firebase Config Path (Spring Boot가 JSON 파일 경로를 알도록 주입)
+            echo "FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH" >> $CONFIG_ENV
+
+            # D. 외부 API Keys (Secrets 목록 기반)
+            echo "OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}" >> $CONFIG_ENV
+            echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $CONFIG_ENV
+            echo "OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}" >> $CONFIG_ENV
+            echo "POLICY_API_KEY=${{ secrets.POLICY_API_KEY }}" >> $CONFIG_ENV
+            echo "POLICY_API_URL=${{ secrets.POLICY_API_URL }}" >> $CONFIG_ENV
+            echo "PUBLIC_RESOURCE_API_KEY=${{ secrets.PUBLIC_RESOURCE_API_KEY }}" >> $CONFIG_ENV
+            echo "PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}" >> $CONFIG_ENV
+            echo "VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}" >> $CONFIG_ENV
+            echo "VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}" >> $CONFIG_ENV
+            
+            # E. Spring Profiles
+            echo "SPRING_PROFILES_ACTIVE=prod" >> $CONFIG_ENV
+            
+            # 3. Firebase JSON 파일 생성 (FCM 서비스 계정)
+            # GitHub Secret 내용을 읽어 VM 내부에 service-account.json 파일로 저장
+            echo "${{ secrets.FIREBASE_JSON }}" > $FIREBASE_CONFIG_PATH
+            echo "Firebase config file created."
+
+            # 4. Docker Compose 재시작
+            cd $COMPOSE_DIR
+            docker-compose up -d --force-recreate backend 
+            
+            echo "Deployment complete! Server is running."
