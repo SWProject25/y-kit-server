@@ -14,23 +14,23 @@ import org.springframework.web.reactive.function.client.WebClient;
 public class WebClientConfig {
 
     @Bean
-    public WebClient policyClient(@Value("${policy.api.url}") String policyUrl) {
+    public WebClient policyClient(@Value("${POLICY_API_URL}") String policyUrl) {
         return createWebClient(policyUrl);
     }
 
     @Bean
-    public WebClient publicWebResourceClient(@Value("${public.resource.api.url}") String url) {
+    public WebClient publicWebResourceClient(@Value("${PUBLIC_RESOURCE_API_URL}") String url) {
         return createWebClient(url);
     }
 
     @Bean
-    public WebClient vWorldClient(@Value("${vworld.api.url}") String vWorldUrl) {
+    public WebClient vWorldClient(@Value("${VWORLD_API_URL}") String vWorldUrl) {
         return createWebClient(vWorldUrl);
     }
 
     @Bean
-    public WebClient openAIClient(@Value("${openai.api.base-url}") String openAIUrl,
-                                  @Value("${openai.api.key}") String apiKey) {
+    public WebClient openAIClient(@Value("${OPENAI_API_BASE_URL}") String openAIUrl,
+                                  @Value("${OPENAI_API_KEY}") String apiKey) {
         return createWebClient(openAIUrl)
                 .mutate()
                 .defaultHeader("Authorization", "Bearer " + apiKey)

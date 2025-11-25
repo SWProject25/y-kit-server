@@ -24,7 +24,7 @@ public class PublicResourceClient {
     public static final int PAGE_SIZE = 100;
     private final WebClient publicWebResourceClient;
 
-    @Value("${public.resource.api.key}")
+    @Value("${PUBLIC_RESOURCE_API_KEY}")
     private String apiKey;
 
     /**

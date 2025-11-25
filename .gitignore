@@ -37,5 +37,4 @@ out/
 .vscode/
 
 application-secrets.properties
-application-oauth.properties
 y-kit-fd5b5-firebase-adminsdk-fbsvc-b3b3e40810.json

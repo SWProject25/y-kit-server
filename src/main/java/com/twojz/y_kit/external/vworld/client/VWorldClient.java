@@ -19,10 +19,10 @@ import reactor.util.retry.Retry;
 public class VWorldClient {
     private final WebClient vWorldClient;
 
-    @Value("${vworld.api.key}")
+    @Value("${VWORLD_API_KEY}")
     private String apiKey;
 
-    @Value("${service.domain.url}")
+    @Value("${SERVICE_DOMAIN_URL}")
     private String serviceDomain;
 
     public List<VWorldRegionItem> fetchRegions(String endpoint, String admCode) {
