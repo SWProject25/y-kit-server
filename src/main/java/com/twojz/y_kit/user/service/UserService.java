@@ -1,5 +1,7 @@
 package com.twojz.y_kit.user.service;
 
+import com.twojz.y_kit.region.entity.Region;
+import com.twojz.y_kit.region.service.RegionFindService;
 import com.twojz.y_kit.user.auth.OAuth2Attributes;
 import com.twojz.y_kit.user.entity.LoginProvider;
 import com.twojz.y_kit.user.entity.Role;
@@ -17,10 +19,16 @@ import lombok.RequiredArgsConstructor;
 public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final RegionFindService regionFindService;
 
     @Transactional
     public void saveLocalUser(LocalSignUpRequest request) {
         validateEmailNotExists(request.getEmail());
+
+        Region region = null;
+        if(request.getRegion() != null) {
+            region = regionFindService.findRegionName(request.getRegion());
+        }
 
         userRepository.save(UserEntity.builder()
                 .email(request.getEmail())
@@ -30,6 +38,7 @@ public class UserService {
                 .gender(request.getGender())
                 .role(Role.USER)
                 .loginProvider(LoginProvider.LOCAL)
+                .region(region)
                 .build());
     }
 
@@ -50,5 +59,4 @@ public class UserService {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
     }
-
 }

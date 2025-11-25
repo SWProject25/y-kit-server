@@ -22,7 +22,8 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+	implementation 'org.springframework:spring-webflux'
+	implementation 'io.projectreactor.netty:reactor-netty-http:1.2.8'
 	implementation("io.netty:netty-resolver-dns-native-macos:4.1.100.Final:osx-aarch_64")
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	runtimeOnly 'com.mysql:mysql-connector-j'
@@ -35,11 +36,19 @@ dependencies {
 	// lombok
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
+	implementation 'org.hibernate.validator:hibernate-validator:9.0.1.Final'
+
+	// swagger
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+
+	// fcm
+	implementation 'com.google.firebase:firebase-admin:9.5.0'
 
 	//test
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.springframework.security:spring-security-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	testImplementation 'io.projectreactor:reactor-test'
 }
 
 tasks.named('test') {
