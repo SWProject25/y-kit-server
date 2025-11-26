@@ -88,19 +88,19 @@ jobs:
             mv "$JAR_ORIGINAL" "$JAR_PATH"
             chmod +x "$JAR_PATH"
             
-            echo "✓ JAR updated at $JAR_PATH"
+            echo "✅ JAR updated at $JAR_PATH"
             
-            # config.env 생성 (🚨 완벽하게 정리된 Heredoc 구문)
-            echo "📝 Creating config.env..."
+            # config.env 생성
+            echo "🔧 Creating config.env..."
             cat <<EOF > $CONFIG_ENV
-            DB_URL='${{ secrets.DB_URL }}'
-            DB_USERNAME=${{ secrets.DB_USERNAME }}
-            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/y_kit_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Seoul
+            SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}
+            SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
             KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
             APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success
-            FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH
+            FIREBASE_CONFIG_PATH=/app/service-account.json
             OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
             OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}
@@ -111,25 +111,29 @@ jobs:
             VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
             VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
             EOF
-  
-            echo "✓ config.env created"
             
-            # DB_URL 호스트 이름 치환 (localhost -> db)
-            sed -i 's/localhost/db/g' $CONFIG_ENV
-            echo "✓ DB_URL host (localhost) replaced with 'db' in config.env"
+            echo "✅ config.env created"
             
-            # DB_URL 최종 값 디버깅 출력 (로그 확인용)
-            echo "🔍 Current DB_URL is:"
-            grep DB_URL $CONFIG_ENV
+            # Firebase JSON 생성 (JSON 내용을 파일로 저장)
+            echo "🔐 Creating Firebase service-account.json..."
+            cat > $FIREBASE_CONFIG_PATH <<'FIREBASE_EOF'
+            ${{ secrets.FIREBASE_JSON }}
+            FIREBASE_EOF
+            chmod 644 $FIREBASE_CONFIG_PATH
+            echo "✅ Firebase JSON created"
             
-            # Firebase JSON 생성 (base64 decode)
-            echo "📝 Creating Firebase service-account.json..."
-            echo '${{ secrets.FIREBASE_JSON }}' > $FIREBASE_CONFIG_PATH # ⬅️ Secret 이름이 FIREBASE_JSON으로 변경됨
-            echo "✓ Firebase JSON created"
+            # 파일 확인
+            if [ -f "$FIREBASE_CONFIG_PATH" ]; then
+                echo "✅ Firebase config file exists at $FIREBASE_CONFIG_PATH"
+                ls -lh $FIREBASE_CONFIG_PATH
+            else
+                echo "❌ ERROR: Firebase config file not created"
+                exit 1
+            fi
             
-            # 환경 변수 로드 (Docker Compose가 참조할 수 있도록)
+            # 환경 변수 로드
             source $CONFIG_ENV
-            echo "✓ Environment variables loaded into shell"
+            echo "✅ Environment variables loaded into shell"
             
             # Docker Compose 재시작
             cd $COMPOSE_DIR
@@ -138,3 +142,5 @@ jobs:
             docker compose up -d --force-recreate
             
             echo "🎉 Deployment Complete!"
+            echo "📋 Checking container status..."
+            docker compose ps
