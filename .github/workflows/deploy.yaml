@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 1. Checkout Code
+      - name: 1. Checkout Code (코드 가져오기)
         uses: actions/checkout@v4
 
       - name: 2. Set up JDK 21
@@ -22,7 +22,7 @@ jobs:
       - name: 3. Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: 4. Build with Gradle (JAR 생성)
+      - name: 4. Build with Gradle (JAR 파일 생성)
         run: ./gradlew clean build -x test
 
       - name: 5. Transfer JAR to KT Cloud VM (JAR 파일 전송)
@@ -31,10 +31,21 @@ jobs:
           host: ${{ secrets.HOST_IP }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./build/libs/*.jar"
+          # JAR 파일을 원본 이름 그대로 VM의 deploy 폴더로 전송
+          source: "./build/libs/y-kit-0.0.1-SNAPSHOT.jar"
           target: "/home/ubuntu/app/deploy/"
 
-      - name: 6. Restart Server via SSH (환경 변수 주입 + 배포)
+      - name: 5.5 Transfer Docker Compose Files (설정 파일 전송)
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOST_IP }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # docker-compose.yml 및 nginx 폴더 전체 전송
+          source: "docker-compose.yml, nginx"
+          target: "/root/y_kit_deploy/"
+
+      - name: 6. Restart Server via SSH (환경 변수 주입 및 서버 재시작)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST_IP }}
@@ -42,57 +53,62 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
 
           script: |
+            set -e # ⬅️ ⚠️ 필수: 오류 발생 시 즉시 중단 및 실패 보고
+            
             echo "🚀 Deployment started..."
-
-            # 1. 디렉토리 및 권한 정리
-            DEPLOY_DIR="/home/ubuntu/app/deploy"
+            
+            # 1. 변수 정의 및 경로 설정
             COMPOSE_DIR="/root/y_kit_deploy"
+            DEPLOY_DIR="/home/ubuntu/app/deploy"
             CONFIG_ENV="$COMPOSE_DIR/config.env"
             FIREBASE_CONFIG_PATH="$COMPOSE_DIR/service-account.json" 
-            JAR_PATH="$DEPLOY_DIR/app.jar"
+            JAR_PATH="$DEPLOY_DIR/app.jar" # 최종 JAR 파일명
 
-            mkdir -p $DEPLOY_DIR
-            mkdir -p $COMPOSE_DIR
-
-            # deploy 디렉토리 권한을 ubuntu로 통일
+            # 2. 필수 디렉토리 생성 및 권한 설정
+            mkdir -p $COMPOSE_DIR 
+            
+            # deploy 디렉토리 권한을 ubuntu로 통일 (JAR 파일 접근 권한 문제 해결)
             chown -R ubuntu:ubuntu $DEPLOY_DIR
-
             echo "✓ Directory ownership fixed"
 
-            # 2. 자동 JAR 파일 탐색
+            # 3. 자동 JAR 파일 탐색 및 이동 (파일명 통일)
             echo "🔍 Searching for JAR file..."
-
-            JAR_ORIGINAL="$DEPLOY_DIR/build/libs/*SNAPSHOT.jar"
+            
+            # *.jar 파일을 찾고 가장 최신 파일 하나를 선택
+            JAR_ORIGINAL=$(find $DEPLOY_DIR -maxdepth 1 -name "*.jar" | head -n 1)
 
             if [ -z "$JAR_ORIGINAL" ]; then
               echo "❌ ERROR: No JAR file found in $DEPLOY_DIR"
               exit 1
             fi
 
-            echo "✓ Found JAR: $JAR_ORIGINAL"
-
-            # 이전 app.jar 삭제
+            # 이전 app.jar 삭제 (mv 명령이 오류날 경우 대비)
             rm -f $JAR_PATH
 
-            # 발견한 JAR를 app.jar로 이동
+            # 발견한 JAR를 app.jar로 이동 (이름 통일)
             mv "$JAR_ORIGINAL" "$JAR_PATH"
+            
+            # 4. JAR 파일에 실행 권한 부여 (VM의 파일 권한 문제 해결)
             chmod +x "$JAR_PATH"
+            echo "✓ JAR renamed and execution permission granted"
+            
+            # 5. config.env 파일 동적 생성 및 Secret 주입
+            echo "--- Writing Environment Variables ---"
 
-            echo "✓ JAR moved to $JAR_PATH"
-
-            # 3. config.env 파일 생성
-            echo "📝 Writing config.env ..."
-
+            # A. DB 및 공통 Secrets
             echo "SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}" > $CONFIG_ENV
             echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $CONFIG_ENV
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $CONFIG_ENV
 
+            # B. OAuth & Redirect URL
             echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> $CONFIG_ENV
             echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> $CONFIG_ENV
             echo "APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success" >> $CONFIG_ENV
-
+            
+            # C. Firebase Config Path
             echo "FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH" >> $CONFIG_ENV
 
+            # D. 외부 API Keys
             echo "OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}" >> $CONFIG_ENV
             echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $CONFIG_ENV
             echo "OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}" >> $CONFIG_ENV
@@ -102,19 +118,17 @@ jobs:
             echo "PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}" >> $CONFIG_ENV
             echo "VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}" >> $CONFIG_ENV
             echo "VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}" >> $CONFIG_ENV
-
+            
+            # E. Spring Profiles
             echo "SPRING_PROFILES_ACTIVE=prod" >> $CONFIG_ENV
-
-            echo "✓ config.env created"
-
-            # 4. Firebase JSON 생성
+            
+            # 6. Firebase JSON 파일 생성
             echo "${{ secrets.FIREBASE_JSON }}" > $FIREBASE_CONFIG_PATH
-            echo "✓ Firebase config created"
+            echo "✓ Firebase config file created."
 
-            # 5. Docker Compose 서비스 재시작
+            # 7. Docker Compose 재시작
             echo "🔄 Restarting Docker Compose service..."
-
             cd $COMPOSE_DIR
-            docker-compose up -d --force-recreate server
-
+            docker-compose up -d --force-recreate server 
+            
             echo "🎉 Deployment complete!"
