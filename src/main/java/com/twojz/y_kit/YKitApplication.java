@@ -5,9 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
 public class YKitApplication {
-
 	public static void main(String[] args) {
 		SpringApplication.run(YKitApplication.class, args);
 	}
-
 }
