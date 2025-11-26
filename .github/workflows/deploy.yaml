@@ -32,7 +32,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "./build/libs/y-kit-0.0.1-SNAPSHOT.jar"
-          target: "/home/ubuntu/app/deploy/app.jar"
+          target: "/home/ubuntu/app/deploy/"
 
       - name: 6. Restart Server via SSH (환경 변수 주입 및 서버 재시작)
         uses: appleboy/ssh-action@v1.0.3
@@ -48,6 +48,10 @@ jobs:
             COMPOSE_DIR="/root/y_kit_deploy"
             CONFIG_ENV="$COMPOSE_DIR/config.env"
             FIREBASE_CONFIG_PATH="$COMPOSE_DIR/service-account.json" 
+            JAR_PATH="/home/ubuntu/app/deploy/app.jar"
+            
+            mkdir -p $COMPOSE_DIR
+            chmod +x $JAR_PATH
             
             # 2. config.env 파일 동적 생성 및 Secret 주입
             echo "--- Writing Environment Variables ---"
@@ -86,6 +90,6 @@ jobs:
 
             # 4. Docker Compose 재시작
             cd $COMPOSE_DIR
-            docker-compose up -d --force-recreate server 
+            docker-compose up -d --force-recreate server
             
             echo "Deployment complete! Server is running."
