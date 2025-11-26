@@ -109,7 +109,6 @@ jobs:
               PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}
               VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
               VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
-              SPRING_PROFILES_ACTIVE=prod
             EOF
   
             echo "✓ config.env created"
