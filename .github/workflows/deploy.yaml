@@ -93,23 +93,38 @@ jobs:
             # config.env 생성
             echo "📝 Creating config.env..."
             cat <<EOF > $CONFIG_ENV
-              DB_URL=${{ secrets.DB_URL }}
-              DB_USERNAME=${{ secrets.DB_USERNAME }}
-              DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-              JWT_SECRET=${{ secrets.JWT_SECRET }}
-              KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
-              KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
-              APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success
-              FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH
-              OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
-              OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-              OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}
-              POLICY_API_KEY=${{ secrets.POLICY_API_KEY }}
-              POLICY_API_URL=${{ secrets.POLICY_API_URL }}
-              PUBLIC_RESOURCE_API_KEY=${{ secrets.PUBLIC_RESOURCE_API_KEY }}
-              PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}
-              VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
-              VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
+            DB_URL=${{ secrets.DB_URL }} 
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+            APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success
+            FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH
+            OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}
+            POLICY_API_KEY=${{ secrets.POLICY_API_KEY }}
+            POLICY_API_URL=${{ secrets.POLICY_API_URL }}
+            PUBLIC_RESOURCE_API_KEY=${{ secrets.PUBLIC_RESOURCE_API_KEY }}
+            PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}
+            VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
+            VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
+            EOFDB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+            APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success
+            FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH
+            OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
+            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+            OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}
+            POLICY_API_KEY=${{ secrets.POLICY_API_KEY }}
+            POLICY_API_URL=${{ secrets.POLICY_API_URL }}
+            PUBLIC_RESOURCE_API_KEY=${{ secrets.PUBLIC_RESOURCE_API_KEY }}
+            PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}
+            VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
+            VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
             EOF
   
             echo "✓ config.env created"
