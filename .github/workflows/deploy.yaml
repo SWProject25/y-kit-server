@@ -98,7 +98,7 @@ jobs:
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
             KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
-            APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success
+            APP_OAUTH2_REDIRECT_URL=http://${{ secrets.HOST_IP }}/api/v1/auth/oauth2/success
             FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH
             OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
@@ -109,28 +109,11 @@ jobs:
             PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}
             VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
             VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
-            EOFDB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
-            KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
-            APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success
             JWT_SECRET=${{ secrets.JWT_SECRET }}
+            SERVICE_DOMAIN_URL=${{ secrets.SERVICE_DOMAIN_URL }}
             FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH
-            OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
-            OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}
-            POLICY_API_KEY=${{ secrets.POLICY_API_KEY }}
-            POLICY_API_URL=${{ secrets.POLICY_API_URL }}
-            PUBLIC_RESOURCE_API_KEY=${{ secrets.PUBLIC_RESOURCE_API_KEY }}
-            PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}
-            VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
-            VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
-            EOF
-  
+
             echo "✓ config.env created"
-            
-            # Firebase JSON 생성 (base64 decode)
-            echo "${{ secrets.FIREBASE_JSON_BASE64 }}" | base64 -d > $FIREBASE_CONFIG_PATH
-            echo "✓ Firebase JSON created"
             
             # Docker Compose 재시작
             cd $COMPOSE_DIR
