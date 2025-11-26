@@ -10,22 +10,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 1. Checkout Code
+      # 1. Checkout Code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: 2. Set up JDK 21
+      # 2. Set up JDK 21
+      - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      - name: 3. Grant execute permission for gradlew
+      # 3. Gradle permissions
+      - name: Grant execute permission to gradlew
         run: chmod +x gradlew
 
-      - name: 4. Build with Gradle (JAR 생성)
-        run: ./gradlew clean build -x test
+      # 4. Build Spring Boot fat JAR
+      - name: Build with Gradle
+        run: ./gradlew clean bootJar -x test
 
-      - name: 5. Transfer JAR to KT Cloud VM (JAR 파일 전송)
+      # 5. Debug: Check built JAR exists
+      - name: Check built JAR files
+        run: |
+          echo "=== build/libs ==="
+          ls -al ./build/libs
+
+      # 6. Transfer JAR to VM
+      - name: Transfer JAR to KT Cloud VM
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.HOST_IP }}
@@ -34,13 +45,13 @@ jobs:
           source: "${{ github.workspace }}/build/libs/*.jar"
           target: "/home/ubuntu/app/deploy/"
 
-      - name: 6. Restart Server via SSH (환경 변수 주입 + 배포)
+      # 7. SSH — Deploy
+      - name: Restart Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST_IP }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-
           script: |
             echo "🚀 Deployment started..."
 
@@ -73,54 +84,44 @@ jobs:
             # 기존 app.jar 삭제
             rm -f $JAR_PATH
 
-            # 이동
+            # 이동 및 권한 설정
             mv "$JAR_ORIGINAL" "$JAR_PATH"
             chmod +x "$JAR_PATH"
 
             echo "✓ JAR updated at $JAR_PATH"
 
-            # -----------------------------
-            # 3. config.env 파일 생성
-            # -----------------------------
-            echo "📝 Writing config.env ..."
-
-            echo "SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}" > $CONFIG_ENV
-            echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $CONFIG_ENV
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $CONFIG_ENV
-
-            echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> $CONFIG_ENV
-            echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> $CONFIG_ENV
-            echo "APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success" >> $CONFIG_ENV
-
-            echo "FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH" >> $CONFIG_ENV
-
-            echo "OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}" >> $CONFIG_ENV
-            echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $CONFIG_ENV
-            echo "OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}" >> $CONFIG_ENV
-            echo "POLICY_API_KEY=${{ secrets.POLICY_API_KEY }}" >> $CONFIG_ENV
-            echo "POLICY_API_URL=${{ secrets.POLICY_API_URL }}" >> $CONFIG_ENV
-            echo "PUBLIC_RESOURCE_API_KEY=${{ secrets.PUBLIC_RESOURCE_API_KEY }}" >> $CONFIG_ENV
-            echo "PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}" >> $CONFIG_ENV
-            echo "VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}" >> $CONFIG_ENV
-            echo "VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}" >> $CONFIG_ENV
-
-            echo "SPRING_PROFILES_ACTIVE=prod" >> $CONFIG_ENV
-
+            # config.env 생성
+            echo "📝 Creating config.env..."
+            cat <<EOF > $CONFIG_ENV
+              SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}
+              SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
+              JWT_SECRET=${{ secrets.JWT_SECRET }}
+              KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
+              KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
+              APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success
+              FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH
+              OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
+              OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+              OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}
+              POLICY_API_KEY=${{ secrets.POLICY_API_KEY }}
+              POLICY_API_URL=${{ secrets.POLICY_API_URL }}
+              PUBLIC_RESOURCE_API_KEY=${{ secrets.PUBLIC_RESOURCE_API_KEY }}
+              PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}
+              VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
+              VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
+              SPRING_PROFILES_ACTIVE=prod
+            EOF
+  
             echo "✓ config.env created"
-
-            # -----------------------------
-            # 4. Firebase JSON 생성
-            # -----------------------------
-            echo "${{ secrets.FIREBASE_JSON }}" > $FIREBASE_CONFIG_PATH
-            echo "✓ Firebase config created"
-
-            # -----------------------------
-            # 5. Docker Compose 서비스 재시작
-            # -----------------------------
+            
+            # Firebase JSON 생성 (base64 decode)
+            echo "${{ secrets.FIREBASE_JSON_BASE64 }}" | base64 -d > $FIREBASE_CONFIG_PATH
+            echo "✓ Firebase JSON created"
+            
+            # Docker Compose 재시작
             cd $COMPOSE_DIR
-
             echo "🔄 Restarting Docker Compose..."
             docker compose down
             docker compose up -d --force-recreate
-
-            echo "🎉 Deployment Complete!"s
+            
+            echo "🎉 Deployment Complete!"

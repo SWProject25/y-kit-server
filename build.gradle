@@ -54,3 +54,12 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+tasks.jar {
+	enabled = false
+}
+
+tasks.bootJar {
+	enabled = true
+	mainClass = 'com.twojz.y_kit.YKitApplication'
+}
