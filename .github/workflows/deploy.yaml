@@ -96,7 +96,6 @@ jobs:
             DB_URL=${{ secrets.DB_URL }} 
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
             KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
             KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
             APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success
@@ -111,10 +110,10 @@ jobs:
             VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
             VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
             EOFDB_PASSWORD=${{ secrets.DB_PASSWORD }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
             KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
             KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
             APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
             FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH
             OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
