@@ -86,6 +86,6 @@ jobs:
 
             # 4. Docker Compose 재시작
             cd $COMPOSE_DIR
-            docker-compose up -d --force-recreate backend 
+            docker-compose up -d --force-recreate server 
             
             echo "Deployment complete! Server is running."
