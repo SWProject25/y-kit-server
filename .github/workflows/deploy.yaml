@@ -31,8 +31,7 @@ jobs:
           host: ${{ secrets.HOST_IP }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # JAR 파일을 원본 이름 그대로 VM의 deploy 폴더로 전송
-          source: "./build/libs/y-kit-0.0.1-SNAPSHOT.jar"
+          source: "./build/libs/*.jar"
           target: "/home/ubuntu/app/deploy/"
 
       - name: 5.5 Transfer Docker Compose Files (설정 파일 전송)
@@ -41,7 +40,6 @@ jobs:
           host: ${{ secrets.HOST_IP }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          # docker-compose.yml 및 nginx 폴더 전체 전송
           source: "docker-compose.yml, nginx"
           target: "/root/y_kit_deploy/"
 
@@ -53,7 +51,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
 
           script: |
-            set -e # ⬅️ ⚠️ 필수: 오류 발생 시 즉시 중단 및 실패 보고
+            set -e # ⬅️ 오류 발생 시 즉시 중단 및 실패 보고
             
             echo "🚀 Deployment started..."
             
@@ -67,14 +65,14 @@ jobs:
             # 2. 필수 디렉토리 생성 및 권한 설정
             mkdir -p $COMPOSE_DIR 
             
-            # deploy 디렉토리 권한을 ubuntu로 통일 (JAR 파일 접근 권한 문제 해결)
+            # deploy 디렉토리 권한을 ubuntu로 통일 (파일 접근 문제 해결)
             chown -R ubuntu:ubuntu $DEPLOY_DIR
             echo "✓ Directory ownership fixed"
 
             # 3. 자동 JAR 파일 탐색 및 이동 (파일명 통일)
             echo "🔍 Searching for JAR file..."
             
-            # *.jar 파일을 찾고 가장 최신 파일 하나를 선택
+            # DEPLOY_DIR에서 *.jar 파일을 찾고 가장 최신 파일 하나를 선택
             JAR_ORIGINAL=$(find $DEPLOY_DIR -maxdepth 1 -name "*.jar" | head -n 1)
 
             if [ -z "$JAR_ORIGINAL" ]; then
