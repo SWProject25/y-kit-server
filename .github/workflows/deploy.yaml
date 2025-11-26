@@ -45,7 +45,7 @@ jobs:
           source: "${{ github.workspace }}/build/libs/*.jar"
           target: "/home/ubuntu/app/deploy/"
 
-      # 7. SSH — Deploy
+      # 7. SSH — Deploy (모든 환경 설정 및 재시작 로직 포함)
       - name: Restart Server via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -54,51 +54,52 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             echo "🚀 Deployment started..."
-
+            
             DEPLOY_DIR="/home/ubuntu/app/deploy"
             COMPOSE_DIR="/root/y_kit_deploy"
             CONFIG_ENV="$COMPOSE_DIR/config.env"
             FIREBASE_CONFIG_PATH="$COMPOSE_DIR/service-account.json"
             JAR_PATH="$DEPLOY_DIR/app.jar"
-
+            
             mkdir -p $DEPLOY_DIR
             mkdir -p $COMPOSE_DIR
-
+            
             # 권한 정리
             chown -R ubuntu:ubuntu $DEPLOY_DIR
             chown -R root:root $COMPOSE_DIR
-
+            
             echo "🔍 Checking transferred files..."
             ls -al $DEPLOY_DIR
-
+            
             # 최신 JAR 선택
             JAR_ORIGINAL=$(find $DEPLOY_DIR -type f -name "*.jar" ! -name "app.jar" | sort | tail -n 1)
-
+            
             if [ -z "$JAR_ORIGINAL" ]; then
-              echo "❌ ERROR: No new JAR found"
-              exit 1
+                echo "❌ ERROR: No new JAR found"
+                exit 1
             fi
-
+            
             echo "Found JAR: $JAR_ORIGINAL"
-
+            
             # 기존 app.jar 삭제
             rm -f $JAR_PATH
-
+            
             # 이동 및 권한 설정
             mv "$JAR_ORIGINAL" "$JAR_PATH"
             chmod +x "$JAR_PATH"
-
+            
             echo "✓ JAR updated at $JAR_PATH"
-
-            # config.env 생성
+            
+            # config.env 생성 (🚨 완벽하게 정리된 Heredoc 구문)
             echo "📝 Creating config.env..."
             cat <<EOF > $CONFIG_ENV
-            DB_URL=${{ secrets.DB_URL }} 
+            DB_URL='${{ secrets.DB_URL }}'
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
             KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
             KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
-            APP_OAUTH2_REDIRECT_URL=http://${{ secrets.HOST_IP }}/api/v1/auth/oauth2/success
+            APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success
             FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH
             OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
@@ -109,11 +110,26 @@ jobs:
             PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}
             VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
             VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            SERVICE_DOMAIN_URL=${{ secrets.SERVICE_DOMAIN_URL }}
-            FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH
-
+            EOF
+  
             echo "✓ config.env created"
+            
+            # DB_URL 호스트 이름 치환 (localhost -> db)
+            sed -i 's/localhost/db/g' $CONFIG_ENV
+            echo "✓ DB_URL host (localhost) replaced with 'db' in config.env"
+            
+            # DB_URL 최종 값 디버깅 출력 (로그 확인용)
+            echo "🔍 Current DB_URL is:"
+            grep DB_URL $CONFIG_ENV
+            
+            # Firebase JSON 생성 (base64 decode)
+            echo "📝 Creating Firebase service-account.json..."
+            echo '${{ secrets.FIREBASE_JSON }}' > $FIREBASE_CONFIG_PATH # ⬅️ Secret 이름이 FIREBASE_JSON으로 변경됨
+            echo "✓ Firebase JSON created"
+            
+            # 환경 변수 로드 (Docker Compose가 참조할 수 있도록)
+            source $CONFIG_ENV
+            echo "✓ Environment variables loaded into shell"
             
             # Docker Compose 재시작
             cd $COMPOSE_DIR
