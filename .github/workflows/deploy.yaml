@@ -93,8 +93,9 @@ jobs:
             # config.env 생성
             echo "📝 Creating config.env..."
             cat <<EOF > $CONFIG_ENV
-              SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}
-              SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}
+              DB_URL=${{ secrets.DB_URL }}
+              DB_USERNAME=${{ secrets.DB_USERNAME }}
+              DB_PASSWORD=${{ secrets.DB_PASSWORD }}
               JWT_SECRET=${{ secrets.JWT_SECRET }}
               KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
               KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}

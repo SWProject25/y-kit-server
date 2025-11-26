@@ -21,13 +21,13 @@ import java.util.Date;
 @Component
 @RequiredArgsConstructor
 public class JwtTokenProvider {
-    @Value("${jwt.secret}")
+    @Value("${JWT_SECRET}")
     private String secretKeyString;
 
-    @Value("${jwt.access-token-validity}")
+    @Value("${JWT_ACCESS_TOKEN_VALIDAITY}")
     private long accessTokenValidityInMilliseconds;
 
-    @Value("${jwt.refresh-token-validity}")
+    @Value("${JWT_REFRESH_TOKEN_VALIDITY}")
     private long refreshTokenValidityInMilliseconds;
 
     private SecretKey secretKey;
