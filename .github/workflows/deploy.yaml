@@ -43,33 +43,47 @@ jobs:
 
           script: |
             echo "Deployment started..."
-            
+
             # 1. 변수 정의 및 경로 설정
             COMPOSE_DIR="/root/y_kit_deploy"
             CONFIG_ENV="$COMPOSE_DIR/config.env"
-            FIREBASE_CONFIG_PATH="$COMPOSE_DIR/service-account.json" 
+            FIREBASE_CONFIG_PATH="$COMPOSE_DIR/service-account.json"
+            
+            # JAR 파일 위치 및 이름 설정
+            JAR_ORIGINAL="/home/ubuntu/app/deploy/y-kit-0.0.1-SNAPSHOT.jar"
             JAR_PATH="/home/ubuntu/app/deploy/app.jar"
-            
+
             mkdir -p $COMPOSE_DIR
+
+            # JAR 파일 존재 여부 검사 후 이름 변경
+            if [ -f "$JAR_ORIGINAL" ]; then
+                mv $JAR_ORIGINAL $JAR_PATH
+                echo "JAR file moved to $JAR_PATH"
+            else
+                echo "ERROR: JAR file not found at $JAR_ORIGINAL"
+                exit 1
+            fi
+
+            # JAR 파일 실행 권한 부여
             chmod +x $JAR_PATH
-            
-            # 2. config.env 파일 동적 생성 및 Secret 주입
+
+            # 2. 환경 변수 파일 생성
             echo "--- Writing Environment Variables ---"
 
-            # A. DB 및 공통 Secrets (첫 줄은 >로 파일 생성, 나머지는 >>로 추가)
+            # A. DB & 기본 설정
             echo "SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}" > $CONFIG_ENV
             echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $CONFIG_ENV
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $CONFIG_ENV
 
-            # B. OAuth & Redirect URL
+            # B. OAuth Redirect URL
             echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> $CONFIG_ENV
             echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> $CONFIG_ENV
             echo "APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success" >> $CONFIG_ENV
-            
-            # C. Firebase Config Path (Spring Boot가 JSON 파일 경로를 알도록 주입)
+
+            # C. Firebase JSON 경로 주입
             echo "FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH" >> $CONFIG_ENV
 
-            # D. 외부 API Keys (Secrets 목록 기반)
+            # D. API Key들
             echo "OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}" >> $CONFIG_ENV
             echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $CONFIG_ENV
             echo "OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}" >> $CONFIG_ENV
@@ -79,17 +93,16 @@ jobs:
             echo "PUBLIC_RESOURCE_API_URL=${{ secrets.PUBLIC_RESOURCE_API_URL }}" >> $CONFIG_ENV
             echo "VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}" >> $CONFIG_ENV
             echo "VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}" >> $CONFIG_ENV
-            
-            # E. Spring Profiles
+
+            # E. Spring 프로필 설정
             echo "SPRING_PROFILES_ACTIVE=prod" >> $CONFIG_ENV
-            
-            # 3. Firebase JSON 파일 생성 (FCM 서비스 계정)
-            # GitHub Secret 내용을 읽어 VM 내부에 service-account.json 파일로 저장
+
+            # 3. Firebase JSON 파일 생성
             echo "${{ secrets.FIREBASE_JSON }}" > $FIREBASE_CONFIG_PATH
             echo "Firebase config file created."
 
             # 4. Docker Compose 재시작
             cd $COMPOSE_DIR
             docker-compose up -d --force-recreate server
-            
+
             echo "Deployment complete! Server is running."
