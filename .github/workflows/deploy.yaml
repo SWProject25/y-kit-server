@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 1. Checkout Code (코드 가져오기)
+      - name: 1. Checkout Code
         uses: actions/checkout@v4
 
       - name: 2. Set up JDK 21
@@ -22,7 +22,7 @@ jobs:
       - name: 3. Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: 4. Build with Gradle (JAR 파일 생성)
+      - name: 4. Build with Gradle (JAR 생성)
         run: ./gradlew clean build -x test
 
       - name: 5. Transfer JAR to KT Cloud VM (JAR 파일 전송)
@@ -31,10 +31,10 @@ jobs:
           host: ${{ secrets.HOST_IP }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "./build/libs/y-kit-0.0.1-SNAPSHOT.jar"
+          source: "./build/libs/*.jar"
           target: "/home/ubuntu/app/deploy/"
 
-      - name: 6. Restart Server via SSH (환경 변수 주입 및 서버 재시작)
+      - name: 6. Restart Server via SSH (환경 변수 주입 + 배포)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.HOST_IP }}
@@ -42,48 +42,57 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
 
           script: |
-            echo "Deployment started..."
+            echo "🚀 Deployment started..."
 
-            # 1. 변수 정의 및 경로 설정
+            # 1. 디렉토리 및 권한 정리
+            DEPLOY_DIR="/home/ubuntu/app/deploy"
             COMPOSE_DIR="/root/y_kit_deploy"
             CONFIG_ENV="$COMPOSE_DIR/config.env"
-            FIREBASE_CONFIG_PATH="$COMPOSE_DIR/service-account.json"
-            
-            # JAR 파일 위치 및 이름 설정
-            JAR_ORIGINAL="/home/ubuntu/app/deploy/y-kit-0.0.1-SNAPSHOT.jar"
-            JAR_PATH="/home/ubuntu/app/deploy/app.jar"
+            FIREBASE_CONFIG_PATH="$COMPOSE_DIR/service-account.json" 
+            JAR_PATH="$DEPLOY_DIR/app.jar"
 
+            mkdir -p $DEPLOY_DIR
             mkdir -p $COMPOSE_DIR
 
-            # JAR 파일 존재 여부 검사 후 이름 변경
-            if [ -f "$JAR_ORIGINAL" ]; then
-                mv $JAR_ORIGINAL $JAR_PATH
-                echo "JAR file moved to $JAR_PATH"
-            else
-                echo "ERROR: JAR file not found at $JAR_ORIGINAL"
-                exit 1
+            # deploy 디렉토리 권한을 ubuntu로 통일
+            chown -R ubuntu:ubuntu $DEPLOY_DIR
+
+            echo "✓ Directory ownership fixed"
+
+            # 2. 자동 JAR 파일 탐색
+            echo "🔍 Searching for JAR file..."
+
+            JAR_ORIGINAL=$(find $DEPLOY_DIR -type f -name "*.jar" | head -n 1)
+
+            if [ -z "$JAR_ORIGINAL" ]; then
+              echo "❌ ERROR: No JAR file found in $DEPLOY_DIR"
+              exit 1
             fi
 
-            # JAR 파일 실행 권한 부여
-            chmod +x $JAR_PATH
+            echo "✓ Found JAR: $JAR_ORIGINAL"
 
-            # 2. 환경 변수 파일 생성
-            echo "--- Writing Environment Variables ---"
+            # 이전 app.jar 삭제
+            rm -f $JAR_PATH
 
-            # A. DB & 기본 설정
+            # 발견한 JAR를 app.jar로 이동
+            mv "$JAR_ORIGINAL" "$JAR_PATH"
+            chmod +x "$JAR_PATH"
+
+            echo "✓ JAR moved to $JAR_PATH"
+
+            # 3. config.env 파일 생성
+            echo "📝 Writing config.env ..."
+
             echo "SPRING_DATASOURCE_USERNAME=${{ secrets.DB_USERNAME }}" > $CONFIG_ENV
             echo "SPRING_DATASOURCE_PASSWORD=${{ secrets.DB_PASSWORD }}" >> $CONFIG_ENV
             echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> $CONFIG_ENV
 
-            # B. OAuth Redirect URL
             echo "KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}" >> $CONFIG_ENV
             echo "KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}" >> $CONFIG_ENV
             echo "APP_OAUTH2_REDIRECT_URL=http://${{ secrets.SERVICE_DOMAIN_URL }}/api/v1/auth/oauth2/success" >> $CONFIG_ENV
 
-            # C. Firebase JSON 경로 주입
             echo "FIREBASE_CONFIG_PATH=$FIREBASE_CONFIG_PATH" >> $CONFIG_ENV
 
-            # D. API Key들
             echo "OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}" >> $CONFIG_ENV
             echo "OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}" >> $CONFIG_ENV
             echo "OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}" >> $CONFIG_ENV
@@ -94,15 +103,18 @@ jobs:
             echo "VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}" >> $CONFIG_ENV
             echo "VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}" >> $CONFIG_ENV
 
-            # E. Spring 프로필 설정
             echo "SPRING_PROFILES_ACTIVE=prod" >> $CONFIG_ENV
 
-            # 3. Firebase JSON 파일 생성
-            echo "${{ secrets.FIREBASE_JSON }}" > $FIREBASE_CONFIG_PATH
-            echo "Firebase config file created."
+            echo "✓ config.env created"
 
-            # 4. Docker Compose 재시작
+            # 4. Firebase JSON 생성
+            echo "${{ secrets.FIREBASE_JSON }}" > $FIREBASE_CONFIG_PATH
+            echo "✓ Firebase config created"
+
+            # 5. Docker Compose 서비스 재시작
+            echo "🔄 Restarting Docker Compose service..."
+
             cd $COMPOSE_DIR
             docker-compose up -d --force-recreate server
 
-            echo "Deployment complete! Server is running."
+            echo "🎉 Deployment complete!"
