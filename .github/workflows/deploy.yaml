@@ -45,7 +45,7 @@ jobs:
             echo "Deployment started..."
             
             # 1. 변수 정의 및 경로 설정
-            COMPOSE_DIR="/home/ubuntu/project_deploy"
+            COMPOSE_DIR="/root/y_kit_deploy"
             CONFIG_ENV="$COMPOSE_DIR/config.env"
             FIREBASE_CONFIG_PATH="$COMPOSE_DIR/service-account.json" 
             
