@@ -43,62 +43,63 @@ jobs:
 
           script: |
             echo "🚀 Deployment started..."
-            
+
             # -----------------------------
             # 1. 디렉토리 및 변수 설정 및 권한 정리 (강화)
             # -----------------------------
             DEPLOY_DIR="/home/ubuntu/app/deploy"
-            COMPOSE_DIR="/root/y_kit_deploy"
+            COMPOSE_DIR="/root/y_kit_deploy" # 이 부분은 사용자님의 실제 경로로 수정하세요
             CONFIG_ENV="$COMPOSE_DIR/config.env"
             FIREBASE_CONFIG_PATH="$COMPOSE_DIR/service-account.json" 
             JAR_PATH="$DEPLOY_DIR/app.jar" # 최종 실행될 파일명
             SSH_USER="ubuntu" # SSH 접속 사용자명
-            
+
             mkdir -p $DEPLOY_DIR
             mkdir -p $COMPOSE_DIR
-            
+
             # DEPLOY_DIR 및 하위 파일의 소유권을 SSH 접속 사용자 (ubuntu)에게 설정
             chown -R $SSH_USER:$SSH_USER $DEPLOY_DIR
             chown -R $SSH_USER:$SSH_USER $COMPOSE_DIR
-            
+
             echo "✓ Directory ownership fixed for $SSH_USER"
-            
+
             # -----------------------------
             # 2. 전송된 JAR 파일 탐색 및 정리 (강화)
             # -----------------------------
             echo "🔍 Searching for transferred JAR file..."
-            
+
             # 2.1. app.jar 이름으로 존재하는 디렉토리가 있다면 강제 삭제
             if [ -d "$JAR_PATH" ]; then
                 echo "⚠️ Existing app.jar is a directory! Deleting it forcefully."
                 rm -rf "$JAR_PATH"
             fi
-            
+
+            # --- 🔥 CRITICAL DEBUG: 전송된 파일 목록 확인 🔥 ---
+            echo "--- Current files in $DEPLOY_DIR on VM ---"
+            ls -al $DEPLOY_DIR
+            echo "---------------------------------------------"
+            # ----------------------------------------------------
+
             # 2.2. 가장 최근에 전송된 .jar 파일을 찾습니다.
-            # *주의: $DEPLOY_DIR 안에 전송된 JAR 파일과 app.jar 만 있어야 합니다.*
-            JAR_ORIGINAL=$(find $DEPLOY_DIR -maxdepth 1 -type f -name "*.jar" -not -name "app.jar" -printf "%T@ %p\n" | sort -n | tail -1 | awk '{print $2}')
+            # 모든 .jar 파일을 대상으로 검색 (가장 최근 파일을 찾습니다)
+            JAR_ORIGINAL=$(find $DEPLOY_DIR -maxdepth 1 -type f -name "*.jar" -printf "%T@ %p\n" | sort -n | tail -1 | awk '{print $2}')
             
-            # 만약 새로운 JAR 파일이 없다면, 이전 app.jar 파일을 사용합니다.
-            if [ -z "$JAR_ORIGINAL" ]; then
+            # 2.3. 탐색 결과에 따른 처리
+            if [ -z "$JAR_ORIGINAL" ] || [ "$JAR_ORIGINAL" = "$JAR_PATH" ]; then
                 if [ -f "$JAR_PATH" ]; then
-                    echo "ℹ️ No new JAR found. Reusing existing $JAR_PATH."
-                    JAR_ORIGINAL=$JAR_PATH
+                    echo "ℹ️ No NEW JAR found. Reusing existing $JAR_PATH."
+                    # JAR_ORIGINAL이 비어있거나 app.jar인데 파일인 경우, 이미 최종 파일이므로 무시
                 else
                     echo "❌ ERROR: No new or existing JAR file found in $DEPLOY_DIR"
+                    echo "Check the 'Current files in /home/ubuntu/app/deploy on VM' output above."
                     exit 1
                 fi
             fi
-            
+
             echo "✓ Found target JAR: $JAR_ORIGINAL"
-            
-            # 2.3. 디버깅 출력: 파일 크기 및 타입 확인
-            echo "ℹ️ Transferred file details:"
-            ls -l "$JAR_ORIGINAL"
-            # file 명령이 없으면 설치가 필요할 수 있으므로, 일단 파일 크기만 확인
-            # file "$JAR_ORIGINAL" 
-            
+
             # 2.4. 발견한 JAR를 app.jar로 이동 (rename) 및 권한 재설정
-            if [ "$JAR_ORIGINAL" != "$JAR_PATH" ]; then
+            if [ "$JAR_ORIGINAL" != "$JAR_PATH" ] && [ -f "$JAR_ORIGINAL" ]; then
                 rm -f $JAR_PATH # 이전 파일명으로 남아있을 수 있는 파일 삭제
                 mv "$JAR_ORIGINAL" "$JAR_PATH"
                 chown $SSH_USER:$SSH_USER "$JAR_PATH" # 소유권 재확보
