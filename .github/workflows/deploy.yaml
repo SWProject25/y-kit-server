@@ -62,7 +62,7 @@ jobs:
             # 2. 자동 JAR 파일 탐색
             echo "🔍 Searching for JAR file..."
 
-            JAR_ORIGINAL=$(find $DEPLOY_DIR -type f -name "*.jar" | head -n 1)
+            JAR_ORIGINAL="$DEPLOY_DIR/build/libs/*SNAPSHOT.jar"
 
             if [ -z "$JAR_ORIGINAL" ]; then
               echo "❌ ERROR: No JAR file found in $DEPLOY_DIR"
