@@ -33,12 +33,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
 
-        log.info("OAuth2 로그인 성공 핸들러 시작");
-
         DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
         String email = extractEmail(oAuth2User);
-
-        log.info("추출된 이메일: {}", email);
 
         Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isEmpty()) {
@@ -48,13 +44,10 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         }
 
         UserEntity user = optionalUser.get();
-        log.info("사용자 찾음: ID={}, Email={}", user.getId(), user.getEmail());
 
         // JWT 생성
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
-
-        log.info("JWT 토큰 생성 완료");
 
         // 쿼리 파라미터로 토큰 전달
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
@@ -62,8 +55,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .queryParam("refreshToken", refreshToken)
                 .build()
                 .toUriString();
-
-        log.info("리다이렉트 URL: {}", targetUrl);
 
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
@@ -78,7 +69,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             return (String) kakaoAccount.get("email");
         }
 
-        // 구글 로그인
         return (String) attributes.get("email");
     }
 }
