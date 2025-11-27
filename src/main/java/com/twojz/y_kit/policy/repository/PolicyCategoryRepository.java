@@ -19,4 +19,9 @@ public interface PolicyCategoryRepository extends JpaRepository<PolicyCategoryEn
     List<PolicyCategoryEntity> findByLevel(Integer level);
 
     List<PolicyCategoryEntity> findByParent(PolicyCategoryEntity parent);
+
+    /**
+     * 활성화된 카테고리 전체 조회
+     */
+    List<PolicyCategoryEntity> findAllByIsActiveTrue();
 }
