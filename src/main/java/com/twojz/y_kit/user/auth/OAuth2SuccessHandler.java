@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -31,20 +33,28 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
 
+        log.info("OAuth2 로그인 성공 핸들러 시작");
+
         DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
         String email = extractEmail(oAuth2User);
 
+        log.info("추출된 이메일: {}", email);
+
         Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isEmpty()) {
+            log.error("사용자를 찾을 수 없음: {}", email);
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "사용자 정보를 찾을 수 없습니다.");
             return;
         }
 
         UserEntity user = optionalUser.get();
+        log.info("사용자 찾음: ID={}, Email={}", user.getId(), user.getEmail());
 
         // JWT 생성
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
+
+        log.info("JWT 토큰 생성 완료");
 
         // 쿼리 파라미터로 토큰 전달
         String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
@@ -53,6 +63,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .build()
                 .toUriString();
 
+        log.info("리다이렉트 URL: {}", targetUrl);
+
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 
@@ -60,10 +72,13 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private String extractEmail(DefaultOAuth2User oAuth2User) {
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
+        // 카카오 로그인
         if (attributes.containsKey("kakao_account")) {
             Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
             return (String) kakaoAccount.get("email");
         }
+
+        // 구글 로그인
         return (String) attributes.get("email");
     }
 }

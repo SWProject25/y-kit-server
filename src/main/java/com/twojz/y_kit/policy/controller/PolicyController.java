@@ -1,11 +1,14 @@
 package com.twojz.y_kit.policy.controller;
 
 import com.twojz.y_kit.global.dto.PageResponse;
+import com.twojz.y_kit.policy.dto.response.PolicyCategoryResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyDetailResponse;
+import com.twojz.y_kit.policy.dto.response.PolicyKeywordResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyListResponse;
 import com.twojz.y_kit.policy.service.PolicyFindService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
@@ -76,4 +79,40 @@ public class PolicyController {
     ) {
         return policyFindService.getDeadlineSoonPolicies(pageable);
     }
+
+    /**
+     * 정책 검색 및 필터링
+     */
+    @GetMapping("/search")
+    @Operation(summary = "정책 검색 및 필터링",
+            description = "키워드, 카테고리, 키워드 태그로 정책을 검색합니다.")
+    public PageResponse<PolicyListResponse> searchPolicies(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) List<Long> categoryIds,
+            @RequestParam(required = false) List<Long> keywordIds,
+            @ParameterObject Pageable pageable
+    ) {
+        return policyFindService.searchPolicies(keyword, categoryIds, keywordIds, pageable);
+    }
+
+    /**
+     * 정책 카테고리 목록 조회
+     */
+    @GetMapping("/categories")
+    @Operation(summary = "정책 카테고리 목록 조회",
+            description = "모든 활성화된 정책 카테고리를 조회합니다.")
+    public List<PolicyCategoryResponse> getPolicyCategories() {
+        return policyFindService.getAllCategories();
+    }
+
+    /**
+     * 정책 키워드 목록 조회
+     */
+    @GetMapping("/keywords")
+    @Operation(summary = "정책 키워드 목록 조회",
+            description = "사용빈도가 높은 상위 50개 키워드를 조회합니다.")
+    public List<PolicyKeywordResponse> getPolicyKeywords() {
+        return policyFindService.getAllKeywords();
+    }
+
 }
