@@ -32,40 +32,137 @@ public class RegionService {
 
         log.info("🚀 VWorld 행정구역 데이터 초기화 시작");
 
-        Map<String, Region> regionMap = new ConcurrentHashMap<>();
         int totalCount = 0;
 
-        // 1. 시도
-        List<VWorldRegionItem> sidoList = fetchRegions(VWorldApiEndpoint.ADM_CODE_LIST_PATH, null);
-        totalCount += saveRegions(sidoList, RegionLevel.SIDO, regionMap);
-
-        // 2. 시군구
-        List<VWorldRegionItem> sigunguList = fetchRegions(VWorldApiEndpoint.ADM_SI_LIST_PATH, sidoList);
-        totalCount += saveRegions(sigunguList, RegionLevel.SIGUNGU, regionMap);
-
-        // 3. 읍면동
-        List<VWorldRegionItem> dongList = fetchRegions(VWorldApiEndpoint.ADM_DONG_LIST_PATH, sigunguList);
-        totalCount += saveRegions(dongList, RegionLevel.DONG, regionMap);
-
-        // 4. 리
-        List<VWorldRegionItem> reeList = fetchRegions(VWorldApiEndpoint.ADM_REE_LIST_PATH, dongList);
-        totalCount += saveRegions(reeList, RegionLevel.REE, regionMap);
+        // 순차적으로 각 레벨 초기화
+        totalCount += initSido();
+        totalCount += initSigungu();
+        totalCount += initDong();
+        totalCount += initRee();
 
         log.info("🎉 행정구역 데이터 총 {}건 저장 완료!", totalCount);
     }
 
-    private List<VWorldRegionItem> fetchRegions(String endpoint, List<VWorldRegionItem> parentList) {
-        if (parentList == null) {
-            return vWorldClient.fetchRegions(endpoint, null);
+    @Transactional
+    public int initSido() {
+        return initRegionLevel(
+                RegionLevel.SIDO,
+                VWorldApiEndpoint.ADM_CODE_LIST_PATH,
+                null
+        );
+    }
+
+    @Transactional
+    public int initSigungu() {
+        return initRegionLevel(
+                RegionLevel.SIGUNGU,
+                VWorldApiEndpoint.ADM_SI_LIST_PATH,
+                RegionLevel.SIDO
+        );
+    }
+
+    @Transactional
+    public int initDong() {
+        return initRegionLevel(
+                RegionLevel.DONG,
+                VWorldApiEndpoint.ADM_DONG_LIST_PATH,
+                RegionLevel.SIGUNGU
+        );
+    }
+
+    @Transactional
+    public int initRee() {
+        return initRegionLevel(
+                RegionLevel.REE,
+                VWorldApiEndpoint.ADM_REE_LIST_PATH,
+                RegionLevel.DONG
+        );
+    }
+
+    private int initRegionLevel(RegionLevel level, String endpoint, RegionLevel parentLevel) {
+        log.info("🚀 {} 데이터 초기화 시작", level.getDescription());
+
+        List<VWorldRegionItem> items;
+
+        if (parentLevel == null) {
+            // 시도인 경우 - 부모 없이 바로 조회
+            items = vWorldClient.fetchRegions(endpoint, null);
+        } else {
+            // 하위 레벨인 경우 - DB에서 부모 레벨 조회
+            List<Region> parentRegions = regionRepository.findByLevel(parentLevel);
+            if (parentRegions.isEmpty()) {
+                log.warn("⚠️ {} 데이터가 없습니다. 먼저 {} 데이터를 초기화해주세요.",
+                        parentLevel.getDescription(), parentLevel.getDescription());
+                return 0;
+            }
+
+            items = fetchChildRegions(endpoint, parentRegions);
         }
 
-        List<VWorldRegionItem> result = new ArrayList<>();
-        parentList.forEach(parent -> {
-            List<VWorldRegionItem> temp = vWorldClient.fetchRegions(endpoint, parent.getAdmCode());
-            result.addAll(temp);
-        });
+        int count = saveRegionsWithParent(items, level, parentLevel);
+        log.info("🎉 {} 데이터 {}건 저장 완료!", level.getDescription(), count);
 
+        return count;
+    }
+
+    private List<VWorldRegionItem> fetchChildRegions(String endpoint, List<Region> parentRegions) {
+        List<VWorldRegionItem> result = new ArrayList<>();
+        int count = 0;
+        int total = parentRegions.size();
+
+        for (Region parent : parentRegions) {
+            count++;
+            try {
+                List<VWorldRegionItem> temp = vWorldClient.fetchRegions(endpoint, parent.getCode());
+
+                if (temp != null && !temp.isEmpty()) {
+                    result.addAll(temp);
+                    log.debug("✅ {} 하위 데이터 {}건 조회 (code: {})",
+                            parent.getName(), temp.size(), parent.getCode());
+                } else {
+                    log.debug("⚠️ {} 하위 데이터 없음 (code: {})",
+                            parent.getName(), parent.getCode());
+                }
+
+                if (count % 10 == 0) {
+                    log.info("진행 중: {}/{} (누적 {}건)", count, total, result.size());
+                }
+
+                Thread.sleep(100);
+
+            } catch (Exception e) {
+                log.warn("❌ {} 조회 실패 ({}번째, code: {}): {}",
+                        parent.getName(), count, parent.getCode(), e.getMessage());
+            }
+        }
+
+        log.info("✅ 총 {}건 수집 완료 ({}/{}개 지역 조회)", result.size(), count, total);
         return result;
+    }
+
+    private int saveRegionsWithParent(List<VWorldRegionItem> regionInfos, RegionLevel level, RegionLevel parentLevel) {
+        if (regionInfos.isEmpty()) {
+            log.warn("⚠️ 저장할 데이터가 없습니다.");
+            return 0;
+        }
+
+        // 부모 레벨이 있는 경우 DB에서 조회
+        Map<String, Region> parentMap = new ConcurrentHashMap<>();
+        if (parentLevel != null) {
+            List<Region> parents = regionRepository.findByLevel(parentLevel);
+            parents.forEach(parent -> parentMap.put(parent.getCode(), parent));
+        }
+
+        List<Region> entities = regionInfos.stream()
+                .map(info -> {
+                    String parentCode = getParentCode(info.getAdmCode(), level);
+                    Region parent = parentCode != null ? parentMap.get(parentCode) : null;
+                    return toEntity(info, level, parent);
+                })
+                .toList();
+
+        List<Region> savedRegions = regionRepository.saveAll(entities);
+        return savedRegions.size();
     }
 
     private int saveRegions(List<VWorldRegionItem> regionInfos, RegionLevel level, Map<String, Region> regionMap) {
@@ -80,7 +177,6 @@ public class RegionService {
         List<Region> savedRegions = regionRepository.saveAll(entities);
         savedRegions.forEach(region -> regionMap.put(region.getCode(), region));
 
-        log.info("{} {}건 저장 완료", level.getDescription(), savedRegions.size());
         return savedRegions.size();
     }
 

@@ -10,4 +10,6 @@ import org.springframework.stereotype.Repository;
 public interface PolicyKeywordRepository extends JpaRepository<PolicyKeywordEntity, Long> {
     Optional<PolicyKeywordEntity> findByKeyword(String keyword);
     List<PolicyKeywordEntity> findTop10ByOrderByUsageCountDesc();
+
+    List<PolicyKeywordEntity> findTop50ByOrderByUsageCountDesc();
 }

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
@@ -17,6 +18,7 @@ import org.springframework.security.web.authentication.SimpleUrlAuthenticationSu
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.UriComponentsBuilder;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -36,6 +38,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
         if (optionalUser.isEmpty()) {
+            log.error("사용자를 찾을 수 없음: {}", email);
             response.sendError(HttpStatus.UNAUTHORIZED.value(), "사용자 정보를 찾을 수 없습니다.");
             return;
         }
@@ -60,10 +63,12 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private String extractEmail(DefaultOAuth2User oAuth2User) {
         Map<String, Object> attributes = oAuth2User.getAttributes();
 
+        // 카카오 로그인
         if (attributes.containsKey("kakao_account")) {
             Map<String, Object> kakaoAccount = (Map<String, Object>) attributes.get("kakao_account");
             return (String) kakaoAccount.get("email");
         }
+
         return (String) attributes.get("email");
     }
 }

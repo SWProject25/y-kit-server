@@ -270,4 +270,113 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
 
 
     List<PolicyEntity> findByIsActive(Boolean isActive);
+
+    // PolicyRepository.java에 추가할 검색 쿼리 메서드 (매핑 테이블 활용)
+
+    /**
+     * 키워드로 정책명/설명 검색 (PolicyDetailEntity에서 검색)
+     */
+    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
+            "LEFT JOIN p.detail d " +
+            "WHERE p.isActive = true " +
+            "AND (:keyword IS NULL OR :keyword = '' OR " +
+            "     d.plcyNm LIKE %:keyword% OR " +
+            "     d.plcyExplnCn LIKE %:keyword%)")
+    Page<PolicyEntity> findByKeywordContaining(
+            @Param("keyword") String keyword,
+            Pageable pageable
+    );
+
+    /**
+     * 카테고리 ID + 키워드 ID + 텍스트 검색으로 정책 필터링
+     */
+    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
+            "LEFT JOIN p.detail d " +
+            "LEFT JOIN p.categoryMappings cm " +
+            "LEFT JOIN p.keywordMappings km " +
+            "WHERE p.isActive = true " +
+            "AND (:keyword IS NULL OR :keyword = '' OR " +
+            "     d.plcyNm LIKE %:keyword% OR " +
+            "     d.plcyExplnCn LIKE %:keyword%) " +
+            "AND (:#{#categoryIds == null || #categoryIds.isEmpty()} = true OR cm.category.id IN :categoryIds) " +
+            "AND (:#{#keywordIds == null || #keywordIds.isEmpty()} = true OR km.keyword.id IN :keywordIds)")
+    Page<PolicyEntity> findByFilters(
+            @Param("keyword") String keyword,
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("keywordIds") List<Long> keywordIds,
+            Pageable pageable
+    );
+
+    /**
+     * 카테고리 ID만으로 필터링
+     */
+    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
+            "LEFT JOIN p.categoryMappings cm " +
+            "WHERE p.isActive = true " +
+            "AND cm.category.id IN :categoryIds")
+    Page<PolicyEntity> findByCategoryIds(
+            @Param("categoryIds") List<Long> categoryIds,
+            Pageable pageable
+    );
+
+    /**
+     * 키워드 ID만으로 필터링
+     */
+    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
+            "LEFT JOIN p.keywordMappings km " +
+            "WHERE p.isActive = true " +
+            "AND km.keyword.id IN :keywordIds")
+    Page<PolicyEntity> findByKeywordIds(
+            @Param("keywordIds") List<Long> keywordIds,
+            Pageable pageable
+    );
+
+    /**
+     * 카테고리 ID + 키워드 ID 조합 필터링
+     */
+    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
+            "LEFT JOIN p.categoryMappings cm " +
+            "LEFT JOIN p.keywordMappings km " +
+            "WHERE p.isActive = true " +
+            "AND cm.category.id IN :categoryIds " +
+            "AND km.keyword.id IN :keywordIds")
+    Page<PolicyEntity> findByCategoryAndKeywordIds(
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("keywordIds") List<Long> keywordIds,
+            Pageable pageable
+    );
+
+    /**
+     * 카테고리 필터 + 텍스트 검색
+     */
+    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
+            "LEFT JOIN p.detail d " +
+            "LEFT JOIN p.categoryMappings cm " +
+            "WHERE p.isActive = true " +
+            "AND (:keyword IS NULL OR :keyword = '' OR " +
+            "     d.plcyNm LIKE %:keyword% OR " +
+            "     d.plcyExplnCn LIKE %:keyword%) " +
+            "AND cm.category.id IN :categoryIds")
+    Page<PolicyEntity> findByCategoriesAndKeyword(
+            @Param("keyword") String keyword,
+            @Param("categoryIds") List<Long> categoryIds,
+            Pageable pageable
+    );
+
+    /**
+     * 키워드 필터 + 텍스트 검색
+     */
+    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
+            "LEFT JOIN p.detail d " +
+            "LEFT JOIN p.keywordMappings km " +
+            "WHERE p.isActive = true " +
+            "AND (:keyword IS NULL OR :keyword = '' OR " +
+            "     d.plcyNm LIKE %:keyword% OR " +
+            "     d.plcyExplnCn LIKE %:keyword%) " +
+            "AND km.keyword.id IN :keywordIds")
+    Page<PolicyEntity> findByKeywordsAndKeyword(
+            @Param("keyword") String keyword,
+            @Param("keywordIds") List<Long> keywordIds,
+            Pageable pageable
+    );
 }
