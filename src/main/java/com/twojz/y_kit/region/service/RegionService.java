@@ -192,11 +192,21 @@ public class RegionService {
     }
 
     private Region toEntity(VWorldRegionItem item, RegionLevel level, Region parent) {
+        String rawName = item.getAdmCodeNm() != null ? item.getAdmCodeNm() : item.getLowestAdmCodeNm();
+        String parsedName = extractLastName(rawName);
+
         return Region.builder()
                 .code(item.getAdmCode())
-                .name(item.getAdmCodeNm() != null ? item.getAdmCodeNm() : item.getLowestAdmCodeNm())
+                .name(parsedName)
                 .level(level)
                 .parent(parent)
                 .build();
+    }
+
+    private String extractLastName(String fullName) {
+        if (fullName == null || fullName.isBlank()) return fullName;
+
+        String[] parts = fullName.trim().split("\\s+");
+        return parts[parts.length - 1];
     }
 }
