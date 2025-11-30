@@ -111,15 +111,7 @@ public class UserController {
         Long userId = extractUserId(authentication);
         UserEntity user = userFindService.findUser(userId);
 
-        UserResponse response = UserResponse.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .name(user.getName())
-                .birthDate(user.getBirthDate())
-                .gender(user.getGender())
-                .region(user.getRegion() != null ? user.getRegion().getName() : null)
-                .profileStatus(user.getProfileStatus())
-                .build();
+        UserResponse response = UserResponse.from(user);
 
         return ResponseEntity.ok(response);
     }
