@@ -49,7 +49,7 @@ public class UserController {
      */
     @Operation(summary = "로컬 회원가입")
     @PostMapping("/sign-up")
-    public ResponseEntity<Void> signUp(@RequestBody LocalSignUpRequest request) {
+    public ResponseEntity<Void> signUp(@Valid @RequestBody LocalSignUpRequest request) {
         UserEntity user = userService.saveLocalUser(request);
 
         try {
