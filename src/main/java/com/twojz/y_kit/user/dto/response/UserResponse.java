@@ -1,9 +1,11 @@
 package com.twojz.y_kit.user.dto.response;
 
+import com.twojz.y_kit.user.entity.ProfileStatus;
 import com.twojz.y_kit.user.entity.Role;
 import com.twojz.y_kit.user.entity.Gender;
 import com.twojz.y_kit.user.entity.UserEntity;
 
+import java.time.LocalDate;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,8 +16,10 @@ public class UserResponse {
     private final String email;
     private final String name;
     private final Role role;
-    private final Integer age;
+    private final LocalDate birthDate;
     private final Gender gender;
+    private final String region;
+    private ProfileStatus profileStatus;
 
     public static UserResponse from(UserEntity user) {
         return UserResponse.builder()
@@ -23,8 +27,10 @@ public class UserResponse {
                 .email(user.getEmail())
                 .name(user.getName())
                 .role(user.getRole())
-                .age(user.getAge())
+                .birthDate(user.getBirthDate())
                 .gender(user.getGender())
+                .region(user.getRegion().getName())
+                .profileStatus(user.getProfileStatus())
                 .build();
     }
 }

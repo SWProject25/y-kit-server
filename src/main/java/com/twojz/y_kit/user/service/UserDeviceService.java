@@ -23,66 +23,101 @@ public class UserDeviceService {
 
     /**
      * 디바이스 토큰 등록/업데이트 (로그인 시)
+     * - 같은 사용자의 같은 토큰이면 업데이트
+     * - 다른 사용자가 같은 토큰을 가지고 있으면 기존 것은 비활성화하고 새로 등록
      */
     public void registerOrUpdateDevice(Long userId, String deviceName, String deviceToken) {
-        try {
-            Optional<UserDeviceEntity> existingDevice = userDeviceRepository.findByDeviceToken(deviceToken);
+        UserEntity user = userFindService.findUser(userId);
 
-            if (existingDevice.isPresent()) {
-                UserDeviceEntity device = existingDevice.get();
+        Optional<UserDeviceEntity> currentUserDevice =
+                userDeviceRepository.findByUserIdAndDeviceToken(userId, deviceToken);
 
-                if (!device.getUser().getId().equals(userId)) {
-                    throw new IllegalArgumentException("다른 사용자의 디바이스 토큰입니다.");
-                }
-
-                device.updateLoginInfo(deviceName, deviceToken);
-            } else {
-                UserEntity user = userFindService.findUser(userId);
-                userDeviceRepository.saveAndFlush(UserDeviceEntity.builder()
-                        .user(user)
-                        .deviceName(deviceName)
-                        .deviceToken(deviceToken)
-                        .isActive(true)
-                        .lastLogin(LocalDateTime.now())
-                        .build());
-            }
-
-        } catch (DataIntegrityViolationException e) {
-            // 경쟁 조건: 동시에 INSERT 시도 → 재조회 후 업데이트
-            log.warn("경쟁 조건 감지 - 재시도. userId: {}, token: {}", userId, maskToken(deviceToken));
-
-            UserDeviceEntity device = userDeviceRepository.findByDeviceToken(deviceToken)
-                    .orElseThrow(() -> new IllegalStateException("디바이스 등록 실패", e));
-
-            if (!device.getUser().getId().equals(userId)) {
-                throw new IllegalArgumentException("다른 사용자의 디바이스 토큰입니다.");
-            }
-
-            device.updateLoginInfo(deviceName, deviceToken);
+        if (currentUserDevice.isPresent()) {
+            currentUserDevice.get().updateLoginInfo(deviceName, deviceToken);
+            return;
         }
-    }
 
+        Optional<UserDeviceEntity> otherUserDevice =
+                userDeviceRepository.findFirstByDeviceToken(deviceToken);
+
+        if (otherUserDevice.isPresent() && !otherUserDevice.get().getUser().getId().equals(userId)) {
+            otherUserDevice.get().deactivate();
+        }
+
+        userDeviceRepository.save(UserDeviceEntity.builder()
+                .user(user)
+                .deviceName(deviceName)
+                .deviceToken(deviceToken)
+                .isActive(true)
+                .notificationEnabled(true)
+                .lastLogin(LocalDateTime.now())
+                .build());
+    }
 
     /**
      * 디바이스 비활성화 (로그아웃 시)
      */
     public void deactivateDevice(Long userId, String deviceToken) {
-        UserDeviceEntity device = userDeviceRepository.findByDeviceToken(deviceToken)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 디바이스 토큰입니다."));
+        Optional<UserDeviceEntity> device =
+                userDeviceRepository.findByUserIdAndDeviceToken(userId, deviceToken);
 
-        if (!device.getUser().getId().equals(userId)) {
-            throw new IllegalArgumentException("다른 사용자의 디바이스 토큰입니다.");
+        if (device.isEmpty()) {
+            return;
         }
 
-        device.deactivate();
+        device.get().deactivate();
     }
 
     /**
-     * 사용자의 활성 디바이스 토큰 목록
+     * 알림 허용된 활성 디바이스 토큰 목록
      */
     @Transactional(readOnly = true)
-    public List<String> getActiveTokens(Long userId) {
-        return userDeviceRepository.findActiveDeviceTokensByUserId(userId);
+    public List<String> getNotificationEnabledTokens(Long userId) {
+        return userDeviceRepository.findNotificationEnabledTokensByUserId(userId);
+    }
+
+    /**
+     * 알림 켜기
+     */
+    public void enableNotification(Long userId, String deviceToken) {
+        Optional<UserDeviceEntity> device =
+                userDeviceRepository.findByUserIdAndDeviceToken(userId, deviceToken);
+
+        if (device.isEmpty()) {
+            return;
+        }
+
+        device.get().enableNotification();
+    }
+
+    /**
+     * 알림 끄기
+     */
+    public void disableNotification(Long userId, String deviceToken) {
+        Optional<UserDeviceEntity> device =
+                userDeviceRepository.findByUserIdAndDeviceToken(userId, deviceToken);
+
+        if (device.isEmpty()) {
+            return;
+        }
+
+        device.get().disableNotification();
+    }
+
+    /**
+     * 모든 디바이스 알림 켜기
+     */
+    public void enableAllNotifications(Long userId) {
+        List<UserDeviceEntity> devices = userDeviceRepository.findByUserIdAndIsActiveTrue(userId);
+        devices.forEach(UserDeviceEntity::enableNotification);
+    }
+
+    /**
+     * 모든 디바이스 알림 끄기
+     */
+    public void disableAllNotifications(Long userId) {
+        List<UserDeviceEntity> devices = userDeviceRepository.findByUserIdAndIsActiveTrue(userId);
+        devices.forEach(UserDeviceEntity::disableNotification);
     }
 
     /**

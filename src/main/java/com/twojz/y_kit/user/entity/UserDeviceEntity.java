@@ -26,16 +26,17 @@ public class UserDeviceEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
-    @Column(name = "device_name")
     private String deviceName;
 
-    @Column(name = "device_token", nullable = false, unique = true)
+    @Column(nullable = false)
     private String deviceToken;
 
-    @Column(name = "is_active", nullable = false)
+    @Column(nullable = false)
     private boolean isActive = true;
 
-    @Column(name = "last_login")
+    @Column(nullable = false)
+    private boolean notificationEnabled = true;
+
     private LocalDateTime lastLogin;
 
     @CreationTimestamp
@@ -43,15 +44,12 @@ public class UserDeviceEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public UserDeviceEntity(UserEntity user,
-                            String deviceName,
-                            String deviceToken,
-                            Boolean isActive,
-                            LocalDateTime lastLogin) {
+    public UserDeviceEntity(UserEntity user, String deviceName, String deviceToken, Boolean isActive, Boolean notificationEnabled, LocalDateTime lastLogin) {
         this.user = user;
         this.deviceName = deviceName;
         this.deviceToken = deviceToken;
         this.isActive = isActive != null ? isActive : true;
+        this.notificationEnabled = notificationEnabled != null ? notificationEnabled : true;
         this.lastLogin = lastLogin;
     }
 
@@ -64,5 +62,17 @@ public class UserDeviceEntity {
 
     public void deactivate() {
         this.isActive = false;
+    }
+
+    public void enableNotification() {
+        this.notificationEnabled = true;
+    }
+
+    public void disableNotification() {
+        this.notificationEnabled = false;
+    }
+
+    public void toggleNotification() {
+        this.notificationEnabled = !this.notificationEnabled;
     }
 }
