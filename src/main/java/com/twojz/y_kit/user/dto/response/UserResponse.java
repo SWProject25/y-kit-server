@@ -29,7 +29,7 @@ public class UserResponse {
                 .role(user.getRole())
                 .birthDate(user.getBirthDate())
                 .gender(user.getGender())
-                .region(user.getRegion().getName())
+                .region(user.getRegion() != null ? user.getRegion().getName() : null)
                 .profileStatus(user.getProfileStatus())
                 .build();
     }

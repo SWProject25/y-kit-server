@@ -71,9 +71,9 @@ public class UserEntity extends BaseEntity {
     }
 
     private void updateProfileStatus() {
-        boolean allFilled = this.name != null && this.birthDate != null &&
+        boolean allFilled = this.birthDate != null &&
                 this.gender != null && this.region != null;
-        boolean noneFilled = this.name == null && this.birthDate == null &&
+        boolean noneFilled = this.birthDate == null &&
                 this.gender == null && this.region == null;
 
         if (allFilled) {

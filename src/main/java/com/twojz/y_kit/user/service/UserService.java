@@ -24,7 +24,7 @@ public class UserService {
     private final UserFindService userFindService;
 
     @Transactional
-    public void saveLocalUser(LocalSignUpRequest request) {
+    public UserEntity saveLocalUser(LocalSignUpRequest request) {
         validateEmailNotExists(request.getEmail());
 
         Region region = null;
@@ -32,7 +32,7 @@ public class UserService {
             region = regionFindService.findRegionName(request.getRegion());
         }
 
-        userRepository.save(UserEntity.builder()
+        return userRepository.save(UserEntity.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())

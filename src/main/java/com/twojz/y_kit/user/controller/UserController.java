@@ -18,6 +18,7 @@ import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -30,6 +31,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Tag(name = "회원관리 API")
 @RequestMapping("/api/v1/user")
 @RequiredArgsConstructor
@@ -48,14 +50,15 @@ public class UserController {
     @Operation(summary = "로컬 회원가입")
     @PostMapping("/sign-up")
     public ResponseEntity<Void> signUp(@RequestBody LocalSignUpRequest request) {
-        userService.saveLocalUser(request);
+        UserEntity user = userService.saveLocalUser(request);
 
-        UserEntity user = userFindService.findUser(request.getEmail());
-
-        userNotificationService.sendWelcomeNotification(user);
-
-        if (user.getProfileStatus() != ProfileStatus.COMPLETED) {
-            userNotificationService.sendProfileCompleteReminder(user);
+        try {
+            userNotificationService.sendWelcomeNotification(user);
+            if (user.getProfileStatus() != ProfileStatus.COMPLETED) {
+                userNotificationService.sendProfileCompleteReminder(user);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to send notification for user: {}", user.getId(), e);
         }
 
         return ResponseEntity.status(HttpStatus.CREATED).build();
@@ -90,7 +93,7 @@ public class UserController {
     @PostMapping("/profile/complete")
     public ResponseEntity<Void> completeProfile(
             Authentication authentication,
-            @RequestBody ProfileCompleteRequest request) {
+            @Valid @RequestBody ProfileCompleteRequest request) {
 
         Long userId = extractUserId(authentication);
         userService.completeProfile(userId, request);
@@ -151,7 +154,7 @@ public class UserController {
     @PutMapping("/notification/enable")
     public ResponseEntity<Void> enableNotification(
             Authentication authentication,
-            @RequestBody DeviceTokenRequest request) {
+            @Valid @RequestBody DeviceTokenRequest request) {
         Long userId = extractUserId(authentication);
         userDeviceService.enableNotification(userId, request.getDeviceToken());
         return ResponseEntity.ok().build();
@@ -161,7 +164,7 @@ public class UserController {
     @PutMapping("/notification/disable")
     public ResponseEntity<Void> disableNotification(
             Authentication authentication,
-            @RequestBody DeviceTokenRequest request) {
+            @Valid @RequestBody DeviceTokenRequest request) {
         Long userId = extractUserId(authentication);
         userDeviceService.disableNotification(userId, request.getDeviceToken());
         return ResponseEntity.ok().build();
