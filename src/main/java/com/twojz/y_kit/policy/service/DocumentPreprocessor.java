@@ -30,7 +30,7 @@ public class DocumentPreprocessor {
 
         tempText = tempText.replaceAll("[\r\n\t]+", ", ");
 
-        tempText = tempText.replaceAll("(?<=\\w)\\s*[-\\○●※❍□■◦ㅇ❍•①-⑳]", ", ");
+        tempText = tempText.replaceAll("(?<=[\\w가-힣])\\s*[-○●※❍□■◦ㅇ•①-⑳]", ", ");
 
 
         String cleanedText = CLEANING_PATTERNS.matcher(tempText).replaceAll(" ").trim();

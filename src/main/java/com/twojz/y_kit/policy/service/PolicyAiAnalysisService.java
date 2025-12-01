@@ -51,10 +51,10 @@ public class PolicyAiAnalysisService {
      * JSON 문자열을 AiAnalysis 객체로 역직렬화하는 내부 로직입니다.
      */
     private Mono<AiAnalysis> parseJsonToAiAnalysis(String jsonString) {
+        if (jsonString == null || jsonString.isBlank()) {
+            return Mono.empty();
+        }
         try {
-            if (jsonString == null || jsonString.isBlank()) {
-                return Mono.just(null);
-            }
             AiAnalysis analysis = objectMapper.readValue(jsonString, AiAnalysis.class);
             return Mono.just(analysis);
         } catch (IOException e) {

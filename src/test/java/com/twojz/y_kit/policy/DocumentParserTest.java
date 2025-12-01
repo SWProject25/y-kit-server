@@ -60,7 +60,7 @@ public class DocumentParserTest {
     void testConditionExtraction() {
         String requiredText = "[필수] ① 신청서(서식1) ② 개인정보 동의서";
         String optionalText = "[선택] ⑨ 가족관계증명서 ⑩ 근로계약서";
-        String mixedText = "[필수] A 서류, [선택] B 서류"; // 가장 마지막에 발견된 조건이 반영됨
+        String mixedText = "[필수] A 서류, [선택] B 서류";
 
         // 필수 테스트
         DocumentParsed requiredResult = DocumentPreprocessor.parse(requiredText);
