@@ -37,10 +37,10 @@ public class HotDealListResponse {
     private long commentCount;
 
     @Schema(description = "좋아요 여부", example = "true")
-    private boolean isLiked;
+    private boolean liked;
 
     @Schema(description = "북마크 여부", example = "false")
-    private boolean isBookmarked;
+    private boolean bookmarked;
 
     @Schema(description = "조회수", example = "120")
     private int viewCount;
@@ -67,8 +67,8 @@ public class HotDealListResponse {
                 .category(dto.category())
                 .likeCount(dto.likeCount())
                 .commentCount(dto.commentCount())
-                .isLiked(dto.isLiked())
-                .isBookmarked(dto.isBookmarked())
+                .liked(dto.isLiked())
+                .bookmarked(dto.isBookmarked())
                 .viewCount(dto.viewCount())
                 .regionName(dto.regionName())
                 .createdAt(dto.createdAt())
