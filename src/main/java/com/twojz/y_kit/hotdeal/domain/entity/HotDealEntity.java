@@ -141,10 +141,6 @@ public class HotDealEntity extends BaseEntity {
         }
     }
 
-    public int getCommentCount() {
-        return comments != null ? comments.size() : 0;
-    }
-
     public boolean isExpired() {
         return expiresAt != null && LocalDateTime.now().isAfter(expiresAt);
     }
