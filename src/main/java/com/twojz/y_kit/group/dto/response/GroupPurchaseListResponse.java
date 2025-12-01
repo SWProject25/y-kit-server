@@ -4,6 +4,7 @@ import com.twojz.y_kit.group.domain.dto.GroupPurchaseWithCountsDto;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
@@ -26,8 +27,14 @@ public class GroupPurchaseListResponse {
     @Schema(description = "상태")
     private GroupPurchaseStatus status;
 
+    @Schema(description = "현재 참여 인원")
+    private Integer currentParticipants;
+
     @Schema(description = "마감일")
-    private LocalDateTime deadline;
+    private LocalDate deadline;
+
+    @Schema(description = "지역")
+    private String region;
 
     @Schema(description = "좋아요 수")
     private long likeCount;
@@ -41,8 +48,10 @@ public class GroupPurchaseListResponse {
                 .title(dto.title())
                 .productName(dto.productName())
                 .price(dto.price())
+                .currentParticipants(dto.currentParticipants())
                 .status(dto.status())
                 .deadline(dto.deadline())
+                .region(dto.region())
                 .likeCount(dto.likeCount())
                 .commentCount(dto.commentCount())
                 .build();
