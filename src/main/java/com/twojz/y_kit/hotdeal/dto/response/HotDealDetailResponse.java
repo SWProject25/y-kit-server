@@ -1,8 +1,10 @@
 package com.twojz.y_kit.hotdeal.dto.response;
 
-import com.twojz.y_kit.hotdeal.domain.dto.HotDealWithCountsDto;
-import com.twojz.y_kit.hotdeal.domain.entity.HotDealEntity;
+import com.twojz.y_kit.hotdeal.domain.dto.HotDealDetailDto;
+import com.twojz.y_kit.hotdeal.domain.entity.DealType;
+import com.twojz.y_kit.hotdeal.domain.entity.HotDealCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -16,6 +18,9 @@ public class HotDealDetailResponse {
 
     @Schema(description = "핫딜 제목", example = "파리바게뜨 빵 50% 할인")
     private String title;
+
+    @Schema(description = "상세 설명", example = "전 품목 50% 할인! 선착순 100명")
+    private String content;
 
     @Schema(description = "가게명", example = "파리바게뜨 홍대점")
     private String placeName;
@@ -32,6 +37,18 @@ public class HotDealDetailResponse {
     @Schema(description = "경도", example = "126.9779451")
     private Double longitude;
 
+    @Schema(description = "딜 타입", example = "DISCOUNT")
+    private DealType dealType;
+
+    @Schema(description = "카테고리", example = "FOOD")
+    private HotDealCategory category;
+
+    @Schema(description = "작성자 ID", example = "123")
+    private Long authorId;
+
+    @Schema(description = "작성자 이름", example = "홍길동")
+    private String authorName;
+
     @Schema(description = "좋아요 여부", example = "true")
     private boolean isLiked;
 
@@ -44,41 +61,51 @@ public class HotDealDetailResponse {
     @Schema(description = "댓글 개수", example = "7")
     private long commentCount;
 
+    @Schema(description = "조회수", example = "456")
+    private int viewCount;
+
+    @Schema(description = "지역명", example = "서울특별시 종로구")
+    private String regionName;
+
+    @Schema(description = "만료 일시", example = "2025-12-31T23:59:59")
+    private LocalDateTime expiresAt;
+
+    @Schema(description = "작성일", example = "2024-12-01T14:22:00")
+    private LocalDateTime createdAt;
+
+    @Schema(description = "수정일", example = "2024-12-01T15:30:00")
+    private LocalDateTime updatedAt;
+
     @Schema(description = "댓글 목록")
     private List<HotDealCommentResponse> comments;
 
-    public static HotDealDetailResponse fromDto(HotDealWithCountsDto dto, List<HotDealCommentResponse> comments) {
+    /**
+     * HotDealDetailDto → HotDealDetailResponse 변환
+     */
+    public static HotDealDetailResponse fromDetailDto(HotDealDetailDto dto, List<HotDealCommentResponse> comments) {
         return HotDealDetailResponse.builder()
                 .id(dto.hotDealId())
                 .title(dto.title())
+                .content(dto.content())
                 .placeName(dto.placeName())
                 .address(dto.address())
                 .url(dto.url())
                 .latitude(dto.latitude())
                 .longitude(dto.longitude())
+                .dealType(dto.dealType())
+                .category(dto.category())
+                .authorId(dto.authorId())
+                .authorName(dto.authorName())
                 .isLiked(dto.isLiked())
                 .isBookmarked(dto.isBookmarked())
                 .likeCount(dto.likeCount())
                 .commentCount(dto.commentCount())
+                .viewCount(dto.viewCount())
+                .regionName(dto.regionName())
+                .expiresAt(dto.expiresAt())
+                .createdAt(dto.createdAt())
+                .updatedAt(dto.updatedAt())
                 .comments(comments)
                 .build();
     }
-
-    public static HotDealDetailResponse from(HotDealEntity hotDeal, boolean isLiked, boolean isBookmarked, long likeCount, long commentCount, List<HotDealCommentResponse> comments) {
-        return HotDealDetailResponse.builder()
-                .id(hotDeal.getId())
-                .title(hotDeal.getTitle())
-                .placeName(hotDeal.getPlaceName())
-                .address(hotDeal.getAddress())
-                .url(hotDeal.getUrl())
-                .latitude(hotDeal.getLatitude())
-                .longitude(hotDeal.getLongitude())
-                .isLiked(isLiked)
-                .isBookmarked(isBookmarked)
-                .likeCount(likeCount)
-                .commentCount(commentCount)
-                .comments(comments)
-                .build();
-    }
-
 }
