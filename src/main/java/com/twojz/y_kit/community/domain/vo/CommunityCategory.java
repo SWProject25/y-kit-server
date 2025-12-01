@@ -18,11 +18,10 @@ public enum CommunityCategory {
     private final String description;
 
     public static CommunityCategory of(String description) {
-        for (CommunityCategory category : values()) {
-            if (category.description.equals(description)) {
-                return category;
-            }
+        try {
+            return CommunityCategory.valueOf(description);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("유효하지 않은 카테고리입니다: " + description);
         }
-        throw new IllegalArgumentException("유효하지 않은 카테고리입니다: " + description);
     }
 }
