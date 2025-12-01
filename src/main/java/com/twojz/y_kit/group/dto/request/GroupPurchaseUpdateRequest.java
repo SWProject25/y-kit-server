@@ -45,7 +45,7 @@ public class GroupPurchaseUpdateRequest {
     @Positive(message = "최대 참여 인원은 양수여야 합니다")
     private int maxParticipants;
 
-    @Schema(description = "모집 마감일", example = "2025-12-31T23:59:00")
+    @Schema(description = "모집 마감일", example = "2025-12-31")
     @NotNull(message = "마감일은 필수입니다")
     @Future(message = "마감일은 미래 시간이어야 합니다")
     private LocalDate deadline;

@@ -34,7 +34,7 @@ public class GroupPurchaseCreateRequest {
     @Schema(description = "최대 참여 인원", example = "20")
     private int maxParticipants;
 
-    @Schema(description = "모집 마감일", example = "2025-12-31T23:59:00")
+    @Schema(description = "모집 마감일", example = "2025-12-31")
     private LocalDate deadline;
 
     @Schema(description = "지역코드", example = "11010")
