@@ -37,7 +37,7 @@ public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
              WHEN EXISTS(SELECT 1 FROM HotDealBookmarkEntity b WHERE b.hotDeal = h AND b.user.id = :userId) THEN true 
              ELSE false END,
         h.region.code,
-        h.region.name,
+        h.region.fullName,
         h.createdAt,
         h.expiresAt
     )
@@ -71,7 +71,7 @@ public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
              WHEN EXISTS(SELECT 1 FROM HotDealBookmarkEntity b WHERE b.hotDeal = h AND b.user.id = :userId) THEN true 
              ELSE false END,
         h.region.code,
-        h.region.name,
+        h.region.fullName,
         h.createdAt,
         h.expiresAt
     )
@@ -110,7 +110,7 @@ public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
         CASE WHEN EXISTS(SELECT 1 FROM HotDealBookmarkEntity b WHERE b.hotDeal = h AND b.user.id = :userId) THEN true 
              ELSE false END,
         h.region.code,
-        h.region.name,
+        h.region.fullName,
         h.createdAt,
         h.expiresAt
     )
@@ -143,7 +143,7 @@ public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
              ELSE false END,
         true,
         h.region.code,
-        h.region.name,
+        h.region.fullName,
         h.createdAt,
         h.expiresAt
     )
@@ -177,7 +177,7 @@ public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
         CASE WHEN EXISTS(SELECT 1 FROM HotDealBookmarkEntity b WHERE b.hotDeal = h AND b.user.id = :userId) THEN true 
              ELSE false END,
         h.region.code,
-        h.region.name,
+        h.region.fullName,
         h.createdAt,
         h.expiresAt
     )
@@ -217,7 +217,7 @@ public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
              WHEN EXISTS(SELECT 1 FROM HotDealBookmarkEntity b WHERE b.hotDeal = h AND b.user.id = :userId) THEN true 
              ELSE false END,
         h.region.code,
-        h.region.name,
+        h.region.fullName,
         h.expiresAt,
         h.createdAt,
         h.updatedAt

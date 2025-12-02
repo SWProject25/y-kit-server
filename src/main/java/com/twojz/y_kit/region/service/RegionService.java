@@ -165,21 +165,6 @@ public class RegionService {
         return savedRegions.size();
     }
 
-    private int saveRegions(List<VWorldRegionItem> regionInfos, RegionLevel level, Map<String, Region> regionMap) {
-        List<Region> entities = regionInfos.stream()
-                .map(info -> {
-                    String parentCode = getParentCode(info.getAdmCode(), level);
-                    Region parent = parentCode != null ? regionMap.get(parentCode) : null;
-                    return toEntity(info, level, parent);
-                })
-                .toList();
-
-        List<Region> savedRegions = regionRepository.saveAll(entities);
-        savedRegions.forEach(region -> regionMap.put(region.getCode(), region));
-
-        return savedRegions.size();
-    }
-
     private String getParentCode(String admCode, RegionLevel level) {
         if (admCode == null) return null;
 
@@ -198,6 +183,7 @@ public class RegionService {
         return Region.builder()
                 .code(item.getAdmCode())
                 .name(parsedName)
+                .fullName(rawName)
                 .level(level)
                 .parent(parent)
                 .build();

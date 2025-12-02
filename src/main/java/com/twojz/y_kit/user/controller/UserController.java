@@ -120,6 +120,21 @@ public class UserController {
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * 프로필 수정 (기존 정보 업데이트)
+     */
+    @Operation(summary = "프로필 수정")
+    @PutMapping("/profile")
+    public ResponseEntity<Void> updateProfile(
+            Authentication authentication,
+            @Valid @RequestBody ProfileCompleteRequest request) {
+
+        Long userId = extractUserId(authentication);
+        userService.completeProfile(userId, request);
+
+        return ResponseEntity.ok().build();
+    }
+
     @Operation(summary = "FCM 디바이스 토큰 등록")
     @PostMapping("/device/register")
     public ResponseEntity<Void> registerDeviceToken(
