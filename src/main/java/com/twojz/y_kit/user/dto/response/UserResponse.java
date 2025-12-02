@@ -19,7 +19,6 @@ public class UserResponse {
     private final Long id;
     private final String email;
     private final Role role;
-    private final String socialId;
     private final LoginProvider loginProvider;
     private final String name;
     private final String nickName;
@@ -36,7 +35,6 @@ public class UserResponse {
                 .id(user.getId())
                 .email(user.getEmail())
                 .role(user.getRole())
-                .socialId(user.getSocialId())
                 .loginProvider(user.getLoginProvider())
                 .name(user.getName())
                 .nickName(user.getNickName())
