@@ -132,8 +132,7 @@ public class UserEntity extends BaseEntity {
         }
     }
 
-    public Optional<Integer> calculateAge() {
-        return Optional.ofNullable(birthDate)
-                .map(bd -> Period.between(bd, LocalDate.now()).getYears());
+    public int calculateAge() {
+        return Period.between(birthDate, LocalDate.now()).getYears();
     }
 }
