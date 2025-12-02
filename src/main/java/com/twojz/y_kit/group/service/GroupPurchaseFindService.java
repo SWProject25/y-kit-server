@@ -8,6 +8,7 @@ import com.twojz.y_kit.group.dto.response.GroupPurchaseCommentResponse;
 import com.twojz.y_kit.group.dto.response.GroupPurchaseDetailResponse;
 import com.twojz.y_kit.group.dto.response.GroupPurchaseListResponse;
 import com.twojz.y_kit.group.repository.GroupPurchaseCommentRepository;
+import com.twojz.y_kit.group.repository.GroupPurchaseParticipantRepository;
 import com.twojz.y_kit.group.repository.GroupPurchaseRepository;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class GroupPurchaseFindService {
     private final GroupPurchaseRepository groupPurchaseRepository;
+    private final GroupPurchaseParticipantRepository participantRepository;
     private final GroupPurchaseCommentRepository commentRepository;
 
     public GroupPurchaseEntity findById(Long groupPurchaseId) {
@@ -34,6 +36,7 @@ public class GroupPurchaseFindService {
                 .orElseThrow(() -> new IllegalArgumentException("공동구매를 찾을 수 없습니다."));
 
         GroupPurchaseEntity gp = findById(gpId);
+        String authorName = gp.getUser().getName();
 
         List<GroupPurchaseCommentResponse> comments = commentRepository
                 .findByGroupPurchaseOrderByCreatedAtDesc(gp)
@@ -41,7 +44,15 @@ public class GroupPurchaseFindService {
                 .map(GroupPurchaseCommentResponse::from)
                 .toList();
 
-        return GroupPurchaseDetailResponse.fromDto(dto, comments);
+        boolean isParticipating = participantRepository
+                .existsByUserIdAndGroupPurchaseId(userId, gpId);
+
+        return GroupPurchaseDetailResponse.fromDto(
+                dto,
+                comments,
+                authorName,
+                isParticipating
+        );
     }
 
     public PageResponse<GroupPurchaseListResponse> getGroupPurchaseList(Long userId, Pageable pageable) {

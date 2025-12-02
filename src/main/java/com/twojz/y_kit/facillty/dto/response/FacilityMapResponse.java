@@ -26,6 +26,9 @@ public class FacilityMapResponse {
     @Schema(description = "시설 이미지 URL", example = "https://example.com/image.jpg")
     private String imgUrl;
 
+    @Schema(description = "카테고리", example = "SPORTS")
+    private String category;
+
     public static FacilityMapResponse from(FacilityEntity e) {
         return new FacilityMapResponse(
                 e.getId(),
@@ -33,7 +36,8 @@ public class FacilityMapResponse {
                 e.getLatitude(),
                 e.getLongitude(),
                 e.getAddress(),
-                e.getImgUrl()
+                e.getImgUrl(),
+                e.getCategory() != null ? e.getCategory().name() : null
         );
     }
 }

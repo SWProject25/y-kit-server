@@ -12,6 +12,8 @@ public interface RegionRepository extends JpaRepository<Region, String> {
 
     Optional<Region> findByName(String name);
 
+    Optional<Region> findByFullName(String fullName);
+
     List<Region> findAllByCodeIn(Collection<String> codes);
 
     List<Region> findByLevel(RegionLevel level);

@@ -3,6 +3,7 @@ package com.twojz.y_kit.user.service;
 import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.region.service.RegionFindService;
 import com.twojz.y_kit.user.auth.OAuth2Attributes;
+import com.twojz.y_kit.user.dto.request.ProfileCompleteRequest;
 import com.twojz.y_kit.user.entity.LoginProvider;
 import com.twojz.y_kit.user.entity.Role;
 import com.twojz.y_kit.user.entity.UserEntity;
@@ -20,9 +21,10 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final RegionFindService regionFindService;
+    private final UserFindService userFindService;
 
     @Transactional
-    public void saveLocalUser(LocalSignUpRequest request) {
+    public UserEntity saveLocalUser(LocalSignUpRequest request) {
         validateEmailNotExists(request.getEmail());
 
         Region region = null;
@@ -30,11 +32,12 @@ public class UserService {
             region = regionFindService.findRegionName(request.getRegion());
         }
 
-        userRepository.save(UserEntity.builder()
+        return userRepository.save(UserEntity.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
-                .age(request.getAge())
+                .nickName(createUniqueNickname())
+                .birthDate(request.getBirthDate())
                 .gender(request.getGender())
                 .role(Role.USER)
                 .loginProvider(LoginProvider.LOCAL)
@@ -50,13 +53,53 @@ public class UserService {
                 )
                 .orElseGet(() -> {
                     validateEmailNotExists(attributes.getEmail());
-                    return userRepository.save(attributes.toEntity());
+
+                    UserEntity user = UserEntity.builder()
+                            .email(attributes.getEmail())
+                            .name(attributes.getName())
+                            .nickName(createUniqueNickname())
+                            .password(null)
+                            .socialId(attributes.getSocialId())
+                            .loginProvider(attributes.getLoginProvider())
+                            .role(Role.USER)
+                            .build();
+
+                    return userRepository.save(user);
                 });
+    }
+
+    @Transactional
+    public void completeProfile(Long userId, ProfileCompleteRequest request) {
+        UserEntity user = userFindService.findUser(userId);
+
+        Region region = null;
+        if (request.getRegion() != null && !request.getRegion().isEmpty()) {
+            region = regionFindService.findRegionCode(request.getRegion());
+        }
+
+        user.completeProfile(
+                request.getName(),
+                request.getNickName(),
+                request.getBirthDate(),
+                request.getGender(),
+                region,
+                request.getEmploymentStatus(),
+                request.getEducationLevel(),
+                request.getMajor()
+        );
     }
 
     private void validateEmailNotExists(String email) {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
+    }
+
+    private String createUniqueNickname() {
+        String nickname;
+        do {
+            nickname = NicknameGenerator.generate();
+        } while (userRepository.existsByNickName(nickname));
+        return nickname;
     }
 }

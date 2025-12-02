@@ -18,7 +18,7 @@ import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.region.service.RegionFindService;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.UserFindService;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,13 +47,14 @@ public class GroupPurchaseCommandService {
         GroupPurchaseEntity gp = GroupPurchaseEntity.builder()
                 .user(user)
                 .title(request.getTitle())
+                .content(request.getContent())
                 .productName(request.getProductName())
                 .productLink(request.getProductLink())
+                .contact(request.getContact())
                 .price(request.getPrice())
                 .minParticipants(request.getMinParticipants())
                 .maxParticipants(request.getMaxParticipants())
                 .deadline(request.getDeadline())
-                .status(request.getStatus())
                 .region(region)
                 .build();
 
@@ -75,13 +76,14 @@ public class GroupPurchaseCommandService {
 
         gp.update(
                 request.getTitle(),
+                request.getContent(),
                 request.getProductName(),
                 request.getProductLink(),
+                request.getContact(),
                 request.getPrice(),
                 request.getMinParticipants(),
                 request.getMaxParticipants(),
                 request.getDeadline(),
-                request.getStatus(),
                 region
         );
     }
@@ -165,7 +167,7 @@ public class GroupPurchaseCommandService {
             throw new IllegalArgumentException("모집이 마감된 공동구매입니다.");
         }
 
-        if (LocalDateTime.now().isAfter(gp.getDeadline())) {
+        if (LocalDate.now().isAfter(gp.getDeadline())) {
             throw new IllegalArgumentException("마감일이 지난 공동구매입니다.");
         }
 

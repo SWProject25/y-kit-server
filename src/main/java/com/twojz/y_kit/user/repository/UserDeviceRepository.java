@@ -10,41 +10,17 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface UserDeviceRepository extends JpaRepository<UserDeviceEntity, Long> {
-    /**
-     * 디바이스 토큰으로 조회
-     */
-    Optional<UserDeviceEntity> findByDeviceToken(String deviceToken);
+    // 특정 사용자의 특정 디바이스 토큰 조회
+    Optional<UserDeviceEntity> findByUserIdAndDeviceToken(Long userId, String deviceToken);
 
-    /**
-     * 사용자의 모든 디바이스 조회
-     */
-    @Query("SELECT d FROM UserDeviceEntity d " +
-            "WHERE d.user.id = :userId " +
-            "ORDER BY d.lastLogin DESC")
-    List<UserDeviceEntity> findAllByUserId(@Param("userId") Long userId);
+    // 디바이스 토큰으로 조회 (첫 번째만)
+    Optional<UserDeviceEntity> findFirstByDeviceToken(String deviceToken);
 
-    /**
-     * 사용자의 활성 디바이스만 조회
-     */
-    @Query("SELECT d FROM UserDeviceEntity d " +
-            "WHERE d.user.id = :userId " +
-            "AND d.isActive = true " +
-            "ORDER BY d.lastLogin DESC")
-    List<UserDeviceEntity> findActiveDevicesByUserId(@Param("userId") Long userId);
+    // 활성화되고 알림 허용된 디바이스 토큰만 조회
+    @Query("SELECT ud.deviceToken FROM UserDeviceEntity ud " +
+            "WHERE ud.user.id = :userId AND ud.isActive = true AND ud.notificationEnabled = true")
+    List<String> findNotificationEnabledTokensByUserId(Long userId);
 
-    /**
-     * 활성 디바이스 토큰 목록 조회
-     */
-    @Query("SELECT d.deviceToken FROM UserDeviceEntity d " +
-            "WHERE d.user.id = :userId " +
-            "AND d.isActive = true")
-    List<String> findActiveDeviceTokensByUserId(@Param("userId") Long userId);
-
-    /**
-     * 여러 사용자의 활성 디바이스 토큰 조회
-     */
-    @Query("SELECT d.deviceToken FROM UserDeviceEntity d " +
-            "WHERE d.user.id IN :userIds " +
-            "AND d.isActive = true")
-    List<String> findActiveDeviceTokensByUserIds(@Param("userIds") List<Long> userIds);
+    // 활성화된 모든 디바이스 조회
+    List<UserDeviceEntity> findByUserIdAndIsActiveTrue(Long userId);
 }

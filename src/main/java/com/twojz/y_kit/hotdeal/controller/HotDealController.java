@@ -4,7 +4,6 @@ import com.twojz.y_kit.global.dto.PageResponse;
 import com.twojz.y_kit.hotdeal.dto.request.*;
 import com.twojz.y_kit.hotdeal.dto.response.*;
 import com.twojz.y_kit.hotdeal.service.HotDealCommandService;
-import com.twojz.y_kit.hotdeal.service.HotDealCommentFindService;
 import com.twojz.y_kit.hotdeal.service.HotDealFindService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,18 +42,20 @@ public class HotDealController {
     @GetMapping
     @Operation(summary = "핫딜 목록 조회")
     public PageResponse<HotDealListResponse> getHotDeals(
-            @RequestParam(required = false) String keyword,
+            HotDealSearchRequest request,
             Authentication authentication,
             Pageable pageable
     ) {
         Long userId = extractUserId(authentication);
 
-        Page<HotDealListResponse> page;
-        if (keyword != null) {
-            page = hotDealFindService.searchHotDeals(keyword, userId, pageable);
-        } else {
-            page = hotDealFindService.getHotDealList(userId, pageable);
-        }
+        Page<HotDealListResponse> page = hotDealFindService.searchHotDeals(
+                request.getKeyword(),
+                request.getDealType(),
+                request.getCategory(),
+                request.getRegionCode(),
+                userId,
+                pageable
+        );
 
         return new PageResponse<>(page);
     }

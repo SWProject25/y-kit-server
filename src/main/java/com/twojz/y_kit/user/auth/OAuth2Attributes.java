@@ -38,15 +38,4 @@ public class OAuth2Attributes {
                 .loginProvider(LoginProvider.KAKAO)
                 .build();
     }
-
-    public UserEntity toEntity() {
-        return UserEntity.builder()
-                .email(email)
-                .name(name)
-                .password(null)
-                .socialId(socialId)
-                .loginProvider(loginProvider)
-                .role(Role.USER)
-                .build();
-    }
 }

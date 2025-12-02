@@ -4,12 +4,14 @@ import com.twojz.y_kit.global.entity.BaseEntity;
 import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.user.entity.UserEntity;
 import jakarta.persistence.*;
+import java.time.LocalDate;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Getter
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "group_purchase")
 @Entity
@@ -21,10 +23,15 @@ public class GroupPurchaseEntity extends BaseEntity {
     @Column(nullable = false)
     private String title;
 
+    private String content;
+
     @Column(nullable = false)
     private String productName;
 
     private String productLink;
+
+    @Column(nullable = false)
+    private String contact;
 
     @Column(nullable = false, precision = 15, scale = 2)
     private BigDecimal price;
@@ -35,12 +42,14 @@ public class GroupPurchaseEntity extends BaseEntity {
     @Column(nullable = false)
     private Integer maxParticipants;
 
+    @Builder.Default
     @Column(nullable = false)
     private Integer currentParticipants = 0;
 
     @Column(nullable = false)
-    private LocalDateTime deadline;
+    private LocalDate deadline;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 10)
     private GroupPurchaseStatus status = GroupPurchaseStatus.OPEN;
@@ -49,37 +58,22 @@ public class GroupPurchaseEntity extends BaseEntity {
     @JoinColumn(name = "region_id")
     private Region region;
 
-    @Builder
-    public GroupPurchaseEntity(UserEntity user, String title, String productName, String productLink,
-                               BigDecimal price, Integer minParticipants, Integer maxParticipants,
-                               LocalDateTime deadline, GroupPurchaseStatus status, Region region) {
-        this.user = user;
+    public void update(String title, String content, String productName, String productLink, String contact,
+                       BigDecimal price, Integer minParticipants, Integer maxParticipants,
+                       LocalDate deadline, Region region) {
         this.title = title;
+        this.content = content;
         this.productName = productName;
         this.productLink = productLink;
+        this.contact = contact;
         this.price = price;
         this.minParticipants = minParticipants;
         this.maxParticipants = maxParticipants;
         this.deadline = deadline;
-        this.status = status != null ? status : GroupPurchaseStatus.OPEN;
         this.region = region;
     }
 
     public void increaseParticipants() {
         this.currentParticipants += 1;
-    }
-
-    public void update(String title, String productName, String productLink,
-                       BigDecimal price, Integer minParticipants, Integer maxParticipants,
-                       LocalDateTime deadline, GroupPurchaseStatus status, Region region) {
-        this.title = title;
-        this.productName = productName;
-        this.productLink = productLink;
-        this.price = price;
-        this.minParticipants = minParticipants;
-        this.maxParticipants = maxParticipants;
-        this.deadline = deadline;
-        this.status = (status != null) ? status : this.status;
-        this.region = region;
     }
 }

@@ -165,21 +165,6 @@ public class RegionService {
         return savedRegions.size();
     }
 
-    private int saveRegions(List<VWorldRegionItem> regionInfos, RegionLevel level, Map<String, Region> regionMap) {
-        List<Region> entities = regionInfos.stream()
-                .map(info -> {
-                    String parentCode = getParentCode(info.getAdmCode(), level);
-                    Region parent = parentCode != null ? regionMap.get(parentCode) : null;
-                    return toEntity(info, level, parent);
-                })
-                .toList();
-
-        List<Region> savedRegions = regionRepository.saveAll(entities);
-        savedRegions.forEach(region -> regionMap.put(region.getCode(), region));
-
-        return savedRegions.size();
-    }
-
     private String getParentCode(String admCode, RegionLevel level) {
         if (admCode == null) return null;
 
@@ -192,11 +177,22 @@ public class RegionService {
     }
 
     private Region toEntity(VWorldRegionItem item, RegionLevel level, Region parent) {
+        String rawName = item.getAdmCodeNm() != null ? item.getAdmCodeNm() : item.getLowestAdmCodeNm();
+        String parsedName = extractLastName(rawName);
+
         return Region.builder()
                 .code(item.getAdmCode())
-                .name(item.getAdmCodeNm() != null ? item.getAdmCodeNm() : item.getLowestAdmCodeNm())
+                .name(parsedName)
+                .fullName(rawName)
                 .level(level)
                 .parent(parent)
                 .build();
+    }
+
+    private String extractLastName(String fullName) {
+        if (fullName == null || fullName.isBlank()) return fullName;
+
+        String[] parts = fullName.trim().split("\\s+");
+        return parts[parts.length - 1];
     }
 }
