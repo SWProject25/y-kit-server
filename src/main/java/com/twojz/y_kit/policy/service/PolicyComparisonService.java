@@ -110,6 +110,7 @@ public class PolicyComparisonService {
         for (int i = 0; i < policies.size(); i++) {
             PolicyEntity p = policies.get(i);
             PolicyDetailEntity d = p.getDetail();
+            if (d == null) continue;
 
             sb.append("  {\n")
                     .append("    \"name\": \"").append(escape(d.getPlcyNm())).append("\",\n")

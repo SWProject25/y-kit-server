@@ -8,6 +8,7 @@ import com.twojz.y_kit.region.entity.Region;
 import jakarta.persistence.*;
 import java.time.LocalDate;
 import java.time.Period;
+import java.util.Optional;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.Builder;
@@ -131,7 +132,8 @@ public class UserEntity extends BaseEntity {
         }
     }
 
-    public int calculateAge() {
-        return Period.between(birthDate, LocalDate.now()).getYears();
+    public Optional<Integer> calculateAge() {
+        return Optional.ofNullable(birthDate)
+                .map(bd -> Period.between(bd, LocalDate.now()).getYears());
     }
 }
