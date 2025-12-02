@@ -9,6 +9,8 @@ import com.twojz.y_kit.policy.dto.response.PolicyListResponse;
 import com.twojz.y_kit.policy.repository.PolicyCategoryRepository;
 import com.twojz.y_kit.policy.repository.PolicyKeywordRepository;
 import com.twojz.y_kit.policy.repository.PolicyRepository;
+import com.twojz.y_kit.user.entity.UserEntity;
+import com.twojz.y_kit.user.repository.UserRepository;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +29,11 @@ public class PolicyFindService {
     private final PolicyMapper policyMapper;
     private final PolicyCategoryRepository policyCategoryRepository;
     private final PolicyKeywordRepository policyKeywordRepository;
+    private final UserRepository userRepository;
+
+    public List<PolicyEntity> getPoliciesByIds(List<Long> ids) {
+        return policyRepository.findAllById(ids);
+    }
 
     /**
      * 정책 목록 조회 - 기본
@@ -58,7 +65,7 @@ public class PolicyFindService {
     }
 
     /**
-     * 추천 정책 조회 - Service
+     * 추천 정책 조회 - Service (파라미터 기반)
      */
     public PageResponse<PolicyListResponse> getRecommendedPolicies(
             Integer age,
@@ -91,6 +98,30 @@ public class PolicyFindService {
         Page<PolicyListResponse> mappedPage = new PageImpl<>(content, pageable, policyPage.getTotalElements());
 
         return new PageResponse<>(mappedPage);
+    }
+
+    /**
+     * 내 맞춤 추천 정책 조회 - 로그인한 사용자 기반
+     */
+    public List<PolicyListResponse> getMyRecommendedPolicies(Long userId, int limit) {
+        // 사용자 정보 조회
+        UserEntity user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다. ID: " + userId));
+
+        // 사용자의 생년월일과 지역이 없으면 빈 리스트 반환
+        if (user.getBirthDate() == null || user.getRegion() == null) {
+            return List.of();
+        }
+
+        // 나이 계산
+        int age = user.calculateAge();
+        String regionCode = user.getRegion().getCode();
+
+        // 추천 정책 조회 (Pageable 생성)
+        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
+        PageResponse<PolicyListResponse> response = getRecommendedPolicies(age, regionCode, null, pageable);
+
+        return response.getContent();
     }
 
     /**

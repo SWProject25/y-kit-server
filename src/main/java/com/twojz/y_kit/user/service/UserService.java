@@ -36,6 +36,7 @@ public class UserService {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .name(request.getName())
+                .nickName(createUniqueNickname())
                 .birthDate(request.getBirthDate())
                 .gender(request.getGender())
                 .role(Role.USER)
@@ -52,7 +53,18 @@ public class UserService {
                 )
                 .orElseGet(() -> {
                     validateEmailNotExists(attributes.getEmail());
-                    return userRepository.save(attributes.toEntity());
+
+                    UserEntity user = UserEntity.builder()
+                            .email(attributes.getEmail())
+                            .name(attributes.getName())
+                            .nickName(createUniqueNickname())
+                            .password(null)
+                            .socialId(attributes.getSocialId())
+                            .loginProvider(attributes.getLoginProvider())
+                            .role(Role.USER)
+                            .build();
+
+                    return userRepository.save(user);
                 });
     }
 
@@ -61,15 +73,19 @@ public class UserService {
         UserEntity user = userFindService.findUser(userId);
 
         Region region = null;
-        if (request.getRegion() != null) {
-            region = regionFindService.findRegionName(request.getRegion());
+        if (request.getRegion() != null && !request.getRegion().isEmpty()) {
+            region = regionFindService.findRegionCode(request.getRegion());
         }
 
         user.completeProfile(
                 request.getName(),
+                request.getNickName(),
                 request.getBirthDate(),
                 request.getGender(),
-                region
+                region,
+                request.getEmploymentStatus(),
+                request.getEducationLevel(),
+                request.getMajor()
         );
     }
 
@@ -77,5 +93,13 @@ public class UserService {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("이미 가입된 이메일입니다.");
         }
+    }
+
+    private String createUniqueNickname() {
+        String nickname;
+        do {
+            nickname = NicknameGenerator.generate();
+        } while (userRepository.existsByNickName(nickname));
+        return nickname;
     }
 }

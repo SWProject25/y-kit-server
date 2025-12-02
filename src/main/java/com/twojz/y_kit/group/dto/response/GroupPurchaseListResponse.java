@@ -30,6 +30,9 @@ public class GroupPurchaseListResponse {
     @Schema(description = "현재 참여 인원")
     private Integer currentParticipants;
 
+    @Schema(description = "최대 참여 인원")
+    private Integer maxParticipants;
+
     @Schema(description = "마감일")
     private LocalDate deadline;
 
@@ -49,6 +52,7 @@ public class GroupPurchaseListResponse {
                 .productName(dto.productName())
                 .price(dto.price())
                 .currentParticipants(dto.currentParticipants())
+                .maxParticipants(dto.maxParticipants())
                 .status(dto.status())
                 .deadline(dto.deadline())
                 .region(dto.region())

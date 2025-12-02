@@ -27,6 +27,8 @@ public class Region {
     @Column(nullable = false)
     private String name;
 
+    private String fullName;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private RegionLevel level;
@@ -39,8 +41,9 @@ public class Region {
     private final List<Region> children = new ArrayList<>();
 
     @Builder
-    public Region(String name, String code, RegionLevel level, Region parent) {
+    public Region(String name, String fullName, String code, RegionLevel level, Region parent) {
         this.name = name;
+        this.fullName = fullName;
         this.code = code;
         this.level = level;
         this.parent = parent;

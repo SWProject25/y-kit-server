@@ -25,6 +25,11 @@ public class RegionFindService {
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역입니다."));
     }
 
+    public Region findRegionFullName(String fullName) {
+        return regionRepository.findByFullName(fullName)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 지역입니다."));
+    }
+
     public List<RegionResponse> findSido() {
         return regionRepository.findByLevel(RegionLevel.SIDO)
                 .stream()
