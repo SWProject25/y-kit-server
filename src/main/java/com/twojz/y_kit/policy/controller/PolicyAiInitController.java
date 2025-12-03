@@ -5,6 +5,7 @@ import com.twojz.y_kit.policy.service.PolicyAiAnalysisService;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class PolicyAiInitController {
     private final PolicyAiAnalysisService aiAnalysisService;
 
-    private volatile boolean isRunning = false;
+    private final AtomicBoolean isRunning = new AtomicBoolean(false);
     private final AtomicInteger processed = new AtomicInteger(0);
     private final AtomicInteger success = new AtomicInteger(0);
     private final AtomicInteger failed = new AtomicInteger(0);
@@ -33,18 +34,18 @@ public class PolicyAiInitController {
     public ResponseEntity<?> startInit(
             @RequestParam(defaultValue = "3000") long delayMs) {
 
-        if (isRunning) {
+        if (!isRunning.compareAndSet(false, true)) {
             return ResponseEntity.badRequest()
                     .body(Map.of("error", "이미 실행 중입니다. /init/status 확인하세요"));
         }
 
         long remaining = aiAnalysisService.countPoliciesWithoutAi();
         if (remaining == 0) {
+            isRunning.set(false);
             return ResponseEntity.ok()
                     .body(Map.of("message", "모든 정책의 AI 분석이 완료되었습니다"));
         }
 
-        isRunning = true;
         processed.set(0);
         success.set(0);
         failed.set(0);
@@ -57,7 +58,7 @@ public class PolicyAiInitController {
                 log.error("AI 분석 초기화 중 예외 발생", e);
                 lastError = e.getMessage();
             } finally {
-                isRunning = false;
+                isRunning.set(false);
             }
         }, "ai-analysis-init").start();
 
@@ -76,7 +77,7 @@ public class PolicyAiInitController {
         long total = remaining + processed.get();
 
         Map<String, Object> status = new LinkedHashMap<>();
-        status.put("isRunning", isRunning);
+        status.put("running", isRunning.get());
         status.put("processed", processed.get());
         status.put("success", success.get());
         status.put("failed", failed.get());
@@ -89,9 +90,9 @@ public class PolicyAiInitController {
             status.put("lastError", lastError);
         }
 
-        if (!isRunning && remaining > 0) {
+        if (!isRunning.get() && remaining > 0) {
             status.put("message", "중단됨 또는 에러 발생. 다시 시작하려면 /init/start 호출");
-        } else if (!isRunning && remaining == 0) {
+        } else if (!isRunning.get() && remaining == 0) {
             status.put("message", "✅ 모든 정책의 AI 분석 완료!");
         }
 
@@ -100,17 +101,17 @@ public class PolicyAiInitController {
 
     @PostMapping("/init/stop")
     public ResponseEntity<?> stopInit() {
-        if (!isRunning) {
+        if (!isRunning.get()) {
             return ResponseEntity.badRequest()
-                    .body(Map.of("error", "실행 중이 아닙니다"));
+                    .body(Map.of("error", "실행 중인 작업이 없습니다"));
         }
 
-        isRunning = false;
+        isRunning.set(false);
 
         return ResponseEntity.ok(Map.of(
                 "message", "중단 요청됨. 현재 처리 중인 정책 완료 후 중단됩니다",
                 "processed", processed.get(),
-                "remaining", aiAnalysisService.countPoliciesWithoutAi() // ✅
+                "remaining", aiAnalysisService.countPoliciesWithoutAi()
         ));
     }
 
@@ -123,7 +124,7 @@ public class PolicyAiInitController {
         int consecutiveFailures = 0;
         final int MAX_CONSECUTIVE_FAILURES = 10;
 
-        while (isRunning) {
+        while (isRunning.get()) {
             Page<PolicyEntity> page = aiAnalysisService
                     .findPoliciesWithoutAi(0, pageSize);
 
@@ -135,7 +136,7 @@ public class PolicyAiInitController {
             log.info("=== 배치 처리 시작 ({}개 정책) ===", page.getContent().size());
 
             for (PolicyEntity policy : page.getContent()) {
-                if (!isRunning) {
+                if (!isRunning.get()) {
                     log.warn("중단 요청으로 인한 종료");
                     return;
                 }
@@ -157,7 +158,7 @@ public class PolicyAiInitController {
                         log.error("!!! 연속 {}회 실패. OpenAI 크레딧 또는 Rate Limit 확인 필요 !!!",
                                 consecutiveFailures);
                         log.error("충전 후 다시 /init/start 호출하면 이어서 진행됩니다");
-                        isRunning = false;
+                        isRunning.set(false);
                         return;
                     }
                 }
