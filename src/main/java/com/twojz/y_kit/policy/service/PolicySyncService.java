@@ -6,7 +6,6 @@ import com.twojz.y_kit.policy.domain.entity.*;
 import com.twojz.y_kit.policy.domain.dto.PolicyApplicationDto;
 import com.twojz.y_kit.policy.domain.dto.PolicyDetailDto;
 import com.twojz.y_kit.policy.domain.dto.PolicyQualificationDto;
-import com.twojz.y_kit.policy.domain.vo.AiAnalysis;
 import com.twojz.y_kit.policy.domain.vo.DocumentParsed;
 import com.twojz.y_kit.policy.repository.*;
 import com.twojz.y_kit.region.entity.Region;
@@ -41,7 +40,6 @@ public class PolicySyncService {
     private final PolicyRegionRepository policyRegionRepository;
     private final RegionRepository regionRepository;
     private final PolicyMapper mapper;
-    private final PolicyAiAnalysisService policyAiAnalysisService;
 
     public void syncAllPolicies() {
         log.info("정책 동기화 시작");
@@ -139,22 +137,6 @@ public class PolicySyncService {
         updateCategoryMappings(apiPolicy, policy, categoryCache);
         updateKeywordMappings(apiPolicy, policy, keywordCache);
         updateRegionMappings(apiPolicy, policy);
-
-        try {
-            if (policy.getAiAnalysis() != null) return;
-
-            String policyName = apiPolicy.getPlcyNm();
-            String policyDescription = apiPolicy.getPlcyExplnCn();
-
-            AiAnalysis aiAnalysis = policyAiAnalysisService.generateAnalysis(policyName, policyDescription).block();
-
-            if (aiAnalysis != null) {
-                policy.updateAiAnalysis(aiAnalysis);
-            }
-
-        } catch (Exception e) {
-            log.error("AI 분석 저장 실패: {}", apiPolicy.getPlcyNo(), e);
-        }
     }
 
     private void updateOrCreateDetail(PolicyEntity policy, PolicyDetailDto dto) {
@@ -238,7 +220,7 @@ public class PolicySyncService {
         }
 
         if (StringUtils.hasText(apiPolicy.getMclsfNm())) {
-            PolicyCategoryEntity mainParent = mappings.isEmpty() ? null : mappings.get(0).getCategory();
+            PolicyCategoryEntity mainParent = mappings.isEmpty() ? null : mappings.getFirst().getCategory();
 
             parse.apply(apiPolicy.getMclsfNm()).forEach(name -> {
                 PolicyCategoryEntity sub = findOrCreateCategoryWithCache(name, 2, mainParent, categoryCache);
