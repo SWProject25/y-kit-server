@@ -8,7 +8,6 @@ import com.twojz.y_kit.policy.dto.response.PolicyKeywordResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyListResponse;
 import com.twojz.y_kit.policy.service.PolicyComparisonService;
 import com.twojz.y_kit.policy.service.PolicyFindService;
-import com.twojz.y_kit.user.entity.UserEntity;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
@@ -61,10 +60,9 @@ public class PolicyController {
     public PageResponse<PolicyListResponse> getRecommendedPolicies(
             @RequestParam(required = false) Integer age,
             @RequestParam(required = false) String regionCode,
-            @RequestParam(required = false) Long categoryId,
             @ParameterObject Pageable pageable
     ) {
-        return policyFindService.getRecommendedPolicies(age, regionCode, categoryId, pageable);
+        return policyFindService.getRecommendedPolicies(age, regionCode, pageable);
     }
 
     /**

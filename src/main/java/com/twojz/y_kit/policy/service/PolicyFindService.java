@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,14 +71,11 @@ public class PolicyFindService {
     public PageResponse<PolicyListResponse> getRecommendedPolicies(
             Integer age,
             String regionCode,
-            Long categoryId,
             Pageable pageable
     ) {
-        LocalDate today = LocalDate.now();
-
         // DB에서 나이 + 지역 + 신청 가능 + 카테고리 조건까지 모두 적용
         Page<PolicyEntity> policyPage = policyRepository.findRecommendedWithCategory(
-                age, regionCode, today, categoryId, pageable
+                age, regionCode, pageable
         );
 
         List<PolicyEntity> policies = policyPage.getContent();
@@ -118,8 +116,8 @@ public class PolicyFindService {
         String regionCode = user.getRegion().getCode();
 
         // 추천 정책 조회 (Pageable 생성)
-        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, limit);
-        PageResponse<PolicyListResponse> response = getRecommendedPolicies(age, regionCode, null, pageable);
+        Pageable pageable = PageRequest.of(0, limit);
+        PageResponse<PolicyListResponse> response = getRecommendedPolicies(age, regionCode, pageable);
 
         return response.getContent();
     }

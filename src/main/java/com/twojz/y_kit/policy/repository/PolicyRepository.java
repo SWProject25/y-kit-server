@@ -143,28 +143,25 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
      * 추천 정책 조회 (나이 + 지역 + 신청가능 + 카테고리)
      */
     @Query("""
-                SELECT DISTINCT p FROM PolicyEntity p
-                LEFT JOIN FETCH p.detail d
-                LEFT JOIN FETCH p.application a
-                LEFT JOIN FETCH p.qualification q
-                LEFT JOIN p.regions pr
-                LEFT JOIN p.categoryMappings cm
-                WHERE p.isActive = true
-                AND pr.region.code = :regionCode
-                AND (
-                    (q.sprtTrgtMinAge IS NULL OR q.sprtTrgtMinAge <= :age)
-                    AND (q.sprtTrgtMaxAge IS NULL OR q.sprtTrgtMaxAge >= :age)
-                )
-                AND a.aplyBgngYmd <= :today
-                AND a.aplyEndYmd >= :today
-                AND (:categoryId IS NULL OR cm.category.id = :categoryId)
-                ORDER BY p.createdAt DESC
-            """)
+        SELECT DISTINCT p FROM PolicyEntity p
+        LEFT JOIN FETCH p.detail d
+        LEFT JOIN FETCH p.application a
+        LEFT JOIN FETCH p.qualification q
+        LEFT JOIN p.regions pr
+        WHERE p.isActive = true
+        AND (pr.region.code = :regionCode OR pr IS NULL)
+        AND (
+            q IS NULL 
+            OR (
+                (q.sprtTrgtMinAge IS NULL OR q.sprtTrgtMinAge <= :age)
+                AND (q.sprtTrgtMaxAge IS NULL OR q.sprtTrgtMaxAge >= :age)
+            )
+        )
+        ORDER BY p.createdAt DESC
+    """)
     Page<PolicyEntity> findRecommendedWithCategory(
             @Param("age") Integer age,
             @Param("regionCode") String regionCode,
-            @Param("today") LocalDate today,
-            @Param("categoryId") Long categoryId,
             Pageable pageable
     );
 
@@ -244,7 +241,7 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
                 LEFT JOIN FETCH cm.category
                 WHERE p IN :policies
             """)
-    List<PolicyEntity> findWithCategories(@Param("policies") List<PolicyEntity> policies);
+    void findWithCategories(@Param("policies") List<PolicyEntity> policies);
 
     /**
      * 키워드 일괄 조회 (N+1 방지)
@@ -255,7 +252,7 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
                 LEFT JOIN FETCH km.keyword
                 WHERE p IN :policies
             """)
-    List<PolicyEntity> findWithKeywords(@Param("policies") List<PolicyEntity> policies);
+    void findWithKeywords(@Param("policies") List<PolicyEntity> policies);
 
     /**
      * 지역 일괄 조회 (N+1 방지)
@@ -266,12 +263,8 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
                 LEFT JOIN FETCH pr.region
                 WHERE p IN :policies
             """)
-    List<PolicyEntity> findWithRegions(@Param("policies") List<PolicyEntity> policies);
+    void findWithRegions(@Param("policies") List<PolicyEntity> policies);
 
-
-    List<PolicyEntity> findByIsActive(Boolean isActive);
-
-    // PolicyRepository.java에 추가할 검색 쿼리 메서드 (매핑 테이블 활용)
 
     /**
      * 키워드로 정책명/설명 검색 (PolicyDetailEntity에서 검색)
@@ -379,4 +372,13 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
             @Param("keywordIds") List<Long> keywordIds,
             Pageable pageable
     );
+
+    @Query("SELECT p FROM PolicyEntity p " +
+            "WHERE p.aiAnalysis IS NULL AND p.isActive = true " +
+            "ORDER BY p.id ASC")
+    Page<PolicyEntity> findAllByAiAnalysisIsNull(Pageable pageable);
+
+    @Query("SELECT COUNT(p) FROM PolicyEntity p " +
+            "WHERE p.aiAnalysis IS NULL AND p.isActive = true")
+    long countByAiAnalysisIsNull();
 }
