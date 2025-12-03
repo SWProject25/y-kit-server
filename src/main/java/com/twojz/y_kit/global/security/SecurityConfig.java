@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -31,7 +32,10 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/**/*.php", "/vendor/**", "/api/vendor/**", "/admin/vendor/**").denyAll()
+                        .requestMatchers(new AntPathRequestMatcher("/**/*.php")).denyAll()
+                        .requestMatchers(new AntPathRequestMatcher("/vendor/**")).denyAll()
+                        .requestMatchers(new AntPathRequestMatcher("/api/vendor/**")).denyAll()
+                        .requestMatchers(new AntPathRequestMatcher("/admin/vendor/**")).denyAll()
                         .requestMatchers("/api/**", "/admin/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**")
                         .permitAll()
