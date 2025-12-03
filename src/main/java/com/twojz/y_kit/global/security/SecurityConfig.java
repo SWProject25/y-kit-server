@@ -3,6 +3,7 @@ package com.twojz.y_kit.global.security;
 import com.twojz.y_kit.user.service.CustomOAuth2UserService;
 import com.twojz.y_kit.user.auth.OAuth2SuccessHandler;
 import java.util.Arrays;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,11 +31,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/**/*.php", "/vendor/**", "/api/vendor/**", "/admin/vendor/**").denyAll()
                         .requestMatchers("/api/**", "/admin/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**")
                         .permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(new InvalidMethodFilter(), UsernamePasswordAuthenticationFilter.class)
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
                 .oauth2Login(oauth2 -> oauth2
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
@@ -52,10 +55,9 @@ public class SecurityConfig {
 
         config.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "http://localhost:5173"));
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
-        config.setAllowedHeaders(Arrays.asList("*"));
+        config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(Arrays.asList("Authorization", "Content-Type"));
 
-        // Preflight request 캐싱 시간 (1시간)
         config.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
