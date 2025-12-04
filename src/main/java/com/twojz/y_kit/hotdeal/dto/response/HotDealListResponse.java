@@ -55,7 +55,7 @@ public class HotDealListResponse {
     @Schema(description = "만료 일시", example = "2025-12-31T23:59:59")
     private LocalDateTime expiresAt;
 
-    public static HotDealListResponse from(HotDealEntity hotDeal, long likeCount, long commentCount) {
+    public static HotDealListResponse from(HotDealEntity hotDeal, long likeCount, long commentCount, boolean liked, boolean bookmarked) {
         return HotDealListResponse.builder()
                 .id(hotDeal.getId())
                 .title(hotDeal.getTitle())
@@ -65,6 +65,8 @@ public class HotDealListResponse {
                 .category(hotDeal.getCategory())
                 .likeCount(likeCount)
                 .commentCount(commentCount)
+                .liked(liked)
+                .bookmarked(bookmarked)
                 .viewCount(hotDeal.getViewCount())
                 .regionName(hotDeal.getRegion() != null ? hotDeal.getRegion().getFullName() : null)
                 .expiresAt(hotDeal.getExpiresAt())

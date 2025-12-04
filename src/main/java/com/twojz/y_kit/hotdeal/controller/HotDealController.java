@@ -43,9 +43,11 @@ public class HotDealController {
     @Operation(summary = "핫딜 목록 조회")
     public PageResponse<HotDealListResponse> getHotDeals(
             @RequestParam(required = false) HotDealCategory category,
+            Authentication authentication,
             Pageable pageable
     ) {
-        return hotDealFindService.getHotDealList(category, pageable);
+        Long userId = extractUserIdOrNull(authentication);
+        return hotDealFindService.getHotDealList(category, userId, pageable);
     }
 
 
@@ -96,9 +98,11 @@ public class HotDealController {
     public PageResponse<HotDealListResponse> searchHotDeals(
             @RequestParam(required = false) HotDealCategory category,
             @RequestParam(required = false) String keyword,
+            Authentication authentication,
             Pageable pageable
     ) {
-        return hotDealFindService.searchHotDeals(category, null, keyword, pageable);
+        Long userId = extractUserIdOrNull(authentication);
+        return hotDealFindService.searchHotDeals(category, null, keyword, userId, pageable);
     }
 
     @GetMapping("/my-posts")
@@ -120,6 +124,17 @@ public class HotDealController {
             return Long.parseLong(authentication.getName());
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("잘못된 사용자 정보입니다.", e);
+        }
+    }
+
+    private Long extractUserIdOrNull(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(authentication.getName());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }

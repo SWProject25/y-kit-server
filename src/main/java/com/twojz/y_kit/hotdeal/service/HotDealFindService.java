@@ -41,12 +41,12 @@ public class HotDealFindService {
                 .orElseThrow(() -> new IllegalArgumentException("핫딜을 찾을 수 없습니다. id: " + id));
     }
 
-    public PageResponse<HotDealListResponse> getHotDealList(HotDealCategory category, Pageable pageable) {
+    public PageResponse<HotDealListResponse> getHotDealList(HotDealCategory category, Long userId, Pageable pageable) {
         Page<HotDealEntity> hotDeals = (category != null)
                 ? hotDealRepository.findByCategory(category, pageable)
                 : hotDealRepository.findAll(pageable);
 
-        return convertToPageResponse(hotDeals);
+        return convertToPageResponse(hotDeals, userId);
     }
 
     public HotDealDetailResponse getHotDealDetail(Long hotDealId, Long userId) {
@@ -80,7 +80,7 @@ public class HotDealFindService {
         UserEntity user = userFindService.findUser(userId);
         Page<HotDealEntity> hotDeals = hotDealRepository.findByUser(user, pageable);
 
-        return convertToPageResponse(hotDeals);
+        return convertToPageResponse(hotDeals, userId);
     }
 
     /**
@@ -95,7 +95,8 @@ public class HotDealFindService {
                     HotDealEntity hotDeal = like.getHotDeal();
                     long likeCount = hotDealLikeRepository.countByHotDeal(hotDeal);
                     long commentCount = hotDealCommentRepository.countByHotDeal(hotDeal);
-                    return HotDealListResponse.from(hotDeal, likeCount, commentCount);
+                    boolean isBookmarked = hotDealBookmarkRepository.existsByHotDealAndUser(hotDeal, user);
+                    return HotDealListResponse.from(hotDeal, likeCount, commentCount, true, isBookmarked);
                 })
                 .toList();
     }
@@ -112,7 +113,8 @@ public class HotDealFindService {
                     HotDealEntity hotDeal = bookmark.getHotDeal();
                     long likeCount = hotDealLikeRepository.countByHotDeal(hotDeal);
                     long commentCount = hotDealCommentRepository.countByHotDeal(hotDeal);
-                    return HotDealListResponse.from(hotDeal, likeCount, commentCount);
+                    boolean isLiked = hotDealLikeRepository.existsByHotDealAndUser(hotDeal, user);
+                    return HotDealListResponse.from(hotDeal, likeCount, commentCount, isLiked, true);
                 })
                 .toList();
     }
@@ -124,6 +126,7 @@ public class HotDealFindService {
             HotDealCategory category,
             DealType dealType,
             String keyword,
+            Long userId,
             Pageable pageable
     ) {
         List<String> extractedKeywords = extractKeywords(keyword);
@@ -139,13 +142,13 @@ public class HotDealFindService {
                 pageable
         );
 
-        return convertToPageResponse(hotDeals);
+        return convertToPageResponse(hotDeals, userId);
     }
 
     /**
-     * Entity를 PageResponse로 변환 (N+1 문제 해결)
+     * Entity를 PageResponse로 변환 (N+1 문제 해결 + 좋아요/북마크 여부 포함)
      */
-    private PageResponse<HotDealListResponse> convertToPageResponse(Page<HotDealEntity> hotDeals) {
+    private PageResponse<HotDealListResponse> convertToPageResponse(Page<HotDealEntity> hotDeals, Long userId) {
         List<HotDealEntity> hotDealList = hotDeals.getContent();
 
         if (hotDealList.isEmpty()) {
@@ -156,6 +159,7 @@ public class HotDealFindService {
                 .map(HotDealEntity::getId)
                 .toList();
 
+        // 좋아요 수 일괄 조회
         java.util.Map<Long, Long> likeCountMap = hotDealLikeRepository.countByHotDealIds(hotDealIds)
                 .stream()
                 .collect(Collectors.toMap(
@@ -163,6 +167,7 @@ public class HotDealFindService {
                         arr -> (Long) arr[1]
                 ));
 
+        // 댓글 수 일괄 조회
         java.util.Map<Long, Long> commentCountMap = hotDealCommentRepository.countByHotDealIds(hotDealIds)
                 .stream()
                 .collect(Collectors.toMap(
@@ -170,10 +175,30 @@ public class HotDealFindService {
                         arr -> (Long) arr[1]
                 ));
 
+        // 사용자의 좋아요/북마크 여부 일괄 조회
+        java.util.Set<Long> likedHotDealIds = new java.util.HashSet<>();
+        java.util.Set<Long> bookmarkedHotDealIds = new java.util.HashSet<>();
+
+        if (userId != null) {
+            UserEntity user = userFindService.findUser(userId);
+            likedHotDealIds = new java.util.HashSet<>(
+                    hotDealLikeRepository.findLikedHotDealIdsByUserAndHotDealIds(user, hotDealIds)
+            );
+            bookmarkedHotDealIds = new java.util.HashSet<>(
+                    hotDealBookmarkRepository.findBookmarkedHotDealIdsByUserAndHotDealIds(user, hotDealIds)
+            );
+        }
+
+        // Response 생성
+        java.util.Set<Long> finalLikedHotDealIds = likedHotDealIds;
+        java.util.Set<Long> finalBookmarkedHotDealIds = bookmarkedHotDealIds;
+
         Page<HotDealListResponse> page = hotDeals.map(hotDeal -> {
             long likeCount = likeCountMap.getOrDefault(hotDeal.getId(), 0L);
             long commentCount = commentCountMap.getOrDefault(hotDeal.getId(), 0L);
-            return HotDealListResponse.from(hotDeal, likeCount, commentCount);
+            boolean isLiked = finalLikedHotDealIds.contains(hotDeal.getId());
+            boolean isBookmarked = finalBookmarkedHotDealIds.contains(hotDeal.getId());
+            return HotDealListResponse.from(hotDeal, likeCount, commentCount, isLiked, isBookmarked);
         });
 
         return new PageResponse<>(page);

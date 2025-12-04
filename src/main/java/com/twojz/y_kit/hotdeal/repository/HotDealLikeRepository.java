@@ -35,4 +35,7 @@ public interface HotDealLikeRepository extends JpaRepository<HotDealLikeEntity, 
     }
 
     List<HotDealLikeEntity> findByUser(UserEntity user);
+
+    @Query("SELECT l.hotDeal.id FROM HotDealLikeEntity l WHERE l.user = :user AND l.hotDeal.id IN :hotDealIds")
+    List<Long> findLikedHotDealIdsByUserAndHotDealIds(@Param("user") UserEntity user, @Param("hotDealIds") List<Long> hotDealIds);
 }
