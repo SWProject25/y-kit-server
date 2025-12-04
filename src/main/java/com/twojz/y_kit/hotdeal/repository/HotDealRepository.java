@@ -28,8 +28,7 @@ public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
             "WHERE (:category IS NULL OR h.category = :category) " +
             "AND (:dealType IS NULL OR h.dealType = :dealType) " +
             "AND (" +
-            "(:keyword1 IS NULL) OR " +
-            "(h.title LIKE %:keyword1% OR h.content LIKE %:keyword1% OR h.placeName LIKE %:keyword1%) OR " +
+            "(:keyword1 IS NOT NULL AND (h.title LIKE %:keyword1% OR h.content LIKE %:keyword1% OR h.placeName LIKE %:keyword1%)) OR " +
             "(:keyword2 IS NOT NULL AND (h.title LIKE %:keyword2% OR h.content LIKE %:keyword2% OR h.placeName LIKE %:keyword2%)) OR " +
             "(:keyword3 IS NOT NULL AND (h.title LIKE %:keyword3% OR h.content LIKE %:keyword3% OR h.placeName LIKE %:keyword3%)) OR " +
             "(:keyword4 IS NOT NULL AND (h.title LIKE %:keyword4% OR h.content LIKE %:keyword4% OR h.placeName LIKE %:keyword4%)) OR " +

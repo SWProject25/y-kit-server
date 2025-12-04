@@ -26,12 +26,12 @@ public interface CommunityRepository extends JpaRepository<CommunityEntity, Long
     @Query("SELECT DISTINCT c FROM CommunityEntity c " +
             "WHERE (:category IS NULL OR c.category = :category) " +
             "AND (" +
-            "(:keyword1 IS NULL) OR " +
-            "(c.title LIKE %:keyword1% OR c.content LIKE %:keyword1%) OR " +
+            "(:keyword1 IS NOT NULL AND (c.title LIKE %:keyword1% OR c.content LIKE %:keyword1%)) OR " +
             "(:keyword2 IS NOT NULL AND (c.title LIKE %:keyword2% OR c.content LIKE %:keyword2%)) OR " +
             "(:keyword3 IS NOT NULL AND (c.title LIKE %:keyword3% OR c.content LIKE %:keyword3%)) OR " +
             "(:keyword4 IS NOT NULL AND (c.title LIKE %:keyword4% OR c.content LIKE %:keyword4%)) OR " +
-            "(:keyword5 IS NOT NULL AND (c.title LIKE %:keyword5% OR c.content LIKE %:keyword5%))" +
+            "(:keyword5 IS NOT NULL AND (c.title LIKE %:keyword5% OR c.content LIKE %:keyword5%)) OR " +
+            "(:keyword1 IS NULL AND :keyword2 IS NULL AND :keyword3 IS NULL AND :keyword4 IS NULL AND :keyword5 IS NULL)" +
             ")")
     Page<CommunityEntity> searchByKeywords(
             @Param("category") CommunityCategory category,
@@ -51,7 +51,6 @@ public interface CommunityRepository extends JpaRepository<CommunityEntity, Long
             "ORDER BY (c.viewCount + COUNT(b)) DESC")
     List<CommunityEntity> findTrendingCommunities(Pageable pageable);
 
-    @EntityGraph(attributePaths = "user")
-    @Query(value = "SELECT * FROM community ORDER BY RAND() LIMIT :limit", nativeQuery = true)
+    @Query("SELECT c FROM CommunityEntity c JOIN FETCH c.user ORDER BY FUNCTION('RAND')")
     List<CommunityEntity> findRandomCommunities(@Param("limit") int limit);
 }

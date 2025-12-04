@@ -44,7 +44,7 @@ public class GlobalSearchService {
                 communityFindService.searchCommunities(null, keyword, pageable);
 
         PageResponse<HotDealListResponse> hotDeals =
-                hotDealFindService.searchHotDeals(null, null, keyword, pageable);
+                hotDealFindService.searchHotDeals(null, null, keyword, userId, pageable);
 
         PageResponse<GroupPurchaseListResponse> groupPurchases =
                 groupPurchaseFindService.searchGroupPurchases(keyword, null, null, pageable);
@@ -98,7 +98,7 @@ public class GlobalSearchService {
             }
             case HOTDEAL -> {
                 PageResponse<HotDealListResponse> hotDeals =
-                        hotDealFindService.searchHotDeals(null, null, keyword, pageable);
+                        hotDealFindService.searchHotDeals(null, null, keyword, userId, pageable);
                 builder.hotDeals(hotDeals);
                 totalCount = hotDeals.getTotalElements();
             }
@@ -134,7 +134,7 @@ public class GlobalSearchService {
                 communityFindService.searchCommunities(null, keyword, pageable);
 
         PageResponse<HotDealListResponse> hotDeals =
-                hotDealFindService.searchHotDeals(null, null, keyword, pageable);
+                hotDealFindService.searchHotDeals(null, null, keyword, userId, pageable);
 
         PageResponse<GroupPurchaseListResponse> groupPurchases =
                 groupPurchaseFindService.searchGroupPurchases(keyword, null, null, pageable);

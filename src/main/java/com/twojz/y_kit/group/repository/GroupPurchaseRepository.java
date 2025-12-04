@@ -34,8 +34,8 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
             "WHERE (:status IS NULL OR g.status = :status) " +
             "AND (:regionCode IS NULL OR g.region.code = :regionCode) " +
             "AND (" +
-            "(:keyword1 IS NULL) OR " +
-            "(g.title LIKE %:keyword1% OR g.productName LIKE %:keyword1% OR g.content LIKE %:keyword1%) OR " +
+            "(:keyword1 IS NULL AND :keyword2 IS NULL AND :keyword3 IS NULL AND :keyword4 IS NULL AND :keyword5 IS NULL) OR " +
+            "(:keyword1 IS NOT NULL AND (g.title LIKE %:keyword1% OR g.productName LIKE %:keyword1% OR g.content LIKE %:keyword1%)) OR " +
             "(:keyword2 IS NOT NULL AND (g.title LIKE %:keyword2% OR g.productName LIKE %:keyword2% OR g.content LIKE %:keyword2%)) OR " +
             "(:keyword3 IS NOT NULL AND (g.title LIKE %:keyword3% OR g.productName LIKE %:keyword3% OR g.content LIKE %:keyword3%)) OR " +
             "(:keyword4 IS NOT NULL AND (g.title LIKE %:keyword4% OR g.productName LIKE %:keyword4% OR g.content LIKE %:keyword4%)) OR " +
