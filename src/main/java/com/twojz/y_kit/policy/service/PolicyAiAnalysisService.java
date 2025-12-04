@@ -79,6 +79,7 @@ public class PolicyAiAnalysisService {
 
         if (analysis != null) {
             policy.updateAiAnalysis(analysis);
+            policyRepository.save(policy);
             log.debug("AI 분석 저장 성공 - policyNo: {}", policy.getPolicyNo());
         } else {
             throw new RuntimeException("AI 분석 결과가 null입니다");

@@ -73,7 +73,7 @@ public class PolicyAiInitController {
     @GetMapping("/init/status")
     public ResponseEntity<?> getStatus() {
         long remaining = aiAnalysisService.countPoliciesWithoutAi();
-        long total = remaining + processed.get();
+        long total = processed.get();
 
         Map<String, Object> status = new LinkedHashMap<>();
         status.put("running", isRunning.get());
