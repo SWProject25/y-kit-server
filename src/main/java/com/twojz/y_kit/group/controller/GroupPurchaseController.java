@@ -44,41 +44,24 @@ public class GroupPurchaseController {
     }
 
     @GetMapping
-    @Operation(summary = "공동구매 목록 조회")
+    @Operation(summary = "공동구매 목록 조회 (전체/상태/지역/상태+지역 필터)")
     public PageResponse<GroupPurchaseListResponse> getGroupPurchases(
             @RequestParam(required = false) GroupPurchaseStatus status,
             @RequestParam(required = false) String regionCode,
-            Authentication authentication,
             Pageable pageable
     ) {
-        Long userId = extractUserId(authentication);
-
-        if (status != null && regionCode != null) {
-            return groupPurchaseFindService.getGroupPurchasesByStatusAndRegion(
-                    status, regionCode, userId, pageable
-            );
-        }
-
-        if (status != null) {
-            return groupPurchaseFindService.getGroupPurchasesByStatus(status, userId, pageable);
-        }
-
-        if (regionCode != null) {
-            return groupPurchaseFindService.getGroupPurchasesByRegion(regionCode, userId, pageable);
-        }
-
-        return groupPurchaseFindService.getGroupPurchaseList(userId, pageable);
+        return groupPurchaseFindService.getGroupPurchaseList(status, regionCode, pageable);
     }
 
     @GetMapping("/search")
-    @Operation(summary = "공동구매 검색")
+    @Operation(summary = "공동구매 통합 검색 (형태소 분석 + 상태/지역 필터)")
     public PageResponse<GroupPurchaseListResponse> searchGroupPurchases(
             @RequestParam String keyword,
-            Authentication authentication,
+            @RequestParam(required = false) GroupPurchaseStatus status,
+            @RequestParam(required = false) String regionCode,
             Pageable pageable
     ) {
-        Long userId = extractUserId(authentication);
-        return groupPurchaseFindService.searchGroupPurchases(keyword, userId, pageable);
+        return groupPurchaseFindService.searchGroupPurchases(keyword, status, regionCode, pageable);
     }
 
     @PutMapping("/{id}")

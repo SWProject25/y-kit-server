@@ -5,6 +5,8 @@ import com.twojz.y_kit.community.domain.entity.CommunityEntity;
 import java.util.List;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -13,4 +15,7 @@ public interface CommunityCommentRepository extends JpaRepository<CommunityComme
     List<CommunityCommentEntity> findByCommunityOrderByCreatedAtDesc(CommunityEntity community);
 
     long countByCommunity(CommunityEntity community);
+
+    @Query("SELECT c.community.id, COUNT(c) FROM CommunityCommentEntity c WHERE c.community.id IN :communityIds GROUP BY c.community.id")
+    List<Object[]> countByCommunityIds(@Param("communityIds") List<Long> communityIds);
 }

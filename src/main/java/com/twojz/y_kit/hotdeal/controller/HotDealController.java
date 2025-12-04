@@ -1,6 +1,7 @@
 package com.twojz.y_kit.hotdeal.controller;
 
 import com.twojz.y_kit.global.dto.PageResponse;
+import com.twojz.y_kit.hotdeal.domain.entity.HotDealCategory;
 import com.twojz.y_kit.hotdeal.dto.request.*;
 import com.twojz.y_kit.hotdeal.dto.response.*;
 import com.twojz.y_kit.hotdeal.service.HotDealCommandService;
@@ -8,7 +9,6 @@ import com.twojz.y_kit.hotdeal.service.HotDealFindService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -42,22 +42,12 @@ public class HotDealController {
     @GetMapping
     @Operation(summary = "핫딜 목록 조회")
     public PageResponse<HotDealListResponse> getHotDeals(
-            HotDealSearchRequest request,
+            @RequestParam(required = false) HotDealCategory category,
             Authentication authentication,
             Pageable pageable
     ) {
-        Long userId = extractUserId(authentication);
-
-        Page<HotDealListResponse> page = hotDealFindService.searchHotDeals(
-                request.getKeyword(),
-                request.getDealType(),
-                request.getCategory(),
-                request.getRegionCode(),
-                userId,
-                pageable
-        );
-
-        return new PageResponse<>(page);
+        Long userId = extractUserIdOrNull(authentication);
+        return hotDealFindService.getHotDealList(category, userId, pageable);
     }
 
 
@@ -103,6 +93,29 @@ public class HotDealController {
         hotDealCommandService.deleteComment(commentId, userId);
     }
 
+    @GetMapping("/search")
+    @Operation(summary = "핫딜 검색", description = "제목, 내용, 장소명으로 핫딜을 검색합니다")
+    public PageResponse<HotDealListResponse> searchHotDeals(
+            @RequestParam(required = false) HotDealCategory category,
+            @RequestParam(required = false) String keyword,
+            Authentication authentication,
+            Pageable pageable
+    ) {
+        Long userId = extractUserIdOrNull(authentication);
+        return hotDealFindService.searchHotDeals(category, null, keyword, userId, pageable);
+    }
+
+    @GetMapping("/my-posts")
+    @Operation(summary = "내가 작성한 핫딜 목록")
+    public PageResponse<HotDealListResponse> getMyPosts(
+            Authentication authentication,
+            Pageable pageable
+    ) {
+        Long userId = extractUserId(authentication);
+        return hotDealFindService.getMyHotDeals(userId, pageable);
+
+    }
+
     private Long extractUserId(Authentication authentication) {
         if (authentication == null) {
             throw new IllegalArgumentException("인증이 필요합니다.");
@@ -111,6 +124,17 @@ public class HotDealController {
             return Long.parseLong(authentication.getName());
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("잘못된 사용자 정보입니다.", e);
+        }
+    }
+
+    private Long extractUserIdOrNull(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(authentication.getName());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }

@@ -15,4 +15,6 @@ public interface CommunityBookmarkRepository extends JpaRepository<CommunityBook
     boolean existsByCommunityAndUser(CommunityEntity community, UserEntity user);
 
     List<CommunityBookmarkEntity> findByUser(UserEntity user);
+
+    long countByCommunity(CommunityEntity community);
 }

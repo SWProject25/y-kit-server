@@ -1,6 +1,9 @@
 package com.twojz.y_kit.policy.repository;
 
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
+import com.twojz.y_kit.policy.domain.enumType.EducationLevel;
+import com.twojz.y_kit.policy.domain.enumType.EmploymentStatus;
+import com.twojz.y_kit.policy.domain.enumType.MajorField;
 import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
@@ -143,25 +146,57 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
      * 추천 정책 조회 (나이 + 지역 + 신청가능 + 카테고리)
      */
     @Query("""
-        SELECT DISTINCT p FROM PolicyEntity p
-        LEFT JOIN FETCH p.detail d
-        LEFT JOIN FETCH p.application a
-        LEFT JOIN FETCH p.qualification q
-        LEFT JOIN p.regions pr
-        WHERE p.isActive = true
-        AND (pr.region.code = :regionCode OR pr IS NULL)
-        AND (
-            q IS NULL 
-            OR (
-                (q.sprtTrgtMinAge IS NULL OR q.sprtTrgtMinAge <= :age)
-                AND (q.sprtTrgtMaxAge IS NULL OR q.sprtTrgtMaxAge >= :age)
-            )
-        )
-        ORDER BY p.createdAt DESC
-    """)
+                SELECT DISTINCT p FROM PolicyEntity p
+                LEFT JOIN FETCH p.detail d
+                LEFT JOIN FETCH p.application a
+                LEFT JOIN FETCH p.qualification q
+                LEFT JOIN p.regions pr
+                WHERE p.isActive = true
+                AND (pr.region.code = :regionCode OR pr IS NULL)
+                AND (
+                    q IS NULL 
+                    OR (
+                        (q.sprtTrgtMinAge IS NULL OR q.sprtTrgtMinAge <= :age)
+                        AND (q.sprtTrgtMaxAge IS NULL OR q.sprtTrgtMaxAge >= :age)
+                    )
+                )
+                ORDER BY p.createdAt DESC
+            """)
     Page<PolicyEntity> findRecommendedWithCategory(
             @Param("age") Integer age,
             @Param("regionCode") String regionCode,
+            Pageable pageable
+    );
+
+    /**
+     * 사용자 프로필 기반 정밀 추천 (나이 + 지역 + 성별 + 취업상태 + 학력 + 전공)
+     */
+    @Query("""
+                SELECT DISTINCT p FROM PolicyEntity p
+                LEFT JOIN FETCH p.detail d
+                LEFT JOIN FETCH p.application a
+                LEFT JOIN FETCH p.qualification q
+                LEFT JOIN p.regions pr
+                WHERE p.isActive = true
+                AND (pr.region.code = :regionCode OR pr IS NULL)
+                AND (
+                    q IS NULL
+                    OR (
+                        (q.sprtTrgtMinAge IS NULL OR q.sprtTrgtMinAge <= :age)
+                        AND (q.sprtTrgtMaxAge IS NULL OR q.sprtTrgtMaxAge >= :age)
+                        AND (q.jobCd IS NULL OR q.jobCd = :employmentStatus)
+                        AND (q.schoolCd IS NULL OR q.schoolCd = :educationLevel)
+                        AND (q.plcyMajorCd IS NULL OR q.plcyMajorCd = :major)
+                    )
+                )
+                ORDER BY p.createdAt DESC
+            """)
+    Page<PolicyEntity> findRecommendedWithProfile(
+            @Param("age") Integer age,
+            @Param("regionCode") String regionCode,
+            @Param("employmentStatus") EmploymentStatus employmentStatus,
+            @Param("educationLevel") EducationLevel educationLevel,
+            @Param("major") MajorField major,
             Pageable pageable
     );
 
@@ -241,7 +276,7 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
                 LEFT JOIN FETCH cm.category
                 WHERE p IN :policies
             """)
-    void findWithCategories(@Param("policies") List<PolicyEntity> policies);
+    List<PolicyEntity> findWithCategories(@Param("policies") List<PolicyEntity> policies);
 
     /**
      * 키워드 일괄 조회 (N+1 방지)
@@ -252,7 +287,7 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
                 LEFT JOIN FETCH km.keyword
                 WHERE p IN :policies
             """)
-    void findWithKeywords(@Param("policies") List<PolicyEntity> policies);
+    List<PolicyEntity> findWithKeywords(@Param("policies") List<PolicyEntity> policies);
 
     /**
      * 지역 일괄 조회 (N+1 방지)
@@ -263,113 +298,37 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
                 LEFT JOIN FETCH pr.region
                 WHERE p IN :policies
             """)
-    void findWithRegions(@Param("policies") List<PolicyEntity> policies);
-
-
-    /**
-     * 키워드로 정책명/설명 검색 (PolicyDetailEntity에서 검색)
-     */
-    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
-            "LEFT JOIN p.detail d " +
-            "WHERE p.isActive = true " +
-            "AND (:keyword IS NULL OR :keyword = '' OR " +
-            "     d.plcyNm LIKE %:keyword% OR " +
-            "     d.plcyExplnCn LIKE %:keyword%)")
-    Page<PolicyEntity> findByKeywordContaining(
-            @Param("keyword") String keyword,
-            Pageable pageable
-    );
+    List<PolicyEntity> findWithRegions(@Param("policies") List<PolicyEntity> policies);
 
     /**
-     * 카테고리 ID + 키워드 ID + 텍스트 검색으로 정책 필터링
+     * LIKE + OR를 사용한 통합 검색 (카테고리, 키워드 ID 필터, OR 조건)
+     * - categoryIds, keywordIds, 검색 키워드 모두 선택적
+     * - 형태소 분석된 키워드를 OR 조건으로 검색
      */
     @Query("SELECT DISTINCT p FROM PolicyEntity p " +
             "LEFT JOIN p.detail d " +
             "LEFT JOIN p.categoryMappings cm " +
             "LEFT JOIN p.keywordMappings km " +
             "WHERE p.isActive = true " +
-            "AND (:keyword IS NULL OR :keyword = '' OR " +
-            "     d.plcyNm LIKE %:keyword% OR " +
-            "     d.plcyExplnCn LIKE %:keyword%) " +
             "AND (:#{#categoryIds == null || #categoryIds.isEmpty()} = true OR cm.category.id IN :categoryIds) " +
-            "AND (:#{#keywordIds == null || #keywordIds.isEmpty()} = true OR km.keyword.id IN :keywordIds)")
-    Page<PolicyEntity> findByFilters(
-            @Param("keyword") String keyword,
+            "AND (:#{#keywordIds == null || #keywordIds.isEmpty()} = true OR km.keyword.id IN :keywordIds) " +
+            "AND (" +
+            "(:keyword1 IS NULL AND :keyword2 IS NULL AND :keyword3 IS NULL AND :keyword4 IS NULL AND :keyword5 IS NULL) OR " +
+            "(:keyword1 IS NOT NULL AND (d.plcyNm LIKE %:keyword1% OR d.plcyExplnCn LIKE %:keyword1%)) OR " +
+            "(:keyword2 IS NOT NULL AND (d.plcyNm LIKE %:keyword2% OR d.plcyExplnCn LIKE %:keyword2%)) OR " +
+            "(:keyword3 IS NOT NULL AND (d.plcyNm LIKE %:keyword3% OR d.plcyExplnCn LIKE %:keyword3%)) OR " +
+            "(:keyword4 IS NOT NULL AND (d.plcyNm LIKE %:keyword4% OR d.plcyExplnCn LIKE %:keyword4%)) OR " +
+            "(:keyword5 IS NOT NULL AND (d.plcyNm LIKE %:keyword5% OR d.plcyExplnCn LIKE %:keyword5%))" +
+            ") " +
+            "ORDER BY p.createdAt DESC")
+    Page<PolicyEntity> searchByKeywords(
             @Param("categoryIds") List<Long> categoryIds,
             @Param("keywordIds") List<Long> keywordIds,
-            Pageable pageable
-    );
-
-    /**
-     * 카테고리 ID만으로 필터링
-     */
-    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
-            "LEFT JOIN p.categoryMappings cm " +
-            "WHERE p.isActive = true " +
-            "AND cm.category.id IN :categoryIds")
-    Page<PolicyEntity> findByCategoryIds(
-            @Param("categoryIds") List<Long> categoryIds,
-            Pageable pageable
-    );
-
-    /**
-     * 키워드 ID만으로 필터링
-     */
-    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
-            "LEFT JOIN p.keywordMappings km " +
-            "WHERE p.isActive = true " +
-            "AND km.keyword.id IN :keywordIds")
-    Page<PolicyEntity> findByKeywordIds(
-            @Param("keywordIds") List<Long> keywordIds,
-            Pageable pageable
-    );
-
-    /**
-     * 카테고리 ID + 키워드 ID 조합 필터링
-     */
-    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
-            "LEFT JOIN p.categoryMappings cm " +
-            "LEFT JOIN p.keywordMappings km " +
-            "WHERE p.isActive = true " +
-            "AND cm.category.id IN :categoryIds " +
-            "AND km.keyword.id IN :keywordIds")
-    Page<PolicyEntity> findByCategoryAndKeywordIds(
-            @Param("categoryIds") List<Long> categoryIds,
-            @Param("keywordIds") List<Long> keywordIds,
-            Pageable pageable
-    );
-
-    /**
-     * 카테고리 필터 + 텍스트 검색
-     */
-    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
-            "LEFT JOIN p.detail d " +
-            "LEFT JOIN p.categoryMappings cm " +
-            "WHERE p.isActive = true " +
-            "AND (:keyword IS NULL OR :keyword = '' OR " +
-            "     d.plcyNm LIKE %:keyword% OR " +
-            "     d.plcyExplnCn LIKE %:keyword%) " +
-            "AND cm.category.id IN :categoryIds")
-    Page<PolicyEntity> findByCategoriesAndKeyword(
-            @Param("keyword") String keyword,
-            @Param("categoryIds") List<Long> categoryIds,
-            Pageable pageable
-    );
-
-    /**
-     * 키워드 필터 + 텍스트 검색
-     */
-    @Query("SELECT DISTINCT p FROM PolicyEntity p " +
-            "LEFT JOIN p.detail d " +
-            "LEFT JOIN p.keywordMappings km " +
-            "WHERE p.isActive = true " +
-            "AND (:keyword IS NULL OR :keyword = '' OR " +
-            "     d.plcyNm LIKE %:keyword% OR " +
-            "     d.plcyExplnCn LIKE %:keyword%) " +
-            "AND km.keyword.id IN :keywordIds")
-    Page<PolicyEntity> findByKeywordsAndKeyword(
-            @Param("keyword") String keyword,
-            @Param("keywordIds") List<Long> keywordIds,
+            @Param("keyword1") String keyword1,
+            @Param("keyword2") String keyword2,
+            @Param("keyword3") String keyword3,
+            @Param("keyword4") String keyword4,
+            @Param("keyword5") String keyword5,
             Pageable pageable
     );
 
@@ -381,4 +340,24 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
     @Query("SELECT COUNT(p) FROM PolicyEntity p " +
             "WHERE p.aiAnalysis IS NULL AND p.isActive = true")
     long countByAiAnalysisIsNull();
+
+    /**
+     * 유사 정책 조회 (같은 카테고리 기반)
+     */
+    @Query("""
+                SELECT DISTINCT p FROM PolicyEntity p
+                LEFT JOIN FETCH p.detail d
+                LEFT JOIN FETCH p.application a
+                LEFT JOIN FETCH p.qualification q
+                LEFT JOIN p.categoryMappings cm
+                WHERE p.isActive = true
+                AND p.id != :policyId
+                AND cm.category.id IN (
+                    SELECT cm2.category.id FROM PolicyEntity p2
+                    LEFT JOIN p2.categoryMappings cm2
+                    WHERE p2.id = :policyId
+                )
+                ORDER BY p.viewCount DESC, p.createdAt DESC
+            """)
+    List<PolicyEntity> findSimilarPoliciesByCategory(@Param("policyId") Long policyId, Pageable pageable);
 }
