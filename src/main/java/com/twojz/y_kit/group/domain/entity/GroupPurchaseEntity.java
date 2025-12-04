@@ -17,20 +17,22 @@ import java.math.BigDecimal;
 @Entity
 public class GroupPurchaseEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
     @Column(nullable = false)
     private String title;
 
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Column(nullable = false)
     private String productName;
 
+    @Column(columnDefinition = "TEXT")
     private String productLink;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String contact;
 
     @Column(nullable = false, precision = 15, scale = 2)

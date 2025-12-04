@@ -63,6 +63,9 @@ public class PolicyListResponse {
     @Schema(description = "신청 수", example = "789")
     private Integer applicationCount;
 
+    @Schema(description = "북마크 여부")
+    private boolean isBookmarked;
+
     @Schema(description = "등록일시")
     private LocalDateTime createdAt;
 }

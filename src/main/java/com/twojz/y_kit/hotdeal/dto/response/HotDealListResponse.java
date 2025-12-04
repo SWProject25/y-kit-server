@@ -3,6 +3,7 @@ package com.twojz.y_kit.hotdeal.dto.response;
 import com.twojz.y_kit.hotdeal.domain.dto.HotDealListDto;
 import com.twojz.y_kit.hotdeal.domain.entity.DealType;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealCategory;
+import com.twojz.y_kit.hotdeal.domain.entity.HotDealEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import lombok.Builder;
@@ -54,25 +55,22 @@ public class HotDealListResponse {
     @Schema(description = "만료 일시", example = "2025-12-31T23:59:59")
     private LocalDateTime expiresAt;
 
-    /**
-     * HotDealListDto → HotDealListResponse 변환
-     */
-    public static HotDealListResponse fromListDto(HotDealListDto dto) {
+    public static HotDealListResponse from(HotDealEntity hotDeal, long likeCount, long commentCount, boolean liked, boolean bookmarked) {
         return HotDealListResponse.builder()
-                .id(dto.hotDealId())
-                .title(dto.title())
-                .placeName(dto.placeName())
-                .address(dto.address())
-                .dealType(dto.dealType())
-                .category(dto.category())
-                .likeCount(dto.likeCount())
-                .commentCount(dto.commentCount())
-                .liked(dto.isLiked())
-                .bookmarked(dto.isBookmarked())
-                .viewCount(dto.viewCount())
-                .regionName(dto.regionName())
-                .createdAt(dto.createdAt())
-                .expiresAt(dto.expiresAt())
+                .id(hotDeal.getId())
+                .title(hotDeal.getTitle())
+                .placeName(hotDeal.getPlaceName())
+                .address(hotDeal.getAddress())
+                .dealType(hotDeal.getDealType())
+                .category(hotDeal.getCategory())
+                .likeCount(likeCount)
+                .commentCount(commentCount)
+                .liked(liked)
+                .bookmarked(bookmarked)
+                .viewCount(hotDeal.getViewCount())
+                .regionName(hotDeal.getRegion() != null ? hotDeal.getRegion().getFullName() : null)
+                .expiresAt(hotDeal.getExpiresAt())
+                .createdAt(hotDeal.getCreatedAt())
                 .build();
     }
 }

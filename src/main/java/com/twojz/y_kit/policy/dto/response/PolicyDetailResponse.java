@@ -42,6 +42,9 @@ public class PolicyDetailResponse {
     @Schema(description = "AI 분석 정보")
     private AiAnalysisInfo aiAnalysis;
 
+    @Schema(description = "북마크 여부")
+    private boolean isBookmarked;
+
     public static List<String> toKeywords(List<PolicyKeywordMapping> mappings) {
         if (mappings == null) {
             return new ArrayList<>();

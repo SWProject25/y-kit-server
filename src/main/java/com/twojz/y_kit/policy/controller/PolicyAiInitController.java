@@ -12,7 +12,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -30,7 +29,7 @@ public class PolicyAiInitController {
     private final AtomicInteger failed = new AtomicInteger(0);
     private volatile String lastError = null;
 
-    @PostMapping("/init/start")
+    @GetMapping("/init/start")
     public ResponseEntity<?> startInit(
             @RequestParam(defaultValue = "3000") long delayMs) {
 
@@ -99,7 +98,7 @@ public class PolicyAiInitController {
         return ResponseEntity.ok(status);
     }
 
-    @PostMapping("/init/stop")
+    @GetMapping("/init/stop")
     public ResponseEntity<?> stopInit() {
         if (!isRunning.get()) {
             return ResponseEntity.badRequest()

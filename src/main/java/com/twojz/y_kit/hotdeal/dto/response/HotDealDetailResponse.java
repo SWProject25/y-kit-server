@@ -3,6 +3,7 @@ package com.twojz.y_kit.hotdeal.dto.response;
 import com.twojz.y_kit.hotdeal.domain.dto.HotDealDetailDto;
 import com.twojz.y_kit.hotdeal.domain.entity.DealType;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealCategory;
+import com.twojz.y_kit.hotdeal.domain.entity.HotDealEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -79,32 +80,29 @@ public class HotDealDetailResponse {
     @Schema(description = "댓글 목록")
     private List<HotDealCommentResponse> comments;
 
-    /**
-     * HotDealDetailDto → HotDealDetailResponse 변환
-     */
-    public static HotDealDetailResponse fromDetailDto(HotDealDetailDto dto, List<HotDealCommentResponse> comments) {
+    public static HotDealDetailResponse from(HotDealEntity hotDeal, boolean isLiked, boolean isBookmarked, long likeCount, long commentCount, List<HotDealCommentResponse> comments) {
         return HotDealDetailResponse.builder()
-                .id(dto.hotDealId())
-                .title(dto.title())
-                .content(dto.content())
-                .placeName(dto.placeName())
-                .address(dto.address())
-                .url(dto.url())
-                .latitude(dto.latitude())
-                .longitude(dto.longitude())
-                .dealType(dto.dealType())
-                .category(dto.category())
-                .authorId(dto.authorId())
-                .authorName(dto.authorName())
-                .isLiked(dto.isLiked())
-                .isBookmarked(dto.isBookmarked())
-                .likeCount(dto.likeCount())
-                .commentCount(dto.commentCount())
-                .viewCount(dto.viewCount())
-                .regionName(dto.regionName())
-                .expiresAt(dto.expiresAt())
-                .createdAt(dto.createdAt())
-                .updatedAt(dto.updatedAt())
+                .id(hotDeal.getId())
+                .title(hotDeal.getTitle())
+                .content(hotDeal.getContent())
+                .placeName(hotDeal.getPlaceName())
+                .address(hotDeal.getAddress())
+                .url(hotDeal.getUrl())
+                .latitude(hotDeal.getLatitude())
+                .longitude(hotDeal.getLongitude())
+                .dealType(hotDeal.getDealType())
+                .category(hotDeal.getCategory())
+                .authorId(hotDeal.getUser().getId())
+                .authorName(hotDeal.getUser().getName())
+                .isLiked(isLiked)
+                .isBookmarked(isBookmarked)
+                .likeCount(likeCount)
+                .commentCount(commentCount)
+                .viewCount(hotDeal.getViewCount())
+                .regionName(hotDeal.getRegion() != null ? hotDeal.getRegion().getFullName() : null)
+                .expiresAt(hotDeal.getExpiresAt())
+                .createdAt(hotDeal.getCreatedAt())
+                .updatedAt(hotDeal.getUpdatedAt())
                 .comments(comments)
                 .build();
     }

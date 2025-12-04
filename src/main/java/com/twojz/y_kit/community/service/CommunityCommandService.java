@@ -43,7 +43,7 @@ public class CommunityCommandService {
     }
 
     public void updateCommunity(Long communityId, Long userId, CommunityUpdateRequest request) {
-        CommunityEntity community = communityFindService.findById(communityId);
+        CommunityEntity community = communityFindService.findCommunity(communityId);
 
         if (!community.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("게시글 수정 권한이 없습니다.");
@@ -57,7 +57,7 @@ public class CommunityCommandService {
     }
 
     public void deleteCommunity(Long communityId, Long userId) {
-        CommunityEntity community = communityFindService.findById(communityId);
+        CommunityEntity community = communityFindService.findCommunity(communityId);
 
         if (!community.getUser().getId().equals(userId)) {
             throw new IllegalArgumentException("게시글 삭제 권한이 없습니다.");
@@ -67,7 +67,7 @@ public class CommunityCommandService {
     }
 
     public void toggleLike(Long communityId, Long userId) {
-        CommunityEntity community = communityFindService.findById(communityId);
+        CommunityEntity community = communityFindService.findCommunity(communityId);
         UserEntity user = userFindService.findUser(userId);
 
         communityLikeRepository.findByCommunityAndUser(community, user)
@@ -83,7 +83,7 @@ public class CommunityCommandService {
     }
 
     public void toggleBookmark(Long communityId, Long userId) {
-        CommunityEntity community = communityFindService.findById(communityId);
+        CommunityEntity community = communityFindService.findCommunity(communityId);
         UserEntity user = userFindService.findUser(userId);
 
         communityBookmarkRepository.findByCommunityAndUser(community, user)
@@ -99,7 +99,7 @@ public class CommunityCommandService {
     }
 
     public Long createComment(Long communityId, Long userId, CommentCreateRequest request) {
-        CommunityEntity community = communityFindService.findById(communityId);
+        CommunityEntity community = communityFindService.findCommunity(communityId);
         UserEntity user = userFindService.findUser(userId);
 
         CommunityCommentEntity comment = CommunityCommentEntity.builder()
@@ -123,7 +123,7 @@ public class CommunityCommandService {
     }
 
     public void increaseViewCount(Long communityId) {
-        CommunityEntity community = communityFindService.findById(communityId);
+        CommunityEntity community = communityFindService.findCommunity(communityId);
         community.increaseViewCount();
     }
 }
