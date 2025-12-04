@@ -42,6 +42,7 @@ public class HotDealEntity extends BaseEntity {
     @Column(name = "place_name", nullable = false)
     private String placeName;
 
+    @Column(columnDefinition = "TEXT")
     private String url;
 
     @Column(nullable = false)

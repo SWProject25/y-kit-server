@@ -1,6 +1,7 @@
 package com.twojz.y_kit.group.dto.response;
 
 import com.twojz.y_kit.group.domain.dto.GroupPurchaseWithCountsDto;
+import com.twojz.y_kit.group.domain.entity.GroupPurchaseEntity;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
@@ -45,19 +46,23 @@ public class GroupPurchaseListResponse {
     @Schema(description = "댓글 수")
     private long commentCount;
 
-    public static GroupPurchaseListResponse fromDto(GroupPurchaseWithCountsDto dto) {
+    @Schema(description = "작성일", example = "2024-12-01T14:22:00")
+    private LocalDateTime createdAt;
+
+    public static GroupPurchaseListResponse from(GroupPurchaseEntity groupPurchase, long likeCount, long commentCount) {
         return GroupPurchaseListResponse.builder()
-                .id(dto.groupPurchaseId())
-                .title(dto.title())
-                .productName(dto.productName())
-                .price(dto.price())
-                .currentParticipants(dto.currentParticipants())
-                .maxParticipants(dto.maxParticipants())
-                .status(dto.status())
-                .deadline(dto.deadline())
-                .region(dto.region())
-                .likeCount(dto.likeCount())
-                .commentCount(dto.commentCount())
+                .id(groupPurchase.getId())
+                .title(groupPurchase.getTitle())
+                .productName(groupPurchase.getProductName())
+                .price(groupPurchase.getPrice())
+                .maxParticipants(groupPurchase.getMaxParticipants())
+                .currentParticipants(groupPurchase.getCurrentParticipants())
+                .deadline(groupPurchase.getDeadline())
+                .status(groupPurchase.getStatus())
+                .region(groupPurchase.getRegion() != null ? groupPurchase.getRegion().getFullName() : null)
+                .likeCount(likeCount)
+                .commentCount(commentCount)
+                .createdAt(groupPurchase.getCreatedAt())
                 .build();
     }
 }

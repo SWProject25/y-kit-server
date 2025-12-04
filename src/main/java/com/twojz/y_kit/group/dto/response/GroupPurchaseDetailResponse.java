@@ -1,10 +1,12 @@
 package com.twojz.y_kit.group.dto.response;
 
 import com.twojz.y_kit.group.domain.dto.GroupPurchaseWithCountsDto;
+import com.twojz.y_kit.group.domain.entity.GroupPurchaseEntity;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Builder;
 import lombok.Getter;
@@ -42,9 +44,6 @@ public class GroupPurchaseDetailResponse {
     @Schema(description = "현재 참여 인원")
     private Integer currentParticipants;
 
-    @Schema(description = "작성자 이름")
-    private String authorName;
-
     @Schema(description = "마감일")
     private LocalDate deadline;
 
@@ -53,6 +52,12 @@ public class GroupPurchaseDetailResponse {
 
     @Schema(description = "지역")
     private String region;
+
+    @Schema(description = "작성자 ID", example = "123")
+    private Long authorId;
+
+    @Schema(description = "작성자 이름", example = "홍길동")
+    private String authorName;
 
     @Schema(description = "좋아요 여부")
     private boolean isLiked;
@@ -72,32 +77,33 @@ public class GroupPurchaseDetailResponse {
     @Schema(description = "댓글 목록")
     private List<GroupPurchaseCommentResponse> comments;
 
-    public static GroupPurchaseDetailResponse fromDto(
-            GroupPurchaseWithCountsDto dto,
-            List<GroupPurchaseCommentResponse> comments,
-            String authorName,
-            boolean isParticipating
-    ) {
+    @Schema(description = "작성일", example = "2024-12-01T14:22:00")
+    private LocalDateTime createdAt;
+
+    public static GroupPurchaseDetailResponse from(GroupPurchaseEntity groupPurchase, boolean isLiked, boolean isBookmarked, boolean isParticipating,
+            long likeCount, long commentCount, List<GroupPurchaseCommentResponse> comments) {
         return GroupPurchaseDetailResponse.builder()
-                .id(dto.groupPurchaseId())
-                .title(dto.title())
-                .content(dto.content())
-                .productName(dto.productName())
-                .productLink(dto.productLink())
-                .contact(dto.contact())
-                .price(dto.price())
-                .minParticipants(dto.minParticipants())
-                .maxParticipants(dto.maxParticipants())
-                .currentParticipants(dto.currentParticipants())
-                .authorName(authorName)
-                .deadline(dto.deadline())
-                .status(dto.status())
-                .region(dto.region())
-                .isLiked(dto.isLiked())
-                .isBookmarked(dto.isBookmarked())
+                .id(groupPurchase.getId())
+                .title(groupPurchase.getTitle())
+                .content(groupPurchase.getContent())
+                .productName(groupPurchase.getProductName())
+                .productLink(groupPurchase.getProductLink())
+                .price(groupPurchase.getPrice())
+                .contact(groupPurchase.getContact())
+                .minParticipants(groupPurchase.getMinParticipants())
+                .maxParticipants(groupPurchase.getMaxParticipants())
+                .currentParticipants(groupPurchase.getCurrentParticipants())
+                .deadline(groupPurchase.getDeadline())
+                .status(groupPurchase.getStatus())
+                .region(groupPurchase.getRegion() != null ? groupPurchase.getRegion().getFullName() : null)
+                .authorId(groupPurchase.getUser().getId())
+                .authorName(groupPurchase.getUser().getName())
+                .isLiked(isLiked)
+                .isBookmarked(isBookmarked)
                 .isParticipating(isParticipating)
-                .likeCount(dto.likeCount())
-                .commentCount(dto.commentCount())
+                .likeCount(likeCount)
+                .commentCount(commentCount)
+                .createdAt(groupPurchase.getCreatedAt())
                 .comments(comments)
                 .build();
     }

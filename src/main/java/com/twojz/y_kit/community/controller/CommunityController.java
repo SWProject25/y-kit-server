@@ -30,7 +30,6 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/v1/community")
 @RequiredArgsConstructor
 public class CommunityController {
-
     private final CommunityCommandService communityCommandService;
     private final CommunityFindService communityFindService;
 
@@ -71,16 +70,6 @@ public class CommunityController {
         Long userId = extractUserId(authentication);
         Long communityId = communityCommandService.createCommunity(userId, request);
         return ResponseEntity.ok(communityId);
-    }
-
-    @Operation(summary = "게시글 검색", description = "제목 또는 내용으로 게시글을 검색합니다.")
-    @GetMapping("/search")
-    public ResponseEntity<PageResponse<CommunityListResponse>> searchCommunities(
-            @RequestParam @Size(min = 2, message = "검색어는 최소 2자 이상이어야 합니다") String keyword,
-            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-
-        PageResponse<CommunityListResponse> page = communityFindService.searchCommunities(keyword, pageable);
-        return ResponseEntity.ok(page);
     }
 
     @Operation(summary = "게시글 수정")
@@ -168,6 +157,34 @@ public class CommunityController {
         Long userId = extractUserId(authentication);
         List<CommunityListResponse> bookmarks = communityFindService.getMyBookmarks(userId);
         return ResponseEntity.ok(bookmarks);
+    }
+
+    @Operation(summary = "게시글 검색", description = "제목 또는 내용으로 게시글을 검색합니다.")
+    @GetMapping("/search")
+    public ResponseEntity<PageResponse<CommunityListResponse>> searchCommunities(
+            @RequestParam @Size(min = 2, message = "검색어는 최소 2자 이상이어야 합니다") String keyword,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        PageResponse<CommunityListResponse> page = communityFindService.searchCommunities(keyword, pageable);
+        return ResponseEntity.ok(page);
+    }
+
+    @Operation(summary = "카테고리별 검색")
+    @GetMapping("/search/category")
+    public ResponseEntity<PageResponse<CommunityListResponse>> searchByCategory(
+            @RequestParam CommunityCategory category,
+            @RequestParam String keyword,
+            @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        PageResponse<CommunityListResponse> results = communityFindService.searchByCategory(category, keyword, pageable);
+        return ResponseEntity.ok(results);
+    }
+
+    @Operation(summary = "실시간 순위", description = "조회수 + 북마크 수 기준으로 상위 5개 게시글을 조회합니다. 데이터가 부족한 경우 무작위로 5개를 선택합니다.")
+    @GetMapping("/trending")
+    public ResponseEntity<List<CommunityListResponse>> getTrendingCommunities() {
+        List<CommunityListResponse> trending = communityFindService.getTrendingCommunities();
+        return ResponseEntity.ok(trending);
     }
 
     private Long extractUserId(Authentication authentication) {

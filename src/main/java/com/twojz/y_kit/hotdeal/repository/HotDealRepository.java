@@ -1,13 +1,12 @@
 package com.twojz.y_kit.hotdeal.repository;
 
-import com.twojz.y_kit.hotdeal.domain.dto.HotDealDetailDto;
-import com.twojz.y_kit.hotdeal.domain.dto.HotDealListDto;
 import com.twojz.y_kit.hotdeal.domain.entity.DealType;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealCategory;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealEntity;
-import java.util.Optional;
+import com.twojz.y_kit.user.entity.UserEntity;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,218 +14,47 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
-    /**
-     * 핫딜 목록 조회
-     */
-    @Query("""
-    SELECT new com.twojz.y_kit.hotdeal.domain.dto.HotDealListDto(
-        h.id,
-        h.title,
-        h.placeName,
-        h.address,
-        h.url,
-        h.dealType,
-        h.category,
-        h.likeCount,
-        h.commentCount,
-        h.viewCount,
-        CASE WHEN :userId IS NULL THEN false 
-             WHEN EXISTS(SELECT 1 FROM HotDealLikeEntity l WHERE l.hotDeal = h AND l.user.id = :userId) THEN true 
-             ELSE false END,
-        CASE WHEN :userId IS NULL THEN false 
-             WHEN EXISTS(SELECT 1 FROM HotDealBookmarkEntity b WHERE b.hotDeal = h AND b.user.id = :userId) THEN true 
-             ELSE false END,
-        h.region.code,
-        h.region.fullName,
-        h.createdAt,
-        h.expiresAt
-    )
-    FROM HotDealEntity h
-    ORDER BY h.createdAt DESC
-    """)
-    Page<HotDealListDto> findHotDealList(
-            @Param("userId") Long userId,
-            Pageable pageable
-    );
+    @EntityGraph(attributePaths = {"user", "region"})
+    Page<HotDealEntity> findByCategory(HotDealCategory category, Pageable pageable);
 
-    /**
-     * 핫딜 검색 (다중 필터)
-     */
-    @Query("""
-    SELECT new com.twojz.y_kit.hotdeal.domain.dto.HotDealListDto(
-        h.id,
-        h.title,
-        h.placeName,
-        h.address,
-        h.url,
-        h.dealType,
-        h.category,
-        h.likeCount,
-        h.commentCount,
-        h.viewCount,
-        CASE WHEN :userId IS NULL THEN false 
-             WHEN EXISTS(SELECT 1 FROM HotDealLikeEntity l WHERE l.hotDeal = h AND l.user.id = :userId) THEN true 
-             ELSE false END,
-        CASE WHEN :userId IS NULL THEN false 
-             WHEN EXISTS(SELECT 1 FROM HotDealBookmarkEntity b WHERE b.hotDeal = h AND b.user.id = :userId) THEN true 
-             ELSE false END,
-        h.region.code,
-        h.region.fullName,
-        h.createdAt,
-        h.expiresAt
-    )
-    FROM HotDealEntity h
-    WHERE (:keyword IS NULL OR h.title LIKE %:keyword% OR h.placeName LIKE %:keyword%)
-      AND (:dealType IS NULL OR h.dealType = :dealType)
-      AND (:category IS NULL OR h.category = :category)
-      AND (:regionCode IS NULL OR h.region.code = :regionCode)
-    ORDER BY h.createdAt DESC
-    """)
-    Page<HotDealListDto> searchHotDeals(
-            @Param("keyword") String keyword,
-            @Param("dealType") DealType dealType,
+    @EntityGraph(attributePaths = {"user", "region"})
+    Page<HotDealEntity> findAll(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"user", "region"})
+    Page<HotDealEntity> findByUser(UserEntity user, Pageable pageable);
+
+    // 카테고리 + 딜타입 + 단일 키워드 검색
+    @EntityGraph(attributePaths = {"user", "region"})
+    @Query("SELECT DISTINCT h FROM HotDealEntity h " +
+            "WHERE (:category IS NULL OR h.category = :category) " +
+            "AND (:dealType IS NULL OR h.dealType = :dealType) " +
+            "AND (h.title LIKE %:keyword% OR h.content LIKE %:keyword% OR h.placeName LIKE %:keyword%)")
+    Page<HotDealEntity> findByFiltersAndKeyword(
             @Param("category") HotDealCategory category,
-            @Param("regionCode") String regionCode,
-            @Param("userId") Long userId,
+            @Param("dealType") DealType dealType,
+            @Param("keyword") String keyword,
             Pageable pageable
     );
 
-    /**
-     * 좋아요한 핫딜 목록
-     */
-    @Query("""
-    SELECT new com.twojz.y_kit.hotdeal.domain.dto.HotDealListDto(
-        h.id,
-        h.title,
-        h.placeName,
-        h.address,
-        h.url,
-        h.dealType,
-        h.category,
-        h.likeCount,
-        h.commentCount,
-        h.viewCount,
-        true,
-        CASE WHEN EXISTS(SELECT 1 FROM HotDealBookmarkEntity b WHERE b.hotDeal = h AND b.user.id = :userId) THEN true 
-             ELSE false END,
-        h.region.code,
-        h.region.fullName,
-        h.createdAt,
-        h.expiresAt
-    )
-    FROM HotDealLikeEntity l
-    JOIN l.hotDeal h
-    WHERE l.user.id = :userId
-    ORDER BY l.createdAt DESC
-    """)
-    Page<HotDealListDto> findLikedHotDeals(
-            @Param("userId") Long userId,
+    // 형태소 분석 결과로 검색 (카테고리, 딜타입 필터 옵션, 여러 키워드 AND 조건, null 허용)
+    @EntityGraph(attributePaths = {"user", "region"})
+    @Query("SELECT DISTINCT h FROM HotDealEntity h " +
+            "WHERE (:category IS NULL OR h.category = :category) " +
+            "AND (:dealType IS NULL OR h.dealType = :dealType) " +
+            "AND (" +
+            "(:keyword1 IS NULL OR h.title LIKE %:keyword1% OR h.content LIKE %:keyword1% OR h.placeName LIKE %:keyword1%) AND " +
+            "(:keyword2 IS NULL OR h.title LIKE %:keyword2% OR h.content LIKE %:keyword2% OR h.placeName LIKE %:keyword2%) AND " +
+            "(:keyword3 IS NULL OR h.title LIKE %:keyword3% OR h.content LIKE %:keyword3% OR h.placeName LIKE %:keyword3%) AND " +
+            "(:keyword4 IS NULL OR h.title LIKE %:keyword4% OR h.content LIKE %:keyword4% OR h.placeName LIKE %:keyword4%) AND " +
+            "(:keyword5 IS NULL OR h.title LIKE %:keyword5% OR h.content LIKE %:keyword5% OR h.placeName LIKE %:keyword5%))")
+    Page<HotDealEntity> searchByKeywords(
+            @Param("category") HotDealCategory category,
+            @Param("dealType") DealType dealType,
+            @Param("keyword1") String keyword1,
+            @Param("keyword2") String keyword2,
+            @Param("keyword3") String keyword3,
+            @Param("keyword4") String keyword4,
+            @Param("keyword5") String keyword5,
             Pageable pageable
-    );
-
-    /**
-     * 북마크한 핫딜 목록
-     */
-    @Query("""
-    SELECT new com.twojz.y_kit.hotdeal.domain.dto.HotDealListDto(
-        h.id,
-        h.title,
-        h.placeName,
-        h.address,
-        h.url,
-        h.dealType,
-        h.category,
-        h.likeCount,
-        h.commentCount,
-        h.viewCount,
-        CASE WHEN EXISTS(SELECT 1 FROM HotDealLikeEntity l WHERE l.hotDeal = h AND l.user.id = :userId) THEN true 
-             ELSE false END,
-        true,
-        h.region.code,
-        h.region.fullName,
-        h.createdAt,
-        h.expiresAt
-    )
-    FROM HotDealBookmarkEntity b
-    JOIN b.hotDeal h
-    WHERE b.user.id = :userId
-    ORDER BY b.createdAt DESC
-    """)
-    Page<HotDealListDto> findBookmarkedHotDeals(
-            @Param("userId") Long userId,
-            Pageable pageable
-    );
-
-    /**
-     * 내가 작성한 핫딜 목록
-     */
-    @Query("""
-    SELECT new com.twojz.y_kit.hotdeal.domain.dto.HotDealListDto(
-        h.id,
-        h.title,
-        h.placeName,
-        h.address,
-        h.url,
-        h.dealType,
-        h.category,
-        h.likeCount,
-        h.commentCount,
-        h.viewCount,
-        CASE WHEN EXISTS(SELECT 1 FROM HotDealLikeEntity l WHERE l.hotDeal = h AND l.user.id = :userId) THEN true 
-             ELSE false END,
-        CASE WHEN EXISTS(SELECT 1 FROM HotDealBookmarkEntity b WHERE b.hotDeal = h AND b.user.id = :userId) THEN true 
-             ELSE false END,
-        h.region.code,
-        h.region.fullName,
-        h.createdAt,
-        h.expiresAt
-    )
-    FROM HotDealEntity h
-    WHERE h.user.id = :userId
-    ORDER BY h.createdAt DESC
-    """)
-    Page<HotDealListDto> findMyHotDeals(
-            @Param("userId") Long userId,
-            Pageable pageable
-    );
-
-    /**
-     * 핫딜 상세 조회
-     */
-    @Query("""
-    SELECT new com.twojz.y_kit.hotdeal.domain.dto.HotDealDetailDto(
-        h.id,
-        h.title,
-        h.content,
-        h.placeName,
-        h.address,
-        h.url,
-        h.latitude,
-        h.longitude,
-        h.dealType,
-        h.category,
-        h.user.id,
-        h.user.name,
-        h.likeCount,
-        h.commentCount,
-        h.viewCount,
-        CASE WHEN :userId IS NULL THEN false 
-             WHEN EXISTS(SELECT 1 FROM HotDealLikeEntity l WHERE l.hotDeal = h AND l.user.id = :userId) THEN true 
-             ELSE false END,
-        CASE WHEN :userId IS NULL THEN false 
-             WHEN EXISTS(SELECT 1 FROM HotDealBookmarkEntity b WHERE b.hotDeal = h AND b.user.id = :userId) THEN true 
-             ELSE false END,
-        h.region.code,
-        h.region.fullName,
-        h.expiresAt,
-        h.createdAt,
-        h.updatedAt
-    )
-    FROM HotDealEntity h
-    WHERE h.id = :hotDealId
-    """)
-    Optional<HotDealDetailDto> findHotDealDetail(
-            @Param("hotDealId") Long hotDealId,
-            @Param("userId") Long userId
     );
 }

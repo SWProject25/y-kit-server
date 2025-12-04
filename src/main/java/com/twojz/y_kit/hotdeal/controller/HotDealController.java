@@ -1,6 +1,7 @@
 package com.twojz.y_kit.hotdeal.controller;
 
 import com.twojz.y_kit.global.dto.PageResponse;
+import com.twojz.y_kit.hotdeal.domain.entity.HotDealCategory;
 import com.twojz.y_kit.hotdeal.dto.request.*;
 import com.twojz.y_kit.hotdeal.dto.response.*;
 import com.twojz.y_kit.hotdeal.service.HotDealCommandService;
@@ -42,22 +43,10 @@ public class HotDealController {
     @GetMapping
     @Operation(summary = "핫딜 목록 조회")
     public PageResponse<HotDealListResponse> getHotDeals(
-            HotDealSearchRequest request,
-            Authentication authentication,
+            HotDealCategory category,
             Pageable pageable
     ) {
-        Long userId = extractUserId(authentication);
-
-        Page<HotDealListResponse> page = hotDealFindService.searchHotDeals(
-                request.getKeyword(),
-                request.getDealType(),
-                request.getCategory(),
-                request.getRegionCode(),
-                userId,
-                pageable
-        );
-
-        return new PageResponse<>(page);
+        return hotDealFindService.getHotDealList(category, pageable);
     }
 
 
@@ -101,6 +90,27 @@ public class HotDealController {
     public void deleteComment(@PathVariable Long commentId, Authentication authentication) {
         Long userId = extractUserId(authentication);
         hotDealCommandService.deleteComment(commentId, userId);
+    }
+
+    @GetMapping("/search")
+    @Operation(summary = "핫딜 검색", description = "제목, 내용, 장소명으로 핫딜을 검색합니다")
+    public PageResponse<HotDealListResponse> searchHotDeals(
+            @RequestParam(required = false) HotDealCategory category,
+            @RequestParam(required = false) String keyword,
+            Pageable pageable
+    ) {
+        return hotDealFindService.searchHotDeals(category, null, keyword, pageable);
+    }
+
+    @GetMapping("/my-posts")
+    @Operation(summary = "내가 작성한 핫딜 목록")
+    public PageResponse<HotDealListResponse> getMyPosts(
+            Authentication authentication,
+            Pageable pageable
+    ) {
+        Long userId = extractUserId(authentication);
+        return hotDealFindService.getMyHotDeals(userId, pageable);
+
     }
 
     private Long extractUserId(Authentication authentication) {

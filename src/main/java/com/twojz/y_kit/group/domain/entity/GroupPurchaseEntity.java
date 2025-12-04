@@ -23,14 +23,16 @@ public class GroupPurchaseEntity extends BaseEntity {
     @Column(nullable = false)
     private String title;
 
+    @Column(columnDefinition = "TEXT")
     private String content;
 
     @Column(nullable = false)
     private String productName;
 
+    @Column(columnDefinition = "TEXT")
     private String productLink;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "TEXT")
     private String contact;
 
     @Column(nullable = false, precision = 15, scale = 2)

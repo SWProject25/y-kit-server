@@ -28,6 +28,9 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 	runtimeOnly 'com.mysql:mysql-connector-j'
 
+	//형태소 분석
+	implementation 'org.openkoreantext:open-korean-text:2.3.1'
+
 	//jwt
 	implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
 	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'

@@ -10,6 +10,11 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface GroupPurchaseBookmarkRepository extends JpaRepository<GroupPurchaseBookmarkEntity, Long> {
-    Optional<GroupPurchaseBookmarkEntity> findByGroupPurchaseAndUser(GroupPurchaseEntity gp, UserEntity user);
-    void deleteByGroupPurchase(GroupPurchaseEntity gp);
+    Optional<GroupPurchaseBookmarkEntity> findByGroupPurchaseAndUser(GroupPurchaseEntity groupPurchase, UserEntity user);
+
+    void deleteByGroupPurchase(GroupPurchaseEntity groupPurchase);
+
+    boolean existsByGroupPurchaseAndUser(GroupPurchaseEntity groupPurchase, UserEntity user);
+
+    List<GroupPurchaseBookmarkEntity> findByUser(UserEntity user);
 }

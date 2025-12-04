@@ -33,4 +33,6 @@ public interface HotDealLikeRepository extends JpaRepository<HotDealLikeEntity, 
         Long getHotDealId();
         Long getCount();
     }
+
+    List<HotDealLikeEntity> findByUser(UserEntity user);
 }

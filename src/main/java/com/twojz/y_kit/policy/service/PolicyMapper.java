@@ -101,7 +101,7 @@ public class PolicyMapper {
     /**
      * Entity -> 응답 DTO
      */
-    public PolicyListResponse toListResponse(PolicyEntity entity) {
+    public PolicyListResponse toListResponse(PolicyEntity entity, boolean isBookmarked) {
         PolicyDetailEntity detail = entity.getDetail();
         PolicyApplicationEntity application = entity.getApplication();
         PolicyQualificationEntity qualification = entity.getQualification();
@@ -152,11 +152,14 @@ public class PolicyMapper {
                 .viewCount(entity.getViewCount())
                 .bookmarkCount(entity.getBookmarkCount())
                 .applicationCount(entity.getApplicationCount())
+                .isBookmarked(isBookmarked)
                 .createdAt(entity.getCreatedAt())
                 .build();
     }
 
-    public PolicyDetailResponse toDetailResponse(PolicyEntity entity) {
+
+
+    public PolicyDetailResponse toDetailResponse(PolicyEntity entity, boolean isBookmarked) {
         return PolicyDetailResponse.builder()
                 .basicInfo(PolicyBasicInfo.from(entity))
                 .detail(PolicyDetail.from(entity.getDetail()))
@@ -167,8 +170,10 @@ public class PolicyMapper {
                 .keywords(toKeywords(entity.getKeywordMappings()))
                 .regions(RegionInfo.from(entity.getRegions()))
                 .aiAnalysis(AiAnalysisInfo.from(entity))
+                .isBookmarked(isBookmarked)
                 .build();
     }
+
 
 
     /**
