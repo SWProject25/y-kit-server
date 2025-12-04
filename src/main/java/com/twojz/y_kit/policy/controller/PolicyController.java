@@ -51,7 +51,7 @@ public class PolicyController {
             @PathVariable Long policyId
     ) {
         Long userId = extractUserIdOrNull(authentication);
-        return policyFindService.getPolicyDetail(userId, policyId);
+        return policyFindService.getPolicyDetail(policyId, userId);
     }
 
     @GetMapping("/search")
