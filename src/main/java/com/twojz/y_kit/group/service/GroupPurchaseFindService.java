@@ -126,31 +126,53 @@ public class GroupPurchaseFindService {
     }
 
     /**
-     * 통합 검색: 형태소 분석 + 상태/지역 필터 (모두 선택사항)
+     * LIKE + OR를 사용한 통합 검색 (상태/지역 필터 옵션, OR 조건)
      */
     public PageResponse<GroupPurchaseListResponse> searchGroupPurchases(String keyword, GroupPurchaseStatus status, String regionCode, Pageable pageable) {
         List<String> extractedKeywords = extractKeywords(keyword);
 
-        Page<GroupPurchaseEntity> groupPurchases = (extractedKeywords.size() <= 1)
-                ? groupPurchaseRepository.searchByKeywordWithFilters(status, regionCode, keyword, pageable)
-                : groupPurchaseRepository.searchByKeywordsWithFilters(
-                        status,
-                        regionCode,
-                        getKeywordOrNull(extractedKeywords, 0),
-                        getKeywordOrNull(extractedKeywords, 1),
-                        getKeywordOrNull(extractedKeywords, 2),
-                        getKeywordOrNull(extractedKeywords, 3),
-                        getKeywordOrNull(extractedKeywords, 4),
-                        pageable
-                );
+        Page<GroupPurchaseEntity> groupPurchases = groupPurchaseRepository.searchByKeywords(
+                status,
+                regionCode,
+                getKeywordOrNull(extractedKeywords, 0),
+                getKeywordOrNull(extractedKeywords, 1),
+                getKeywordOrNull(extractedKeywords, 2),
+                getKeywordOrNull(extractedKeywords, 3),
+                getKeywordOrNull(extractedKeywords, 4),
+                pageable
+        );
 
         return convertToPageResponse(groupPurchases);
     }
 
     private PageResponse<GroupPurchaseListResponse> convertToPageResponse(Page<GroupPurchaseEntity> groupPurchases) {
+        List<GroupPurchaseEntity> groupPurchaseList = groupPurchases.getContent();
+
+        if (groupPurchaseList.isEmpty()) {
+            return new PageResponse<>(Page.empty());
+        }
+
+        List<Long> groupPurchaseIds = groupPurchaseList.stream()
+                .map(GroupPurchaseEntity::getId)
+                .toList();
+
+        java.util.Map<Long, Long> likeCountMap = groupPurchaseLikeRepository.countByGroupPurchaseIds(groupPurchaseIds)
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        arr -> (Long) arr[0],
+                        arr -> (Long) arr[1]
+                ));
+
+        java.util.Map<Long, Long> commentCountMap = groupPurchaseCommentRepository.countByGroupPurchaseIds(groupPurchaseIds)
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        arr -> (Long) arr[0],
+                        arr -> (Long) arr[1]
+                ));
+
         Page<GroupPurchaseListResponse> page = groupPurchases.map(groupPurchase -> {
-            long likeCount = groupPurchaseLikeRepository.countByGroupPurchase(groupPurchase);
-            long commentCount = groupPurchaseCommentRepository.countByGroupPurchase(groupPurchase);
+            long likeCount = likeCountMap.getOrDefault(groupPurchase.getId(), 0L);
+            long commentCount = commentCountMap.getOrDefault(groupPurchase.getId(), 0L);
             return GroupPurchaseListResponse.from(groupPurchase, likeCount, commentCount);
         });
 

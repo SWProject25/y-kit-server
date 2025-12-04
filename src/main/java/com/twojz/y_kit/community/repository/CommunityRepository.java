@@ -20,44 +20,20 @@ public interface CommunityRepository extends JpaRepository<CommunityEntity, Long
     @EntityGraph(attributePaths = "user")
     Page<CommunityEntity> findAll(Pageable pageable);
 
-    Page<CommunityEntity> findByTitleContainingOrContentContaining(String title, String content, Pageable pageable);
-
     Page<CommunityEntity> findByUser(UserEntity user, Pageable pageable);
 
-    // 카테고리 + 단일 키워드 검색
     @EntityGraph(attributePaths = "user")
-    Page<CommunityEntity> findByCategoryAndTitleContainingOrCategoryAndContentContaining(
-            CommunityCategory category1, String title,
-            CommunityCategory category2, String content,
-            Pageable pageable
-    );
-
-    // 형태소 분석 결과로 검색 (여러 키워드 AND 조건, null 허용)
-    @EntityGraph(attributePaths = "user")
-    @Query("SELECT DISTINCT c FROM CommunityEntity c WHERE " +
-            "(:keyword1 IS NULL OR c.title LIKE %:keyword1% OR c.content LIKE %:keyword1%) AND " +
-            "(:keyword2 IS NULL OR c.title LIKE %:keyword2% OR c.content LIKE %:keyword2%) AND " +
-            "(:keyword3 IS NULL OR c.title LIKE %:keyword3% OR c.content LIKE %:keyword3%) AND " +
-            "(:keyword4 IS NULL OR c.title LIKE %:keyword4% OR c.content LIKE %:keyword4%) AND " +
-            "(:keyword5 IS NULL OR c.title LIKE %:keyword5% OR c.content LIKE %:keyword5%)")
+    @Query("SELECT DISTINCT c FROM CommunityEntity c " +
+            "WHERE (:category IS NULL OR c.category = :category) " +
+            "AND (" +
+            "(:keyword1 IS NULL) OR " +
+            "(c.title LIKE %:keyword1% OR c.content LIKE %:keyword1%) OR " +
+            "(:keyword2 IS NOT NULL AND (c.title LIKE %:keyword2% OR c.content LIKE %:keyword2%)) OR " +
+            "(:keyword3 IS NOT NULL AND (c.title LIKE %:keyword3% OR c.content LIKE %:keyword3%)) OR " +
+            "(:keyword4 IS NOT NULL AND (c.title LIKE %:keyword4% OR c.content LIKE %:keyword4%)) OR " +
+            "(:keyword5 IS NOT NULL AND (c.title LIKE %:keyword5% OR c.content LIKE %:keyword5%))" +
+            ")")
     Page<CommunityEntity> searchByKeywords(
-            @Param("keyword1") String keyword1,
-            @Param("keyword2") String keyword2,
-            @Param("keyword3") String keyword3,
-            @Param("keyword4") String keyword4,
-            @Param("keyword5") String keyword5,
-            Pageable pageable
-    );
-
-    // 카테고리 + 여러 키워드로 검색 (null 허용)
-    @EntityGraph(attributePaths = "user")
-    @Query("SELECT DISTINCT c FROM CommunityEntity c WHERE c.category = :category AND (" +
-            "(:keyword1 IS NULL OR c.title LIKE %:keyword1% OR c.content LIKE %:keyword1%) OR " +
-            "(:keyword2 IS NULL OR c.title LIKE %:keyword2% OR c.content LIKE %:keyword2%) OR " +
-            "(:keyword3 IS NULL OR c.title LIKE %:keyword3% OR c.content LIKE %:keyword3%) OR " +
-            "(:keyword4 IS NULL OR c.title LIKE %:keyword4% OR c.content LIKE %:keyword4%) OR " +
-            "(:keyword5 IS NULL OR c.title LIKE %:keyword5% OR c.content LIKE %:keyword5%))")
-    Page<CommunityEntity> searchByCategoryAndKeywords(
             @Param("category") CommunityCategory category,
             @Param("keyword1") String keyword1,
             @Param("keyword2") String keyword2,
@@ -75,7 +51,6 @@ public interface CommunityRepository extends JpaRepository<CommunityEntity, Long
             "ORDER BY (c.viewCount + COUNT(b)) DESC")
     List<CommunityEntity> findTrendingCommunities(Pageable pageable);
 
-    // 무작위 게시글 조회
     @EntityGraph(attributePaths = "user")
     @Query(value = "SELECT * FROM community ORDER BY RAND() LIMIT :limit", nativeQuery = true)
     List<CommunityEntity> findRandomCommunities(@Param("limit") int limit);

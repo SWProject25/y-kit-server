@@ -9,7 +9,6 @@ import com.twojz.y_kit.hotdeal.service.HotDealFindService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -43,7 +42,7 @@ public class HotDealController {
     @GetMapping
     @Operation(summary = "핫딜 목록 조회")
     public PageResponse<HotDealListResponse> getHotDeals(
-            HotDealCategory category,
+            @RequestParam(required = false) HotDealCategory category,
             Pageable pageable
     ) {
         return hotDealFindService.getHotDealList(category, pageable);

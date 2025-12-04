@@ -3,8 +3,11 @@ package com.twojz.y_kit.community.repository;
 import com.twojz.y_kit.community.domain.entity.CommunityEntity;
 import com.twojz.y_kit.community.domain.entity.CommunityLikeEntity;
 import com.twojz.y_kit.user.entity.UserEntity;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -14,4 +17,7 @@ public interface CommunityLikeRepository extends JpaRepository<CommunityLikeEnti
     long countByCommunity(CommunityEntity community);
 
     boolean existsByCommunityAndUser(CommunityEntity community, UserEntity user);
+
+    @Query("SELECT l.community.id, COUNT(l) FROM CommunityLikeEntity l WHERE l.community.id IN :communityIds GROUP BY l.community.id")
+    List<Object[]> countByCommunityIds(@Param("communityIds") List<Long> communityIds);
 }

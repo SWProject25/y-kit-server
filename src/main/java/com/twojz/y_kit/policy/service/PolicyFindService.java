@@ -1,7 +1,6 @@
 package com.twojz.y_kit.policy.service;
 
 import com.twojz.y_kit.global.dto.PageResponse;
-import com.twojz.y_kit.policy.domain.entity.PolicyBookmarkEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
 import com.twojz.y_kit.policy.dto.response.PolicyCategoryResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyDetailResponse;
@@ -15,6 +14,7 @@ import com.twojz.y_kit.user.entity.ProfileStatus;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.UserFindService;
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -184,10 +184,10 @@ public class PolicyFindService {
     }
 
     /**
-     * 정책 검색 및 필터링 (형태소 분석 지원)
+     * LIKE + OR를 사용한 정책 검색 및 필터링 (OR 조건)
      * - categoryIds: PolicyCategoryEntity의 ID 리스트
      * - keywordIds: PolicyKeywordEntity의 ID 리스트
-     * - keyword: 정책명(plcyNm)/설명(plcyExplnCn) 텍스트 검색 (형태소 분석 적용)
+     * - keyword: 정책명(plcyNm)/설명(plcyExplnCn) 텍스트 검색 (형태소 분석 후 OR 연산)
      */
     public PageResponse<PolicyListResponse> searchPolicies(
             String keyword,
@@ -200,11 +200,7 @@ public class PolicyFindService {
                 ? extractKeywords(keyword)
                 : List.of();
 
-        if (!extractedKeywords.isEmpty()) {
-            log.info("정책 검색 - 검색어: {}, 추출된 키워드: {}", keyword, extractedKeywords);
-        }
-
-        Page<PolicyEntity> policyPage = policyRepository.searchPoliciesUnified(
+        Page<PolicyEntity> policyPage = policyRepository.searchByKeywords(
                 categoryIds,
                 keywordIds,
                 getKeywordOrNull(extractedKeywords, 0),
@@ -226,9 +222,10 @@ public class PolicyFindService {
 
         List<PolicyEntity> similarPolicies = policyRepository.findSimilarPoliciesByCategory(policyId, pageable);
         fetchCollections(similarPolicies);
+        Map<Long, Boolean> bookmarkMap = getBookmarkMap(similarPolicies, userId);
 
         return similarPolicies.stream()
-                .map(policy -> policyMapper.toListResponse(policy, false))
+                .map(policy -> policyMapper.toListResponse(policy, bookmarkMap.getOrDefault(policy.getId(), false)))
                 .toList();
     }
 
@@ -246,7 +243,7 @@ public class PolicyFindService {
     }
 
     /**
-     * 북마크 여부 Map 생성
+     * 북마크 여부 Map 생성 (N+1 문제 해결)
      * - userId가 null이면 빈 Map 반환 (모든 북마크 false)
      * - userId가 있으면 해당 사용자의 북마크 여부를 Map으로 반환
      */
@@ -260,11 +257,14 @@ public class PolicyFindService {
             return Map.of();
         }
 
-        List<PolicyBookmarkEntity> bookmarks = policyBookmarkRepository.findByUser(user);
+        // 현재 페이지의 정책 ID 수집
+        List<Long> policyIds = policies.stream()
+                .map(PolicyEntity::getId)
+                .toList();
 
-        Set<Long> bookmarkedPolicyIds = bookmarks.stream()
-                .map(bookmark -> bookmark.getPolicy().getId())
-                .collect(Collectors.toSet());
+        // 해당 정책들에 대한 북마크만 조회
+        Set<Long> bookmarkedPolicyIds = new HashSet<>(policyBookmarkRepository
+                .findBookmarkedPolicyIdsByUserAndPolicyIds(user, policyIds));
 
         return policies.stream()
                 .collect(Collectors.toMap(

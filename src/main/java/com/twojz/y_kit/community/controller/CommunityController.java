@@ -165,7 +165,7 @@ public class CommunityController {
             @RequestParam @Size(min = 2, message = "검색어는 최소 2자 이상이어야 합니다") String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        PageResponse<CommunityListResponse> page = communityFindService.searchCommunities(keyword, pageable);
+        PageResponse<CommunityListResponse> page = communityFindService.searchCommunities(null, keyword, pageable);
         return ResponseEntity.ok(page);
     }
 
@@ -176,7 +176,7 @@ public class CommunityController {
             @RequestParam String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        PageResponse<CommunityListResponse> results = communityFindService.searchByCategory(category, keyword, pageable);
+        PageResponse<CommunityListResponse> results = communityFindService.searchCommunities(category, keyword, pageable);
         return ResponseEntity.ok(results);
     }
 

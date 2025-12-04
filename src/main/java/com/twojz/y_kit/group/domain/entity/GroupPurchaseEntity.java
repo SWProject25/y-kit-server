@@ -17,7 +17,7 @@ import java.math.BigDecimal;
 @Entity
 public class GroupPurchaseEntity extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
     @Column(nullable = false)

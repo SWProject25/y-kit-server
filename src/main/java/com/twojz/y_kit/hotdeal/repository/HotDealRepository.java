@@ -23,30 +23,18 @@ public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
     @EntityGraph(attributePaths = {"user", "region"})
     Page<HotDealEntity> findByUser(UserEntity user, Pageable pageable);
 
-    // 카테고리 + 딜타입 + 단일 키워드 검색
-    @EntityGraph(attributePaths = {"user", "region"})
-    @Query("SELECT DISTINCT h FROM HotDealEntity h " +
-            "WHERE (:category IS NULL OR h.category = :category) " +
-            "AND (:dealType IS NULL OR h.dealType = :dealType) " +
-            "AND (h.title LIKE %:keyword% OR h.content LIKE %:keyword% OR h.placeName LIKE %:keyword%)")
-    Page<HotDealEntity> findByFiltersAndKeyword(
-            @Param("category") HotDealCategory category,
-            @Param("dealType") DealType dealType,
-            @Param("keyword") String keyword,
-            Pageable pageable
-    );
-
-    // 형태소 분석 결과로 검색 (카테고리, 딜타입 필터 옵션, 여러 키워드 AND 조건, null 허용)
     @EntityGraph(attributePaths = {"user", "region"})
     @Query("SELECT DISTINCT h FROM HotDealEntity h " +
             "WHERE (:category IS NULL OR h.category = :category) " +
             "AND (:dealType IS NULL OR h.dealType = :dealType) " +
             "AND (" +
-            "(:keyword1 IS NULL OR h.title LIKE %:keyword1% OR h.content LIKE %:keyword1% OR h.placeName LIKE %:keyword1%) AND " +
-            "(:keyword2 IS NULL OR h.title LIKE %:keyword2% OR h.content LIKE %:keyword2% OR h.placeName LIKE %:keyword2%) AND " +
-            "(:keyword3 IS NULL OR h.title LIKE %:keyword3% OR h.content LIKE %:keyword3% OR h.placeName LIKE %:keyword3%) AND " +
-            "(:keyword4 IS NULL OR h.title LIKE %:keyword4% OR h.content LIKE %:keyword4% OR h.placeName LIKE %:keyword4%) AND " +
-            "(:keyword5 IS NULL OR h.title LIKE %:keyword5% OR h.content LIKE %:keyword5% OR h.placeName LIKE %:keyword5%))")
+            "(:keyword1 IS NULL) OR " +
+            "(h.title LIKE %:keyword1% OR h.content LIKE %:keyword1% OR h.placeName LIKE %:keyword1%) OR " +
+            "(:keyword2 IS NOT NULL AND (h.title LIKE %:keyword2% OR h.content LIKE %:keyword2% OR h.placeName LIKE %:keyword2%)) OR " +
+            "(:keyword3 IS NOT NULL AND (h.title LIKE %:keyword3% OR h.content LIKE %:keyword3% OR h.placeName LIKE %:keyword3%)) OR " +
+            "(:keyword4 IS NOT NULL AND (h.title LIKE %:keyword4% OR h.content LIKE %:keyword4% OR h.placeName LIKE %:keyword4%)) OR " +
+            "(:keyword5 IS NOT NULL AND (h.title LIKE %:keyword5% OR h.content LIKE %:keyword5% OR h.placeName LIKE %:keyword5%))" +
+            ")")
     Page<HotDealEntity> searchByKeywords(
             @Param("category") HotDealCategory category,
             @Param("dealType") DealType dealType,

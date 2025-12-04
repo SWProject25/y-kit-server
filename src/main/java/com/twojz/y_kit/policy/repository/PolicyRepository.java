@@ -301,7 +301,9 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
     List<PolicyEntity> findWithRegions(@Param("policies") List<PolicyEntity> policies);
 
     /**
-     * 통합 검색 - 모든 필터 조건을 null 가능하게 처리 - categoryIds, keywordIds, keyword1~5 모두 선택적 - 형태소 분석 지원 (keyword1~5)
+     * LIKE + OR를 사용한 통합 검색 (카테고리, 키워드 ID 필터, OR 조건)
+     * - categoryIds, keywordIds, 검색 키워드 모두 선택적
+     * - 형태소 분석된 키워드를 OR 조건으로 검색
      */
     @Query("SELECT DISTINCT p FROM PolicyEntity p " +
             "LEFT JOIN p.detail d " +
@@ -311,15 +313,15 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
             "AND (:#{#categoryIds == null || #categoryIds.isEmpty()} = true OR cm.category.id IN :categoryIds) " +
             "AND (:#{#keywordIds == null || #keywordIds.isEmpty()} = true OR km.keyword.id IN :keywordIds) " +
             "AND (" +
-            "    (:keyword1 IS NULL AND :keyword2 IS NULL AND :keyword3 IS NULL AND :keyword4 IS NULL AND :keyword5 IS NULL) "
-            +
-            "    OR (:keyword1 IS NOT NULL AND (d.plcyNm LIKE %:keyword1% OR d.plcyExplnCn LIKE %:keyword1%)) " +
-            "    OR (:keyword2 IS NOT NULL AND (d.plcyNm LIKE %:keyword2% OR d.plcyExplnCn LIKE %:keyword2%)) " +
-            "    OR (:keyword3 IS NOT NULL AND (d.plcyNm LIKE %:keyword3% OR d.plcyExplnCn LIKE %:keyword3%)) " +
-            "    OR (:keyword4 IS NOT NULL AND (d.plcyNm LIKE %:keyword4% OR d.plcyExplnCn LIKE %:keyword4%)) " +
-            "    OR (:keyword5 IS NOT NULL AND (d.plcyNm LIKE %:keyword5% OR d.plcyExplnCn LIKE %:keyword5%))" +
-            ")")
-    Page<PolicyEntity> searchPoliciesUnified(
+            "(:keyword1 IS NULL AND :keyword2 IS NULL AND :keyword3 IS NULL AND :keyword4 IS NULL AND :keyword5 IS NULL) OR " +
+            "(:keyword1 IS NOT NULL AND (d.plcyNm LIKE %:keyword1% OR d.plcyExplnCn LIKE %:keyword1%)) OR " +
+            "(:keyword2 IS NOT NULL AND (d.plcyNm LIKE %:keyword2% OR d.plcyExplnCn LIKE %:keyword2%)) OR " +
+            "(:keyword3 IS NOT NULL AND (d.plcyNm LIKE %:keyword3% OR d.plcyExplnCn LIKE %:keyword3%)) OR " +
+            "(:keyword4 IS NOT NULL AND (d.plcyNm LIKE %:keyword4% OR d.plcyExplnCn LIKE %:keyword4%)) OR " +
+            "(:keyword5 IS NOT NULL AND (d.plcyNm LIKE %:keyword5% OR d.plcyExplnCn LIKE %:keyword5%))" +
+            ") " +
+            "ORDER BY p.createdAt DESC")
+    Page<PolicyEntity> searchByKeywords(
             @Param("categoryIds") List<Long> categoryIds,
             @Param("keywordIds") List<Long> keywordIds,
             @Param("keyword1") String keyword1,

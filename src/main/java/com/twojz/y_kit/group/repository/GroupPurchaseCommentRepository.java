@@ -4,6 +4,8 @@ import com.twojz.y_kit.group.domain.entity.GroupPurchaseCommentEntity;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseEntity;
 import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
@@ -13,4 +15,7 @@ public interface GroupPurchaseCommentRepository extends JpaRepository<GroupPurch
     void deleteByGroupPurchase(GroupPurchaseEntity groupPurchase);
 
     long countByGroupPurchase(GroupPurchaseEntity groupPurchase);
+
+    @Query("SELECT c.groupPurchase.id, COUNT(c) FROM GroupPurchaseCommentEntity c WHERE c.groupPurchase.id IN :groupPurchaseIds GROUP BY c.groupPurchase.id")
+    List<Object[]> countByGroupPurchaseIds(@Param("groupPurchaseIds") List<Long> groupPurchaseIds);
 }

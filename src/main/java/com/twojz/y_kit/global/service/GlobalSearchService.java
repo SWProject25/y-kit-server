@@ -34,16 +34,14 @@ public class GlobalSearchService {
     /**
      * 통합 검색 - 전체 카테고리
      */
-    public GlobalSearchResponse searchAll(String keyword, Long userId) {
+    public GlobalSearchResponse searchAll(String keyword, Long userId, Pageable pageable) {
         log.info("통합 검색 시작 - 검색어: {}", keyword);
 
         List<String> extractedKeywords = extractKeywords(keyword);
         log.info("추출된 키워드: {}", extractedKeywords);
 
-        Pageable pageable = PageRequest.of(0, 10);
-
         PageResponse<CommunityListResponse> communities =
-                communityFindService.searchCommunities(keyword, pageable);
+                communityFindService.searchCommunities(null, keyword, pageable);
 
         PageResponse<HotDealListResponse> hotDeals =
                 hotDealFindService.searchHotDeals(null, null, keyword, pageable);
@@ -94,7 +92,7 @@ public class GlobalSearchService {
         switch (category) {
             case COMMUNITY -> {
                 PageResponse<CommunityListResponse> communities =
-                        communityFindService.searchCommunities(keyword, pageable);
+                        communityFindService.searchCommunities(null, keyword, pageable);
                 builder.communities(communities);
                 totalCount = communities.getTotalElements();
             }
@@ -133,7 +131,7 @@ public class GlobalSearchService {
         Pageable pageable = PageRequest.of(0, 5);
 
         PageResponse<CommunityListResponse> communities =
-                communityFindService.searchCommunities(keyword, pageable);
+                communityFindService.searchCommunities(null, keyword, pageable);
 
         PageResponse<HotDealListResponse> hotDeals =
                 hotDealFindService.searchHotDeals(null, null, keyword, pageable);

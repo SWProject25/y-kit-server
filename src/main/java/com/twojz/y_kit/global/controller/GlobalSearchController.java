@@ -33,10 +33,10 @@ public class GlobalSearchController {
     public ResponseEntity<GlobalSearchResponse> globalSearch(
             @RequestParam @Size(min = 2, message = "검색어는 최소 2자 이상이어야 합니다") String keyword,
             Authentication authentication,
-            @ParameterObject @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
+            @ParameterObject @PageableDefault(sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         Long userId = extractUserIdOrNull(authentication);
-        GlobalSearchResponse response = globalSearchService.searchAll(keyword, userId);
+        GlobalSearchResponse response = globalSearchService.searchAll(keyword, userId, pageable);
         return ResponseEntity.ok(response);
     }
 

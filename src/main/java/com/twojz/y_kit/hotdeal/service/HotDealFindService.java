@@ -118,7 +118,7 @@ public class HotDealFindService {
     }
 
     /**
-     * 형태소 분석을 사용한 통합 검색 (카테고리, 딜타입 필터 옵션)
+     * LIKE + OR를 사용한 통합 검색 (카테고리, 딜타입 필터 옵션, OR 조건)
      */
     public PageResponse<HotDealListResponse> searchHotDeals(
             HotDealCategory category,
@@ -128,32 +128,51 @@ public class HotDealFindService {
     ) {
         List<String> extractedKeywords = extractKeywords(keyword);
 
-        log.info("핫딜 검색 - category: {}, dealType: {}, 검색어: {}, 추출된 키워드: {}",
-                category, dealType, keyword, extractedKeywords);
-
-        Page<HotDealEntity> hotDeals = (extractedKeywords.size() <= 1)
-                ? hotDealRepository.findByFiltersAndKeyword(category, dealType, keyword, pageable)
-                : hotDealRepository.searchByKeywords(
-                        category,
-                        dealType,
-                        getKeywordOrNull(extractedKeywords, 0),
-                        getKeywordOrNull(extractedKeywords, 1),
-                        getKeywordOrNull(extractedKeywords, 2),
-                        getKeywordOrNull(extractedKeywords, 3),
-                        getKeywordOrNull(extractedKeywords, 4),
-                        pageable
-                );
+        Page<HotDealEntity> hotDeals = hotDealRepository.searchByKeywords(
+                category,
+                dealType,
+                getKeywordOrNull(extractedKeywords, 0),
+                getKeywordOrNull(extractedKeywords, 1),
+                getKeywordOrNull(extractedKeywords, 2),
+                getKeywordOrNull(extractedKeywords, 3),
+                getKeywordOrNull(extractedKeywords, 4),
+                pageable
+        );
 
         return convertToPageResponse(hotDeals);
     }
 
     /**
-     * Entity를 PageResponse로 변환
+     * Entity를 PageResponse로 변환 (N+1 문제 해결)
      */
     private PageResponse<HotDealListResponse> convertToPageResponse(Page<HotDealEntity> hotDeals) {
+        List<HotDealEntity> hotDealList = hotDeals.getContent();
+
+        if (hotDealList.isEmpty()) {
+            return new PageResponse<>(Page.empty());
+        }
+
+        List<Long> hotDealIds = hotDealList.stream()
+                .map(HotDealEntity::getId)
+                .toList();
+
+        java.util.Map<Long, Long> likeCountMap = hotDealLikeRepository.countByHotDealIds(hotDealIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        arr -> (Long) arr[0],
+                        arr -> (Long) arr[1]
+                ));
+
+        java.util.Map<Long, Long> commentCountMap = hotDealCommentRepository.countByHotDealIds(hotDealIds)
+                .stream()
+                .collect(Collectors.toMap(
+                        arr -> (Long) arr[0],
+                        arr -> (Long) arr[1]
+                ));
+
         Page<HotDealListResponse> page = hotDeals.map(hotDeal -> {
-            long likeCount = hotDealLikeRepository.countByHotDeal(hotDeal);
-            long commentCount = hotDealCommentRepository.countByHotDeal(hotDeal);
+            long likeCount = likeCountMap.getOrDefault(hotDeal.getId(), 0L);
+            long commentCount = commentCountMap.getOrDefault(hotDeal.getId(), 0L);
             return HotDealListResponse.from(hotDeal, likeCount, commentCount);
         });
 

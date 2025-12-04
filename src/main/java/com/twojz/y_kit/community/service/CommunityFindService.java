@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openkoreantext.processor.OpenKoreanTextProcessorJava;
-import org.openkoreantext.processor.tokenizer.KoreanTokenizer;
 import org.openkoreantext.processor.tokenizer.KoreanTokenizer.KoreanToken;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -89,56 +88,93 @@ public class CommunityFindService {
     }
 
     /**
-     * 형태소 분석을 사용한 통합 검색
+     * LIKE + OR를 사용한 통합 검색 메서드
+     * @param category null이면 전체 검색, 값이 있으면 해당 카테고리 내 검색
      */
-    public PageResponse<CommunityListResponse> searchCommunities(String keyword, Pageable pageable) {
+    public PageResponse<CommunityListResponse> searchCommunities(
+            CommunityCategory category,
+            String keyword,
+            Pageable pageable
+    ) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            return getCommunityList(category, pageable);
+        }
+
         List<String> extractedKeywords = extractKeywords(keyword);
 
-        Page<CommunityEntity> communities = (extractedKeywords.size() <= 1)
-                ? communityRepository.findByTitleContainingOrContentContaining(keyword, keyword, pageable)
-                : communityRepository.searchByKeywords(
-                        getKeywordOrNull(extractedKeywords, 0),
-                        getKeywordOrNull(extractedKeywords, 1),
-                        getKeywordOrNull(extractedKeywords, 2),
-                        getKeywordOrNull(extractedKeywords, 3),
-                        getKeywordOrNull(extractedKeywords, 4),
-                        pageable
-                );
+        Page<CommunityEntity> communities = communityRepository.searchByKeywords(
+                category,
+                getKeywordOrNull(extractedKeywords, 0),
+                getKeywordOrNull(extractedKeywords, 1),
+                getKeywordOrNull(extractedKeywords, 2),
+                getKeywordOrNull(extractedKeywords, 3),
+                getKeywordOrNull(extractedKeywords, 4),
+                pageable
+        );
 
         return convertToPageResponse(communities);
     }
 
     /**
-     * 카테고리별 검색
+     * 실시간 순위 조회 (조회수 + 북마크 수 기준, 최대 5개)
+     * 데이터가 부족하면 무작위로 5개 선택
      */
-    public PageResponse<CommunityListResponse> searchByCategory(CommunityCategory category, String keyword, Pageable pageable) {
-        List<String> extractedKeywords = extractKeywords(keyword);
+    public List<CommunityListResponse> getTrendingCommunities() {
+        final int TRENDING_SIZE = 5;
+        final int MIN_DATA_THRESHOLD = 10;
 
-        log.info("카테고리: {}, 검색어: {}, 추출된 키워드: {}", category, keyword, extractedKeywords);
+        long totalCount = communityRepository.count();
 
-        Page<CommunityEntity> communities = (extractedKeywords.size() <= 1)
-                ? communityRepository.findByCategoryAndTitleContainingOrCategoryAndContentContaining(
-                category, keyword, category, keyword, pageable)
-                : communityRepository.searchByCategoryAndKeywords(
-                        category,
-                        getKeywordOrNull(extractedKeywords, 0),
-                        getKeywordOrNull(extractedKeywords, 1),
-                        getKeywordOrNull(extractedKeywords, 2),
-                        getKeywordOrNull(extractedKeywords, 3),
-                        getKeywordOrNull(extractedKeywords, 4),
-                        pageable
-                );
+        List<CommunityEntity> communities;
+        if (totalCount < MIN_DATA_THRESHOLD) {
+            communities = communityRepository.findRandomCommunities(TRENDING_SIZE);
+        } else {
+            communities = communityRepository.findTrendingCommunities(
+                    org.springframework.data.domain.PageRequest.of(0, TRENDING_SIZE)
+            );
+        }
 
-        return convertToPageResponse(communities);
+        return communities.stream()
+                .map(community -> {
+                    long likeCount = communityLikeRepository.countByCommunity(community);
+                    long commentCount = communityCommentRepository.countByCommunity(community);
+                    return CommunityListResponse.from(community, likeCount, commentCount);
+                })
+                .toList();
     }
 
+
     /**
-     * Entity를 PageResponse로 변환
+     * Entity를 PageResponse로 변환 (N+1 문제 해결)
      */
     private PageResponse<CommunityListResponse> convertToPageResponse(Page<CommunityEntity> communities) {
+        List<CommunityEntity> communityList = communities.getContent();
+
+        if (communityList.isEmpty()) {
+            return new PageResponse<>(Page.empty());
+        }
+
+        List<Long> communityIds = communityList.stream()
+                .map(CommunityEntity::getId)
+                .toList();
+
+        java.util.Map<Long, Long> likeCountMap = communityLikeRepository.countByCommunityIds(communityIds)
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        arr -> (Long) arr[0],
+                        arr -> (Long) arr[1]
+                ));
+
+        java.util.Map<Long, Long> commentCountMap = communityCommentRepository.countByCommunityIds(communityIds)
+                .stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        arr -> (Long) arr[0],
+                        arr -> (Long) arr[1]
+                ));
+
         Page<CommunityListResponse> page = communities.map(community -> {
-            long likeCount = communityLikeRepository.countByCommunity(community);
-            long commentCount = communityCommentRepository.countByCommunity(community);
+            long likeCount = likeCountMap.getOrDefault(community.getId(), 0L);
+            long commentCount = commentCountMap.getOrDefault(community.getId(), 0L);
             return CommunityListResponse.from(community, likeCount, commentCount);
         });
 
@@ -175,33 +211,5 @@ public class CommunityFindService {
      */
     private String getKeywordOrNull(List<String> keywords, int index) {
         return index < keywords.size() ? keywords.get(index) : null;
-    }
-
-    /**
-     * 실시간 순위 조회 (조회수 + 북마크 수 기준, 최대 5개)
-     * 데이터가 부족하면 무작위로 5개 선택
-     */
-    public List<CommunityListResponse> getTrendingCommunities() {
-        final int TRENDING_SIZE = 5;
-        final int MIN_DATA_THRESHOLD = 10;
-
-        long totalCount = communityRepository.count();
-
-        List<CommunityEntity> communities;
-        if (totalCount < MIN_DATA_THRESHOLD) {
-            communities = communityRepository.findRandomCommunities(TRENDING_SIZE);
-        } else {
-            communities = communityRepository.findTrendingCommunities(
-                    org.springframework.data.domain.PageRequest.of(0, TRENDING_SIZE)
-            );
-        }
-
-        return communities.stream()
-                .map(community -> {
-                    long likeCount = communityLikeRepository.countByCommunity(community);
-                    long commentCount = communityCommentRepository.countByCommunity(community);
-                    return CommunityListResponse.from(community, likeCount, commentCount);
-                })
-                .toList();
     }
 }
