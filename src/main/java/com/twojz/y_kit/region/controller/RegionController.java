@@ -35,4 +35,16 @@ public class RegionController {
     public List<RegionResponse> getDongList(@RequestParam String sigunguCode) {
         return regionFindService.findDong(sigunguCode);
     }
+
+    @Operation(summary = "지역명으로 조회")
+    @GetMapping("/find/name")
+    public RegionResponse findRegionName(@RequestParam String name) {
+        return RegionResponse.from(regionFindService.findRegionName(name));
+    }
+
+    @Operation(summary = "전체 지역명으로 조회")
+    @GetMapping("/find/fullname")
+    public RegionResponse findByFullName(@RequestParam String fullName) {
+        return RegionResponse.from(regionFindService.findRegionFullName(fullName));
+    }
 }
