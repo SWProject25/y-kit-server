@@ -3,8 +3,9 @@ package com.twojz.y_kit.policy.controller;
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
 import com.twojz.y_kit.policy.service.PolicyAiAnalysisService;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +32,8 @@ public class PolicyAiInitController {
 
     @GetMapping("/init/start")
     public ResponseEntity<?> startInit(
-            @RequestParam(defaultValue = "1000") long delayMs) {
+            @RequestParam(defaultValue = "0") long delayMs,
+            @RequestParam(defaultValue = "5") int parallelCount) {
 
         if (!isRunning.compareAndSet(false, true)) {
             return ResponseEntity.badRequest()
@@ -52,7 +54,7 @@ public class PolicyAiInitController {
 
         new Thread(() -> {
             try {
-                runAiAnalysisInit(delayMs);
+                runAiAnalysisInit(delayMs, parallelCount);
             } catch (Exception e) {
                 log.error("AI 분석 초기화 중 예외 발생", e);
                 lastError = e.getMessage();
@@ -65,7 +67,8 @@ public class PolicyAiInitController {
                 "message", "AI 분석 시작됨",
                 "remaining", remaining,
                 "delayMs", delayMs,
-                "estimatedHours", String.format("%.1f", (remaining * delayMs) / 3600000.0),
+                "parallelCount", parallelCount,
+                "estimatedHours", String.format("%.1f", (remaining * delayMs) / 3600000.0 / parallelCount),
                 "statusUrl", "/admin/policy-ai/init/status"
         ));
     }
@@ -116,74 +119,108 @@ public class PolicyAiInitController {
         ));
     }
 
-    private void runAiAnalysisInit(long delayMs) {
+    private void runAiAnalysisInit(long delayMs, int parallelCount) {
         log.info("=== AI 분석 초기화 시작 ===");
-        log.info("딜레이: {}ms ({}초)", delayMs, delayMs / 1000.0);
+        log.info("병렬 처리 수: {}, 딜레이: {}ms", parallelCount, delayMs);
 
         long startTime = System.currentTimeMillis();
         int pageSize = 100;
-        int consecutiveFailures = 0;
-        final int MAX_CONSECUTIVE_FAILURES = 10;
+        AtomicInteger consecutiveFailures = new AtomicInteger(0);
+        final int MAX_CONSECUTIVE_FAILURES = 20;
 
-        while (isRunning.get()) {
-            Page<PolicyEntity> page = aiAnalysisService
-                    .findPoliciesWithoutAi(0, pageSize);
+        ExecutorService executor = Executors.newFixedThreadPool(parallelCount);
 
-            if (page.isEmpty()) {
-                log.info("✅ 모든 정책 처리 완료!");
-                break;
-            }
+        try {
+            while (isRunning.get()) {
+                Page<PolicyEntity> page = aiAnalysisService
+                        .findPoliciesWithoutAi(0, pageSize);
 
-            log.info("=== 배치 처리 시작 ({}개 정책) ===", page.getContent().size());
-
-            for (PolicyEntity policy : page.getContent()) {
-                if (!isRunning.get()) {
-                    log.warn("중단 요청으로 인한 종료");
-                    return;
+                if (page.isEmpty()) {
+                    log.info("✅ 모든 정책 처리 완료!");
+                    break;
                 }
 
-                try {
-                    aiAnalysisService.processAiAnalysis(policy);
-                    success.incrementAndGet();
-                    consecutiveFailures = 0;
+                log.info("=== 배치 처리 시작 ({}개 정책, {}개 병렬) ===",
+                        page.getContent().size(), parallelCount);
 
-                } catch (Exception e) {
-                    failed.incrementAndGet();
-                    consecutiveFailures++;
-                    lastError = e.getMessage();
+                List<PolicyEntity> policies = page.getContent();
+                CountDownLatch latch = new CountDownLatch(policies.size());
 
-                    log.error("실패 (연속 {}회) - policyNo: {}, error: {}",
-                            consecutiveFailures, policy.getPolicyNo(), e.getMessage());
-
-                    if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
-                        log.error("!!! 연속 {}회 실패. OpenAI 크레딧 또는 Rate Limit 확인 필요 !!!",
-                                consecutiveFailures);
-                        log.error("충전 후 다시 /init/start 호출하면 이어서 진행됩니다");
-                        isRunning.set(false);
+                for (PolicyEntity policy : policies) {
+                    if (!isRunning.get()) {
+                        log.warn("중단 요청으로 인한 종료");
+                        executor.shutdownNow();
                         return;
+                    }
+
+                    executor.submit(() -> {
+                        try {
+                            aiAnalysisService.processAiAnalysis(policy);
+                            success.incrementAndGet();
+                            consecutiveFailures.set(0);
+
+                        } catch (Exception e) {
+                            failed.incrementAndGet();
+                            int failures = consecutiveFailures.incrementAndGet();
+                            lastError = e.getMessage();
+
+                            log.error("실패 (연속 {}회) - policyNo: {}, error: {}",
+                                    failures, policy.getPolicyNo(), e.getMessage());
+
+                            if (failures >= MAX_CONSECUTIVE_FAILURES) {
+                                log.error("!!! 연속 {}회 실패. OpenAI 크레딧 또는 Rate Limit 확인 필요 !!!",
+                                        failures);
+                                log.error("잠시 후 다시 /init/start 호출하면 이어서 진행됩니다");
+                                isRunning.set(false);
+                            }
+                        } finally {
+                            latch.countDown();
+
+                            int currentProcessed = processed.incrementAndGet();
+
+                            if (currentProcessed % 10 == 0) {
+                                long elapsed = System.currentTimeMillis() - startTime;
+                                long remaining = aiAnalysisService.countPoliciesWithoutAi();
+                                long estimatedRemaining = remaining > 0 ?
+                                        (elapsed * remaining / currentProcessed) : 0;
+
+                                log.info("진행: {} (성공: {}, 실패: {}) | 남은: {}개 | 예상 남은 시간: {}",
+                                        currentProcessed, success.get(), failed.get(), remaining,
+                                        formatDuration(estimatedRemaining));
+                            }
+                        }
+                    });
+
+                    if (delayMs > 0) {
+                        try {
+                            TimeUnit.MILLISECONDS.sleep(delayMs / parallelCount);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            log.error("인터럽트로 인한 중단");
+                            executor.shutdownNow();
+                            return;
+                        }
                     }
                 }
 
-                int currentProcessed = processed.incrementAndGet();
-
-                if (currentProcessed % 10 == 0) {
-                    long elapsed = System.currentTimeMillis() - startTime;
-                    long remaining = aiAnalysisService.countPoliciesWithoutAi();
-                    long estimatedRemaining = remaining > 0 ?
-                            (elapsed * remaining / currentProcessed) : 0;
-
-                    log.info("진행: {} (성공: {}, 실패: {}) | 남은: {}개 | 예상 남은 시간: {}",
-                            currentProcessed, success.get(), failed.get(), remaining,
-                            formatDuration(estimatedRemaining));
-                }
-
+                // 현재 배치 완료 대기
                 try {
-                    TimeUnit.MILLISECONDS.sleep(delayMs);
+                    latch.await(5, TimeUnit.MINUTES);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    log.error("인터럽트로 인한 중단");
+                    log.error("배치 대기 중 인터럽트");
+                    executor.shutdownNow();
                     return;
                 }
+            }
+        } finally {
+            executor.shutdown();
+            try {
+                if (!executor.awaitTermination(1, TimeUnit.MINUTES)) {
+                    executor.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                executor.shutdownNow();
             }
         }
 
