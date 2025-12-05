@@ -338,9 +338,12 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
     Page<PolicyEntity> findAllByAiAnalysisIsNull(Pageable pageable);
 
     @Query("SELECT COUNT(p) FROM PolicyEntity p " +
-            "WHERE p.aiAnalysis IS NULL AND p.isActive = true")
+            "WHERE p.aiAnalysis IS NULL")
     long countByAiAnalysisIsNull();
 
+    // 추가 (AI 분석 있는 개수)
+    @Query("SELECT COUNT(p) FROM PolicyEntity p WHERE p.aiAnalysis IS NOT NULL")
+    long countByAiAnalysisIsNotNull();
     /**
      * 유사 정책 조회 (같은 카테고리 기반)
      */

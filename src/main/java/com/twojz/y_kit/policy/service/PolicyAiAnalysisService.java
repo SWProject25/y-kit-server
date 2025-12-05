@@ -46,6 +46,10 @@ public class PolicyAiAnalysisService {
         return policyRepository.countByAiAnalysisIsNull();
     }
 
+    public long countPoliciesWithAi() {
+        return policyRepository.countByAiAnalysisIsNotNull();
+    }
+
     /**
      * AI 분석이 없는 정책 페이징 조회
      */

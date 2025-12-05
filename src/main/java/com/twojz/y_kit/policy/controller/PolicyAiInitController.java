@@ -31,7 +31,7 @@ public class PolicyAiInitController {
 
     @GetMapping("/init/start")
     public ResponseEntity<?> startInit(
-            @RequestParam(defaultValue = "3000") long delayMs) {
+            @RequestParam(defaultValue = "1000") long delayMs) {
 
         if (!isRunning.compareAndSet(false, true)) {
             return ResponseEntity.badRequest()
@@ -73,17 +73,19 @@ public class PolicyAiInitController {
     @GetMapping("/init/status")
     public ResponseEntity<?> getStatus() {
         long remaining = aiAnalysisService.countPoliciesWithoutAi();
-        long total = processed.get();
+        long completed = aiAnalysisService.countPoliciesWithAi();
+        long total = completed + remaining;
 
         Map<String, Object> status = new LinkedHashMap<>();
         status.put("running", isRunning.get());
-        status.put("processed", processed.get());
-        status.put("success", success.get());
-        status.put("failed", failed.get());
+        status.put("processedThisSession", processed.get());
+        status.put("successThisSession", success.get());
+        status.put("failedThisSession", failed.get());
+        status.put("totalCompleted", completed);
         status.put("remaining", remaining);
         status.put("total", total);
         status.put("progress", total > 0 ?
-                String.format("%.1f%%", (processed.get() * 100.0 / total)) : "100%");
+                String.format("%.1f%%", (completed * 100.0 / total)) : "100%");
 
         if (lastError != null) {
             status.put("lastError", lastError);
