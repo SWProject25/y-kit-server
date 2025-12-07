@@ -134,6 +134,17 @@ public class GroupPurchaseController {
         groupPurchaseCommandService.deleteComment(commentId, userId);
     }
 
+    @PutMapping("/comments/{commentId}")
+    @Operation(summary = "댓글 수정")
+    public void editComment(
+            @PathVariable Long commentId,
+            Authentication authentication,
+            @RequestBody GroupPurchaseCommentCreateRequest request
+    ) {
+        Long userId = extractUserId(authentication);
+        groupPurchaseCommandService.updateComment(commentId, userId, request);
+    }
+
     @PostMapping("/{id}/join")
     @Operation(summary = "공동구매 참여")
     public void joinGroupPurchase(

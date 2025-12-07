@@ -146,6 +146,18 @@ public class CommunityCommandService {
         communityCommentRepository.delete(comment);
     }
 
+    public void updateComment(Long commentId, Long userId, CommentCreateRequest request) {
+        CommunityCommentEntity comment = communityCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("댓글 수정 권한이 없습니다.");
+        }
+
+        // 내용 수정
+        comment.updateContent(request.getContent());
+    }
+
     public void increaseViewCount(Long communityId) {
         CommunityEntity community = communityFindService.findCommunity(communityId);
         community.increaseViewCount();

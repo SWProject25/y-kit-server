@@ -93,6 +93,13 @@ public class HotDealController {
         hotDealCommandService.deleteComment(commentId, userId);
     }
 
+    @PutMapping("/comments/{commentId}")
+    @Operation(summary = "댓글 수정")
+    public void editComment(@PathVariable Long id, Authentication authentication, @RequestBody HotDealCommentCreateRequest request)  {
+        Long userId = extractUserId(authentication);
+        hotDealCommandService.updateComment(id, userId, request);
+    }
+
     @GetMapping("/search")
     @Operation(summary = "핫딜 검색", description = "제목, 내용, 장소명으로 핫딜을 검색합니다")
     public PageResponse<HotDealListResponse> searchHotDeals(

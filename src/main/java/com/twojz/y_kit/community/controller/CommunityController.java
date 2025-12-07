@@ -146,6 +146,17 @@ public class CommunityController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "댓글 수정")
+    @PutMapping("/comments/{commentId}")
+    public void editComment(
+            @PathVariable Long commentId,
+            Authentication authentication,
+            @Valid @RequestBody CommentCreateRequest request) {
+
+        Long userId = extractUserId(authentication);
+        communityCommandService.updateComment(commentId, userId, request);
+    }
+
     @Operation(summary = "내가 작성한 게시글 목록")
     @GetMapping("/my-posts")
     public ResponseEntity<PageResponse<CommunityListResponse>> getMyPosts(

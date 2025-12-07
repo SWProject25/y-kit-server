@@ -243,6 +243,23 @@ public class GroupPurchaseCommandService {
         gp.decreaseCommentCount();
     }
 
+    /**
+     * 댓글 수정
+     */
+    public void updateComment(Long commentId, Long userId, GroupPurchaseCommentCreateRequest request) {
+        GroupPurchaseCommentEntity comment = commentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+
+        // 작성자 본인 확인
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("댓글 수정 권한이 없습니다.");
+        }
+
+        // 댓글 내용 업데이트
+        comment.updateContent(request.getContent());
+    }
+
+
     public void joinGroupPurchase(Long gpId, Long userId) {
         GroupPurchaseEntity gp = groupPurchaseFindService.findById(gpId);
         UserEntity user = userFindService.findUser(userId);
