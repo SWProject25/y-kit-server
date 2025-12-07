@@ -18,6 +18,8 @@ import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.BadgeCommandService;
 import com.twojz.y_kit.user.service.BadgeFindService;
 import com.twojz.y_kit.user.service.UserFindService;
+import com.twojz.y_kit.notification.service.NotificationService;
+import com.twojz.y_kit.notification.entity.NotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,6 +39,7 @@ public class HotDealCommandService {
     private final HotDealFindService hotDealFindService;
     private final BadgeCommandService badgeCommandService;
     private final BadgeFindService badgeFindService;
+    private final NotificationService notificationService;
 
     /**
      * 핫딜 생성
@@ -94,7 +97,11 @@ public class HotDealCommandService {
 
         validateOwnership(hotDeal, userId, "수정");
 
-        Region region = regionFindService.findRegionCode(request.getRegionCode());
+        Region region = regionFindService.findRegionByAddress(
+                request.getSido(),
+                request.getSigungu(),
+                request.getDong()
+        );
 
         hotDeal.update(
                 request.getTitle(),
@@ -142,6 +149,18 @@ public class HotDealCommandService {
                                     .build();
                             hotDealLikeRepository.save(newLike);
                             hotDeal.increaseLikeCount();
+
+                            // 좋아요 알림 전송 (자기 게시물이 아닐 때만)
+                            if (!hotDeal.getUser().getId().equals(userId)) {
+                                try {
+                                    String title = "핫딜 좋아요";
+                                    String body = user.getNickName() + "님이 회원님의 핫딜 '" + hotDeal.getTitle() + "'에 좋아요를 눌렀습니다.";
+                                    String deepLink = "/hot-deals/" + hotDealId;
+                                    notificationService.sendNotification(hotDeal.getUser(), title, body, NotificationType.HOT_DEAL, deepLink);
+                                } catch (Exception e) {
+                                    log.error("좋아요 알림 전송 실패 - hotDealId: {}, userId: {}", hotDealId, userId, e);
+                                }
+                            }
                         }
                 );
     }
@@ -185,6 +204,18 @@ public class HotDealCommandService {
 
         HotDealCommentEntity saved = hotDealCommentRepository.save(comment);
         hotDeal.increaseCommentCount();
+
+        // 댓글 알림 전송 (자기 게시물이 아닐 때만)
+        if (!hotDeal.getUser().getId().equals(userId)) {
+            try {
+                String title = "핫딜 댓글";
+                String body = user.getNickName() + "님이 회원님의 핫딜 '" + hotDeal.getTitle() + "'에 댓글을 남겼습니다.";
+                String deepLink = "/hot-deals/" + hotDealId;
+                notificationService.sendNotification(hotDeal.getUser(), title, body, NotificationType.COMMENT, deepLink);
+            } catch (Exception e) {
+                log.error("댓글 알림 전송 실패 - hotDealId: {}, userId: {}", hotDealId, userId, e);
+            }
+        }
 
         return saved.getId();
     }

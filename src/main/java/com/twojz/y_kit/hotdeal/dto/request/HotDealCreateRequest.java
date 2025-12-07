@@ -46,9 +46,6 @@ public class HotDealCreateRequest {
     @Schema(description = "카테고리", example = "ELECTRONICS")
     private HotDealCategory category;
 
-    @Schema(description = "지역 코드 (직접 지정 시)", example = "11010")
-    private String regionCode;
-
     @Schema(description = "시/도 (주소 기반 자동 매핑 시)", example = "서울특별시")
     private String sido;
 

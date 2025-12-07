@@ -17,6 +17,9 @@ public interface CommunityBookmarkRepository extends JpaRepository<CommunityBook
 
     boolean existsByCommunityAndUser(CommunityEntity community, UserEntity user);
 
+    @Modifying
+    void deleteByCommunity(CommunityEntity community);
+
     List<CommunityBookmarkEntity> findByUser(UserEntity user);
 
     long countByCommunity(CommunityEntity community);
@@ -28,6 +31,6 @@ public interface CommunityBookmarkRepository extends JpaRepository<CommunityBook
             @Param("communityIds") List<Long> communityIds
     );
 
-    @Query("DELETE FROM CommunityBookmarkEntity b WHERE b.user = :user")
+    @Modifying
     void deleteByUser(@Param("user") UserEntity user);
 }

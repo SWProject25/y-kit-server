@@ -20,6 +20,9 @@ public interface HotDealCommentRepository extends JpaRepository<HotDealCommentEn
     @EntityGraph(attributePaths = {"hotDeal", "user"})
     List<HotDealCommentEntity> findByUserOrderByCreatedAtDesc(UserEntity user);
 
+    @Modifying
+    void deleteByHotDeal(HotDealEntity hotDeal);
+
     @Query("SELECT h.id, COUNT(c) FROM HotDealCommentEntity c " +
             "JOIN c.hotDeal h WHERE h.id IN :hotDealIds GROUP BY h.id")
     List<Object[]> countByHotDealIds(@Param("hotDealIds") List<Long> hotDealIds);

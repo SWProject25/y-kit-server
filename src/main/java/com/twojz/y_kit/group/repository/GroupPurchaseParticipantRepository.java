@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 public interface GroupPurchaseParticipantRepository extends JpaRepository<GroupPurchaseParticipantEntity, Long> {
     Optional<GroupPurchaseParticipantEntity> findByGroupPurchaseAndUser(GroupPurchaseEntity groupPurchase, UserEntity user);
 
+    @Modifying
     void deleteByGroupPurchase(GroupPurchaseEntity groupPurchase);
 
     boolean existsByUserIdAndGroupPurchaseId(Long userId, Long groupPurchaseId);
@@ -28,6 +29,6 @@ public interface GroupPurchaseParticipantRepository extends JpaRepository<GroupP
             @Param("groupPurchaseIds") List<Long> groupPurchaseIds
     );
 
-    @Query("DELETE FROM GroupPurchaseParticipantEntity p WHERE p.user = :user")
+    @Modifying
     void deleteByUser(@Param("user") UserEntity user);
 }

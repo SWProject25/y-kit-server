@@ -38,6 +38,7 @@ public interface PolicyNotificationRepository extends JpaRepository<PolicyNotifi
             "AND pn.notificationSent = false")
     List<PolicyNotificationEntity> findPendingNotificationsByDeadline(@Param("targetDate") LocalDate targetDate);
 
+    @Modifying
     @Query("DELETE FROM PolicyNotificationEntity n WHERE n.user = :user")
     void deleteByUser(@Param("user") UserEntity user);
 }

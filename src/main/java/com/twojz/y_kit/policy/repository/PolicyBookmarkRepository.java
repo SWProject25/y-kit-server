@@ -27,6 +27,7 @@ public interface PolicyBookmarkRepository extends JpaRepository<PolicyBookmarkEn
     List<PolicyBookmarkEntity> findByUserOrderByCreatedAtDesc(UserEntity user);
 
     // 사용자의 모든 정책 북마크 삭제
+    @Modifying
     @Query("DELETE FROM PolicyBookmarkEntity b WHERE b.user = :user")
     void deleteByUser(@Param("user") UserEntity user);
 }

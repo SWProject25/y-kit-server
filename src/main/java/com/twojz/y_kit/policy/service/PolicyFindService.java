@@ -235,10 +235,8 @@ public class PolicyFindService {
 
         Map<Long, Boolean> bookmarkMap = getBookmarkMap(policies, userId);
 
-        // 로그 추가
         policies.forEach(policy -> {
             boolean isBookmarked = bookmarkMap.getOrDefault(policy.getId(), false);
-            System.out.println("PolicyId: " + policy.getId() + ", isBookmarked: " + isBookmarked);
         });
 
         Page<PolicyListResponse> mappedPage = policyPage.map(policy ->

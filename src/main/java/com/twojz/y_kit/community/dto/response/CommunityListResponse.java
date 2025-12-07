@@ -53,7 +53,7 @@ public class CommunityListResponse {
                 .title(entity.getTitle())
                 .category(entity.getCategory())
                 .categoryDescription(entity.getCategory().getDescription())
-                .authorName(entity.getUser().getName())
+                .authorName(entity.getUser().getNickName())
                 .viewCount(entity.getViewCount())
                 .likeCount(likeCount)
                 .commentCount(commentCount)

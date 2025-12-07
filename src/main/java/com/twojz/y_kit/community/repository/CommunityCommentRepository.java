@@ -21,9 +21,12 @@ public interface CommunityCommentRepository extends JpaRepository<CommunityComme
 
     long countByCommunity(CommunityEntity community);
 
+    @Modifying
+    void deleteByCommunity(CommunityEntity community);
+
     @Query("SELECT c.community.id, COUNT(c) FROM CommunityCommentEntity c WHERE c.community.id IN :communityIds GROUP BY c.community.id")
     List<Object[]> countByCommunityIds(@Param("communityIds") List<Long> communityIds);
 
-    @Query("DELETE FROM CommunityCommentEntity c WHERE c.user = :user")
+    @Modifying
     void deleteByUser(@Param("user") UserEntity user);
 }

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Repository;
 public interface GroupPurchaseBookmarkRepository extends JpaRepository<GroupPurchaseBookmarkEntity, Long> {
     Optional<GroupPurchaseBookmarkEntity> findByGroupPurchaseAndUser(GroupPurchaseEntity groupPurchase, UserEntity user);
 
+    @Modifying
     void deleteByGroupPurchase(GroupPurchaseEntity groupPurchase);
 
     boolean existsByGroupPurchaseAndUser(GroupPurchaseEntity groupPurchase, UserEntity user);
@@ -28,6 +29,6 @@ public interface GroupPurchaseBookmarkRepository extends JpaRepository<GroupPurc
             @Param("groupPurchaseIds") List<Long> groupPurchaseIds
     );
 
-    @Query("DELETE FROM GroupPurchaseBookmarkEntity b WHERE b.user = :user")
+    @Modifying
     void deleteByUser(@Param("user") UserEntity user);
 }

@@ -75,6 +75,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .queryParam("accessToken", accessToken)
                 .queryParam("refreshToken", refreshToken)
                 .queryParam("profileStatus", user.getProfileStatus())
+                .queryParam("isNewUser", isNewUser)
                 .queryParam("needProfileComplete", user.getProfileStatus() != ProfileStatus.COMPLETED)
                 .build()
                 .toUriString();

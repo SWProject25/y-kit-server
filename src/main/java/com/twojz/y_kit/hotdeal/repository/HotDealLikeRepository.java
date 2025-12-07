@@ -18,6 +18,9 @@ public interface HotDealLikeRepository extends JpaRepository<HotDealLikeEntity, 
 
     long countByHotDeal(HotDealEntity hotDeal);
 
+    @Modifying
+    void deleteByHotDeal(HotDealEntity hotDeal);
+
     @Query("SELECT h.id, COUNT(l) FROM HotDealLikeEntity l " +
             "JOIN l.hotDeal h WHERE h.id IN :hotDealIds GROUP BY h.id")
     List<Object[]> countByHotDealIds(@Param("hotDealIds") List<Long> hotDealIds);

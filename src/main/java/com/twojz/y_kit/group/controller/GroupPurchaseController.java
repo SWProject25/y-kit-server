@@ -27,6 +27,7 @@ public class GroupPurchaseController {
 
     @PostMapping
     @Operation(summary = "공동구매 생성")
+    @ResponseStatus(HttpStatus.CREATED)
     public Long createGroupPurchase(
             Authentication authentication,
             @RequestBody GroupPurchaseCreateRequest request

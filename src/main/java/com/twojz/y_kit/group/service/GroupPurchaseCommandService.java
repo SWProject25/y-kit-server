@@ -22,6 +22,8 @@ import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.BadgeCommandService;
 import com.twojz.y_kit.user.service.BadgeFindService;
 import com.twojz.y_kit.user.service.UserFindService;
+import com.twojz.y_kit.notification.service.NotificationService;
+import com.twojz.y_kit.notification.entity.NotificationType;
 import java.time.LocalDate;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,7 @@ public class GroupPurchaseCommandService {
     private final GroupPurchaseFindService groupPurchaseFindService;
     private final BadgeCommandService badgeCommandService;
     private final BadgeFindService badgeFindService;
+    private final NotificationService notificationService;
 
     public Long createGroupPurchase(Long userId, GroupPurchaseCreateRequest request) {
         UserEntity user = userFindService.findUser(userId);
@@ -184,6 +187,18 @@ public class GroupPurchaseCommandService {
                                             .build()
                             );
                             gp.increaseLikeCount();
+
+                            // 좋아요 알림 전송 (자기 게시물이 아닐 때만)
+                            if (!gp.getUser().getId().equals(userId)) {
+                                try {
+                                    String title = "공동구매 좋아요";
+                                    String body = user.getNickName() + "님이 회원님의 공동구매 '" + gp.getTitle() + "'에 좋아요를 눌렀습니다.";
+                                    String deepLink = "/group-purchase/" + gpId;
+                                    notificationService.sendNotification(gp.getUser(), title, body, NotificationType.GROUP_BUYING, deepLink);
+                                } catch (Exception e) {
+                                    log.error("좋아요 알림 전송 실패 - gpId: {}, userId: {}", gpId, userId, e);
+                                }
+                            }
                         }
                 );
     }
@@ -224,6 +239,18 @@ public class GroupPurchaseCommandService {
 
         // 댓글 수 증가
         gp.increaseCommentCount();
+
+        // 댓글 알림 전송 (자기 게시물이 아닐 때만)
+        if (!gp.getUser().getId().equals(userId)) {
+            try {
+                String title = "공동구매 댓글";
+                String body = user.getNickName() + "님이 회원님의 공동구매 '" + gp.getTitle() + "'에 댓글을 남겼습니다.";
+                String deepLink = "/group-purchase/" + gpId;
+                notificationService.sendNotification(gp.getUser(), title, body, NotificationType.COMMENT, deepLink);
+            } catch (Exception e) {
+                log.error("댓글 알림 전송 실패 - gpId: {}, userId: {}", gpId, userId, e);
+            }
+        }
 
         return commentId;
     }

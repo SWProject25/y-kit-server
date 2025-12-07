@@ -189,13 +189,13 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    /*@Operation(summary = "회원 탈퇴")
+    @Operation(summary = "회원 탈퇴")
     @DeleteMapping("/withdraw")
     public ResponseEntity<Void> withdrawUser(Authentication authentication) {
         Long userId = extractUserId(authentication);
         userDeleteService.withdrawUser(userId);
         return ResponseEntity.ok().build();
-    }*/
+    }
 
     @Operation(summary = "FCM 디바이스 토큰 등록")
     @PostMapping("/device/register")

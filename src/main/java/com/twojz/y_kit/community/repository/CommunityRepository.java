@@ -57,6 +57,6 @@ public interface CommunityRepository extends JpaRepository<CommunityEntity, Long
     @Query("SELECT c FROM CommunityEntity c JOIN FETCH c.user ORDER BY FUNCTION('RAND')")
     List<CommunityEntity> findRandomCommunities(@Param("limit") int limit);
 
-    @Query("DELETE FROM CommunityEntity c WHERE c.user = :user")
+    @Modifying
     void deleteByUser(@Param("user") UserEntity user);
 }

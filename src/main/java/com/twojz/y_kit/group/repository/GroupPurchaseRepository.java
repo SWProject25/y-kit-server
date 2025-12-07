@@ -56,7 +56,6 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
             Pageable pageable
     );
 
-    // 실시간 순위 조회 (조회수 + 북마크 수 기준으로 정렬)
     @EntityGraph(attributePaths = "user")
     @Query("SELECT g FROM GroupPurchaseEntity g " +
             "LEFT JOIN GroupPurchaseBookmarkEntity b ON b.groupPurchase = g " +
@@ -64,6 +63,6 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
             "ORDER BY (g.viewCount + COUNT(b)) DESC")
     List<GroupPurchaseEntity> findTrendingGroupPurchases(Pageable pageable);
 
-    @Query("DELETE FROM GroupPurchaseEntity g WHERE g.user = :user")
+    @Modifying
     void deleteByUser(@Param("user") UserEntity user);
 }

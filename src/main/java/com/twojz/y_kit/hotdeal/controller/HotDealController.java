@@ -95,9 +95,9 @@ public class HotDealController {
 
     @PutMapping("/comments/{commentId}")
     @Operation(summary = "댓글 수정")
-    public void editComment(@PathVariable Long id, Authentication authentication, @RequestBody HotDealCommentCreateRequest request)  {
+    public void editComment(@PathVariable Long commentId, Authentication authentication, @RequestBody HotDealCommentCreateRequest request)  {
         Long userId = extractUserId(authentication);
-        hotDealCommandService.updateComment(id, userId, request);
+        hotDealCommandService.updateComment(commentId, userId, request);
     }
 
     @GetMapping("/search")

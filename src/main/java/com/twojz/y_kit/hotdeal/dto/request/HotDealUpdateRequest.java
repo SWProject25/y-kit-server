@@ -36,9 +36,6 @@ public class HotDealUpdateRequest {
     @Schema(description = "카테고리", example = "ELECTRONICS")
     private HotDealCategory category;
 
-    @Schema(description = "지역 코드", example = "11010")
-    private String regionCode;
-
     @Schema(description = "이미지 URL", example = "https://example.com/new-image.png")
     private String url;
 
@@ -47,6 +44,15 @@ public class HotDealUpdateRequest {
 
     @Schema(description = "경도", example = "126.9779451")
     private Double longitude;
+
+    @Schema(description = "시/도 (주소 기반 자동 매핑 시)", example = "서울특별시")
+    private String sido;
+
+    @Schema(description = "시/군/구 (주소 기반 자동 매핑 시)", example = "마포구")
+    private String sigungu;
+
+    @Schema(description = "읍/면/동 (주소 기반 자동 매핑 시)", example = "서교동")
+    private String dong;
 
     @Schema(description = "만료 시간", example = "2025-01-20T23:00:00")
     private LocalDateTime expiresAt;

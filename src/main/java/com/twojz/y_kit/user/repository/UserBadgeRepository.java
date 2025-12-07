@@ -14,6 +14,7 @@ import org.springframework.stereotype.Repository;
 public interface UserBadgeRepository extends JpaRepository<UserBadgeEntity, Long> {
     Optional<UserBadgeEntity> findByUserIdAndBadgeId(Long userId, Long badgeId);
 
+    @Modifying
     void deleteByUserIdAndBadgeId(Long userId, Long badgeId);
 
     @EntityGraph(attributePaths = "badge")

@@ -54,6 +54,15 @@ public class GroupPurchaseDetailResponse {
     @Schema(description = "지역")
     private String region;
 
+    @Schema(description = "주소")
+    private String address;
+
+    @Schema(description = "위도")
+    private Double latitude;
+
+    @Schema(description = "경도")
+    private Double longitude;
+
     @Schema(description = "작성자 ID", example = "123")
     private Long authorId;
 
@@ -100,6 +109,9 @@ public class GroupPurchaseDetailResponse {
                 .deadline(groupPurchase.getDeadline())
                 .status(groupPurchase.getStatus())
                 .region(groupPurchase.getRegion() != null ? groupPurchase.getRegion().getFullName() : null)
+                .address(groupPurchase.getAddress())
+                .latitude(groupPurchase.getLatitude())
+                .longitude(groupPurchase.getLongitude())
                 .authorId(groupPurchase.getUser().getId())
                 .authorName(groupPurchase.getUser().getNickName())
                 .isLiked(isLiked)

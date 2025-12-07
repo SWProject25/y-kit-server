@@ -19,6 +19,9 @@ public interface CommunityLikeRepository extends JpaRepository<CommunityLikeEnti
 
     boolean existsByCommunityAndUser(CommunityEntity community, UserEntity user);
 
+    @Modifying
+    void deleteByCommunity(CommunityEntity community);
+
     @Query("SELECT l.community.id, COUNT(l) FROM CommunityLikeEntity l WHERE l.community.id IN :communityIds GROUP BY l.community.id")
     List<Object[]> countByCommunityIds(@Param("communityIds") List<Long> communityIds);
 
@@ -34,6 +37,6 @@ public interface CommunityLikeRepository extends JpaRepository<CommunityLikeEnti
             @Param("communityIds") List<Long> communityIds
     );
 
-    @Query("DELETE FROM CommunityLikeEntity l WHERE l.user = :user")
+    @Modifying
     void deleteByUser(@Param("user") UserEntity user);
 }

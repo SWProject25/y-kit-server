@@ -62,12 +62,6 @@ public class UserEntity extends BaseEntity {
     @Column(nullable = false)
     private ProfileStatus profileStatus;
 
-    /*@Column(nullable = false)
-    private boolean deleted = false;
-
-    @Column
-    private LocalDateTime deletedAt;*/
-
     @Builder
     public UserEntity(String email, String password, Role role, LoginProvider loginProvider,
                       String name, String nickName, String socialId,
@@ -146,20 +140,4 @@ public class UserEntity extends BaseEntity {
     public int calculateAge() {
         return Period.between(birthDate, LocalDate.now()).getYears();
     }
-
-    /*public void withdraw() {
-        this.deleted = true;
-        this.deletedAt = LocalDateTime.now();
-        this.email = "deleted_" + this.getId() + "_" + System.currentTimeMillis() + "@deleted.com";
-        this.password = null;
-        this.socialId = null;
-        this.name = "탈퇴한 사용자";
-        this.nickName = null;
-        this.birthDate = null;
-        this.gender = null;
-        this.region = null;
-        this.employmentStatus = null;
-        this.educationLevel = null;
-        this.major = null;
-    }*/
 }

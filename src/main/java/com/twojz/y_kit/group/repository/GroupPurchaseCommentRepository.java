@@ -18,6 +18,7 @@ public interface GroupPurchaseCommentRepository extends JpaRepository<GroupPurch
     @EntityGraph(attributePaths = {"groupPurchase", "user"})
     List<GroupPurchaseCommentEntity> findByUserOrderByCreatedAtDesc(UserEntity user);
 
+    @Modifying
     void deleteByGroupPurchase(GroupPurchaseEntity groupPurchase);
 
     long countByGroupPurchase(GroupPurchaseEntity groupPurchase);
@@ -25,6 +26,6 @@ public interface GroupPurchaseCommentRepository extends JpaRepository<GroupPurch
     @Query("SELECT c.groupPurchase.id, COUNT(c) FROM GroupPurchaseCommentEntity c WHERE c.groupPurchase.id IN :groupPurchaseIds GROUP BY c.groupPurchase.id")
     List<Object[]> countByGroupPurchaseIds(@Param("groupPurchaseIds") List<Long> groupPurchaseIds);
 
-    @Query("DELETE FROM GroupPurchaseCommentEntity c WHERE c.user = :user")
+    @Modifying
     void deleteByUser(@Param("user") UserEntity user);
 }

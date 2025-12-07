@@ -16,6 +16,9 @@ public interface HotDealBookmarkRepository extends JpaRepository<HotDealBookmark
 
     boolean existsByHotDealAndUser(HotDealEntity hotDeal, UserEntity user);
 
+    @Modifying
+    void deleteByHotDeal(HotDealEntity hotDeal);
+
     List<HotDealBookmarkEntity> findByUser(UserEntity user);
 
     @Query("SELECT b.hotDeal.id FROM HotDealBookmarkEntity b WHERE b.user = :user AND b.hotDeal.id IN :hotDealIds")
