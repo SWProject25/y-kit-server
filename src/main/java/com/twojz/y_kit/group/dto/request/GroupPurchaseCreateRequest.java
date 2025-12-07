@@ -37,6 +37,24 @@ public class GroupPurchaseCreateRequest {
     @Schema(description = "모집 마감일", example = "2025-12-31")
     private LocalDate deadline;
 
-    @Schema(description = "지역코드", example = "11010")
-    private String regionCode;
+    @Schema(description = "위도", example = "37.5662952")
+    private Double latitude;
+
+    @Schema(description = "경도", example = "126.9779451")
+    private Double longitude;
+
+    @Schema(description = "주소", example = "서울 마포구 와우산로 11길 45")
+    private String address;
+
+    @Schema(description = "시/도 (주소 기반 자동 매핑 시)", example = "서울특별시")
+    private String sido;
+
+    @Schema(description = "시/군/구 (주소 기반 자동 매핑 시)", example = "마포구")
+    private String sigungu;
+
+    @Schema(description = "읍/면/동 (주소 기반 자동 매핑 시)", example = "서교동")
+    private String dong;
+
+    @Schema(description = "카테고리", example = "FOOD")
+    private String category;
 }

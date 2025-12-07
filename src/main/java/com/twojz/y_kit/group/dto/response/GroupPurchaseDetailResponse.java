@@ -1,5 +1,6 @@
 package com.twojz.y_kit.group.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.twojz.y_kit.group.domain.dto.GroupPurchaseWithCountsDto;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseEntity;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseStatus;
@@ -59,13 +60,16 @@ public class GroupPurchaseDetailResponse {
     @Schema(description = "작성자 이름", example = "홍길동")
     private String authorName;
 
-    @Schema(description = "좋아요 여부")
+    @Schema(description = "좋아요 여부", example = "true")
+    @JsonProperty("isLiked")
     private boolean isLiked;
 
-    @Schema(description = "북마크 여부")
+    @Schema(description = "북마크 여부", example = "false")
+    @JsonProperty("isBookmarked")
     private boolean isBookmarked;
 
     @Schema(description = "참여 여부 (사용자가 이미 참여 중인지)")
+    @JsonProperty("isParticipating")
     private boolean isParticipating;
 
     @Schema(description = "좋아요 수")
@@ -97,7 +101,7 @@ public class GroupPurchaseDetailResponse {
                 .status(groupPurchase.getStatus())
                 .region(groupPurchase.getRegion() != null ? groupPurchase.getRegion().getFullName() : null)
                 .authorId(groupPurchase.getUser().getId())
-                .authorName(groupPurchase.getUser().getName())
+                .authorName(groupPurchase.getUser().getNickName())
                 .isLiked(isLiked)
                 .isBookmarked(isBookmarked)
                 .isParticipating(isParticipating)

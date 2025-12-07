@@ -3,10 +3,12 @@ package com.twojz.y_kit.group.repository;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseEntity;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseStatus;
 import com.twojz.y_kit.user.entity.UserEntity;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -28,6 +30,8 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
 
     @EntityGraph(attributePaths = {"user", "region"})
     Page<GroupPurchaseEntity> findByUser(UserEntity user, Pageable pageable);
+
+    long countByUser(UserEntity user);
 
     @EntityGraph(attributePaths = {"user", "region"})
     @Query("SELECT DISTINCT g FROM GroupPurchaseEntity g " +
@@ -51,4 +55,15 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
             @Param("keyword5") String keyword5,
             Pageable pageable
     );
+
+    // 실시간 순위 조회 (조회수 + 북마크 수 기준으로 정렬)
+    @EntityGraph(attributePaths = "user")
+    @Query("SELECT g FROM GroupPurchaseEntity g " +
+            "LEFT JOIN GroupPurchaseBookmarkEntity b ON b.groupPurchase = g " +
+            "GROUP BY g " +
+            "ORDER BY (g.viewCount + COUNT(b)) DESC")
+    List<GroupPurchaseEntity> findTrendingGroupPurchases(Pageable pageable);
+
+    @Query("DELETE FROM GroupPurchaseEntity g WHERE g.user = :user")
+    void deleteByUser(@Param("user") UserEntity user);
 }

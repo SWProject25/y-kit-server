@@ -10,10 +10,12 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @Tag(name = "공동구매 API")
 @RestController
@@ -39,29 +41,35 @@ public class GroupPurchaseController {
             @PathVariable Long id,
             Authentication authentication
     ) {
-        Long userId = extractUserId(authentication);
+        Long userId = extractUserIdOrNull(authentication);  // 🔥 로그인 선택으로 변경
         return groupPurchaseFindService.getGroupPurchaseDetail(id, userId);
     }
 
     @GetMapping
-    @Operation(summary = "공동구매 목록 조회 (전체/상태/지역/상태+지역 필터)")
+    @Operation(summary = "공동구매 목록 조회 (전체/상태/지역/상태+지역 필터)",
+            description = "로그인 시 좋아요/북마크/참여 여부 포함")
     public PageResponse<GroupPurchaseListResponse> getGroupPurchases(
+            Authentication authentication,  // 🔥 추가
             @RequestParam(required = false) GroupPurchaseStatus status,
             @RequestParam(required = false) String regionCode,
             Pageable pageable
     ) {
-        return groupPurchaseFindService.getGroupPurchaseList(status, regionCode, pageable);
+        Long userId = extractUserIdOrNull(authentication);  // 🔥 추가
+        return groupPurchaseFindService.getGroupPurchaseList(status, regionCode, userId, pageable);
     }
 
     @GetMapping("/search")
-    @Operation(summary = "공동구매 통합 검색 (형태소 분석 + 상태/지역 필터)")
+    @Operation(summary = "공동구매 통합 검색 (형태소 분석 + 상태/지역 필터)",
+            description = "로그인 시 좋아요/북마크/참여 여부 포함")
     public PageResponse<GroupPurchaseListResponse> searchGroupPurchases(
+            Authentication authentication,  // 🔥 추가
             @RequestParam String keyword,
             @RequestParam(required = false) GroupPurchaseStatus status,
             @RequestParam(required = false) String regionCode,
             Pageable pageable
     ) {
-        return groupPurchaseFindService.searchGroupPurchases(keyword, status, regionCode, pageable);
+        Long userId = extractUserIdOrNull(authentication);  // 🔥 추가
+        return groupPurchaseFindService.searchGroupPurchases(keyword, status, regionCode, userId, pageable);
     }
 
     @PutMapping("/{id}")
@@ -146,14 +154,67 @@ public class GroupPurchaseController {
         return groupPurchaseFindService.getMyGroupPurchases(userId, pageable);
     }
 
+    @GetMapping("/my-bookmarks")
+    @Operation(summary = "내가 북마크한 공동구매 목록")
+    public java.util.List<GroupPurchaseListResponse> getMyBookmarks(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return groupPurchaseFindService.getMyBookmarks(userId);
+    }
+
+    @GetMapping("/my-liked")
+    @Operation(summary = "내가 좋아요한 공동구매 목록")
+    public java.util.List<GroupPurchaseListResponse> getMyLiked(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return groupPurchaseFindService.getMyLikedGroupPurchases(userId);
+    }
+
+    @GetMapping("/my-comments")
+    @Operation(summary = "내가 작성한 댓글 목록")
+    public java.util.List<GroupPurchaseCommentResponse> getMyComments(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return groupPurchaseFindService.getMyComments(userId);
+    }
+
+    @GetMapping("/my-participations")
+    @Operation(summary = "내가 참여한 공동구매 목록")
+    public java.util.List<GroupPurchaseListResponse> getMyParticipations(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return groupPurchaseFindService.getMyParticipatingGroupPurchases(userId);
+    }
+
+    /**
+     * 🔥 로그인 필수 - userId 추출 (로그인 안되어 있으면 예외 발생)
+     */
     private Long extractUserId(Authentication authentication) {
         if (authentication == null) {
-            throw new AuthenticationCredentialsNotFoundException("인증이 필요합니다.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.");
         }
         try {
             return Long.parseLong(authentication.getName());
         } catch (NumberFormatException e) {
-            throw new AuthenticationServiceException("잘못된 사용자 정보입니다.", e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 사용자 정보입니다.", e);
+        }
+    }
+
+    /**
+     * 🔥 로그인 선택 - userId 추출 (로그인 안되어 있으면 null 반환)
+     */
+    private Long extractUserIdOrNull(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(authentication.getName());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }
