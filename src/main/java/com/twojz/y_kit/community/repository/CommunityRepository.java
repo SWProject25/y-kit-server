@@ -8,6 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -21,6 +22,8 @@ public interface CommunityRepository extends JpaRepository<CommunityEntity, Long
     Page<CommunityEntity> findAll(Pageable pageable);
 
     Page<CommunityEntity> findByUser(UserEntity user, Pageable pageable);
+
+    long countByUser(UserEntity user);
 
     @EntityGraph(attributePaths = "user")
     @Query("SELECT DISTINCT c FROM CommunityEntity c " +
@@ -53,4 +56,7 @@ public interface CommunityRepository extends JpaRepository<CommunityEntity, Long
 
     @Query("SELECT c FROM CommunityEntity c JOIN FETCH c.user ORDER BY FUNCTION('RAND')")
     List<CommunityEntity> findRandomCommunities(@Param("limit") int limit);
+
+    @Query("DELETE FROM CommunityEntity c WHERE c.user = :user")
+    void deleteByUser(@Param("user") UserEntity user);
 }

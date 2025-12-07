@@ -1,5 +1,6 @@
 package com.twojz.y_kit.community.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.twojz.y_kit.community.domain.entity.CommunityEntity;
 import com.twojz.y_kit.community.domain.vo.CommunityCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -41,10 +42,12 @@ public class CommunityDetailResponse {
     @Schema(description = "댓글 수", example = "10")
     private long commentCount;
 
-    @Schema(description = "내가 좋아요 했는지 여부", example = "true")
+    @Schema(description = "좋아요 여부", example = "true")
+    @JsonProperty("isLiked")
     private boolean isLiked;
 
-    @Schema(description = "내가 북마크 했는지 여부", example = "false")
+    @Schema(description = "북마크 여부", example = "false")
+    @JsonProperty("isBookmarked")
     private boolean isBookmarked;
 
     @Schema(description = "댓글 목록")
@@ -71,7 +74,7 @@ public class CommunityDetailResponse {
                 .category(entity.getCategory())
                 .categoryDescription(entity.getCategory().getDescription())
                 .authorId(entity.getUser().getId())
-                .authorName(entity.getUser().getName())
+                .authorName(entity.getUser().getNickName())
                 .viewCount(entity.getViewCount())
                 .likeCount(likeCount)
                 .commentCount(commentCount)

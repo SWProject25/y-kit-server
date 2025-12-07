@@ -1,5 +1,6 @@
 package com.twojz.y_kit.community.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.twojz.y_kit.community.domain.entity.CommunityEntity;
 import com.twojz.y_kit.community.domain.vo.CommunityCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -34,10 +35,19 @@ public class CommunityListResponse {
     @Schema(description = "댓글 수", example = "10")
     private long commentCount;
 
+    @Schema(description = "좋아요 여부", example = "true")
+    @JsonProperty("isLiked")
+    private boolean isLiked;
+
+    @Schema(description = "북마크 여부", example = "false")
+    @JsonProperty("isBookmarked")
+    private boolean isBookmarked;
+
     @Schema(description = "작성일시", example = "2024-11-08T10:30:00")
     private LocalDateTime createdAt;
 
-    public static CommunityListResponse from(CommunityEntity entity, long likeCount, long commentCount) {
+    public static CommunityListResponse from(CommunityEntity entity, boolean isLiked,
+                                             boolean isBookmarked, long likeCount, long commentCount) {
         return CommunityListResponse.builder()
                 .id(entity.getId())
                 .title(entity.getTitle())
@@ -47,6 +57,8 @@ public class CommunityListResponse {
                 .viewCount(entity.getViewCount())
                 .likeCount(likeCount)
                 .commentCount(commentCount)
+                .isLiked(isLiked)
+                .isBookmarked(isBookmarked)
                 .createdAt(entity.getCreatedAt())
                 .build();
     }

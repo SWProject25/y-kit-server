@@ -12,12 +12,17 @@ import com.twojz.y_kit.community.repository.CommunityBookmarkRepository;
 import com.twojz.y_kit.community.repository.CommunityCommentRepository;
 import com.twojz.y_kit.community.repository.CommunityLikeRepository;
 import com.twojz.y_kit.community.repository.CommunityRepository;
+import com.twojz.y_kit.user.entity.BadgeEntity;
 import com.twojz.y_kit.user.entity.UserEntity;
+import com.twojz.y_kit.user.service.BadgeCommandService;
+import com.twojz.y_kit.user.service.BadgeFindService;
 import com.twojz.y_kit.user.service.UserFindService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -28,9 +33,15 @@ public class CommunityCommandService {
     private final CommunityCommentRepository communityCommentRepository;
     private final UserFindService userFindService;
     private final CommunityFindService communityFindService;
+    private final BadgeCommandService badgeCommandService;
+    private final BadgeFindService badgeFindService;
 
     public Long createCommunity(Long userId, CommunityCreateRequest request) {
         UserEntity user = userFindService.findUser(userId);
+
+        // 첫 게시물인지 확인
+        long userPostCount = communityRepository.countByUser(user);
+        boolean isFirstPost = (userPostCount == 0);
 
         CommunityEntity community = CommunityEntity.builder()
                 .title(request.getTitle())
@@ -39,7 +50,20 @@ public class CommunityCommandService {
                 .user(user)
                 .build();
 
-        return communityRepository.save(community).getId();
+        Long communityId = communityRepository.save(community).getId();
+
+        // 첫 게시물이면 뱃지 부여
+        if (isFirstPost) {
+            try {
+                BadgeEntity badge = badgeFindService.findByName("커뮤니티 첫 글");
+                badgeCommandService.grantBadgeIfNotExists(userId, badge.getId());
+                log.info("🏅 '커뮤니티 첫 글' 뱃지 부여 완료 - userId: {}", userId);
+            } catch (Exception e) {
+                log.warn("뱃지 부여 실패 - userId: {}, error: {}", userId, e.getMessage());
+            }
+        }
+
+        return communityId;
     }
 
     public void updateCommunity(Long communityId, Long userId, CommunityUpdateRequest request) {

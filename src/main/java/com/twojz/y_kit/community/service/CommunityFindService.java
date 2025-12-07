@@ -1,6 +1,8 @@
 package com.twojz.y_kit.community.service;
 
+import com.twojz.y_kit.community.domain.entity.CommunityBookmarkEntity;
 import com.twojz.y_kit.community.domain.entity.CommunityEntity;
+import com.twojz.y_kit.community.domain.entity.CommunityLikeEntity;
 import com.twojz.y_kit.community.domain.vo.CommunityCategory;
 import com.twojz.y_kit.community.dto.response.CommentResponse;
 import com.twojz.y_kit.community.dto.response.CommunityDetailResponse;
@@ -12,7 +14,10 @@ import com.twojz.y_kit.community.repository.CommunityRepository;
 import com.twojz.y_kit.global.dto.PageResponse;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.UserFindService;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -42,10 +47,16 @@ public class CommunityFindService {
 
     public CommunityDetailResponse getCommunityDetail(Long communityId, Long userId) {
         CommunityEntity community = findCommunity(communityId);
-        UserEntity user = userFindService.findUser(userId);
 
-        boolean isLiked = communityLikeRepository.existsByCommunityAndUser(community, user);
-        boolean isBookmarked = communityBookmarkRepository.existsByCommunityAndUser(community, user);
+        boolean isLiked = false;
+        boolean isBookmarked = false;
+
+        if (userId != null) {
+            UserEntity user = userFindService.findUser(userId);
+            isLiked = communityLikeRepository.existsByCommunityAndUser(community, user);
+            isBookmarked = communityBookmarkRepository.existsByCommunityAndUser(community, user);
+        }
+
         long likeCount = communityLikeRepository.countByCommunity(community);
         long commentCount = communityCommentRepository.countByCommunity(community);
 
@@ -58,19 +69,24 @@ public class CommunityFindService {
         return CommunityDetailResponse.from(community, isLiked, isBookmarked, likeCount, commentCount, comments);
     }
 
-    public PageResponse<CommunityListResponse> getCommunityList(CommunityCategory category, Pageable pageable) {
+    // 🔥 userId 매개변수 추가
+    public PageResponse<CommunityListResponse> getCommunityList(
+            CommunityCategory category,
+            Long userId,
+            Pageable pageable
+    ) {
         Page<CommunityEntity> communities = (category != null)
                 ? communityRepository.findByCategory(category, pageable)
                 : communityRepository.findAll(pageable);
 
-        return convertToPageResponse(communities);
+        return convertToPageResponse(communities, userId);
     }
 
     public PageResponse<CommunityListResponse> getMyPosts(Long userId, Pageable pageable) {
         UserEntity user = userFindService.findUser(userId);
         Page<CommunityEntity> communities = communityRepository.findByUser(user, pageable);
 
-        return convertToPageResponse(communities);
+        return convertToPageResponse(communities, userId);
     }
 
     public List<CommunityListResponse> getMyBookmarks(Long userId) {
@@ -80,24 +96,52 @@ public class CommunityFindService {
                 .stream()
                 .map(bookmark -> {
                     CommunityEntity community = bookmark.getCommunity();
+                    boolean isLiked = communityLikeRepository.existsByCommunityAndUser(community, user);
                     long likeCount = communityLikeRepository.countByCommunity(community);
                     long commentCount = communityCommentRepository.countByCommunity(community);
-                    return CommunityListResponse.from(community, likeCount, commentCount);
+                    // 🔥 북마크 목록이므로 isBookmarked는 항상 true
+                    return CommunityListResponse.from(community, isLiked, true, likeCount, commentCount);
                 })
+                .toList();
+    }
+
+    public List<CommunityListResponse> getMyLiked(Long userId) {
+        UserEntity user = userFindService.findUser(userId);
+
+        return communityLikeRepository.findByUser(user)
+                .stream()
+                .map(like -> {
+                    CommunityEntity community = like.getCommunity();
+                    boolean isBookmarked = communityBookmarkRepository.existsByCommunityAndUser(community, user);
+                    long likeCount = communityLikeRepository.countByCommunity(community);
+                    long commentCount = communityCommentRepository.countByCommunity(community);
+                    // 🔥 좋아요 목록이므로 isLiked는 항상 true
+                    return CommunityListResponse.from(community, true, isBookmarked, likeCount, commentCount);
+                })
+                .toList();
+    }
+
+    public List<CommentResponse> getMyComments(Long userId) {
+        UserEntity user = userFindService.findUser(userId);
+
+        return communityCommentRepository.findByUserOrderByCreatedAtDesc(user)
+                .stream()
+                .map(CommentResponse::from)
                 .toList();
     }
 
     /**
      * LIKE + OR를 사용한 통합 검색 메서드
-     * @param category null이면 전체 검색, 값이 있으면 해당 카테고리 내 검색
      */
+    // 🔥 userId 매개변수 추가
     public PageResponse<CommunityListResponse> searchCommunities(
             CommunityCategory category,
             String keyword,
+            Long userId,
             Pageable pageable
     ) {
         if (keyword == null || keyword.trim().isEmpty()) {
-            return getCommunityList(category, pageable);
+            return getCommunityList(category, userId, pageable);
         }
 
         List<String> extractedKeywords = extractKeywords(keyword);
@@ -112,12 +156,11 @@ public class CommunityFindService {
                 pageable
         );
 
-        return convertToPageResponse(communities);
+        return convertToPageResponse(communities, userId);
     }
 
     /**
      * 실시간 순위 조회 (조회수 + 북마크 수 기준, 최대 5개)
-     * 데이터가 부족하면 무작위로 5개 선택
      */
     public List<CommunityListResponse> getTrendingCommunities() {
         final int TRENDING_SIZE = 5;
@@ -138,16 +181,19 @@ public class CommunityFindService {
                 .map(community -> {
                     long likeCount = communityLikeRepository.countByCommunity(community);
                     long commentCount = communityCommentRepository.countByCommunity(community);
-                    return CommunityListResponse.from(community, likeCount, commentCount);
+                    // 🔥 비로그인 상태로 조회
+                    return CommunityListResponse.from(community, false, false, likeCount, commentCount);
                 })
                 .toList();
     }
 
-
     /**
-     * Entity를 PageResponse로 변환 (N+1 문제 해결)
+     * 🔥 Entity를 PageResponse로 변환 (N+1 문제 해결 + 좋아요/북마크 여부 포함)
      */
-    private PageResponse<CommunityListResponse> convertToPageResponse(Page<CommunityEntity> communities) {
+    private PageResponse<CommunityListResponse> convertToPageResponse(
+            Page<CommunityEntity> communities,
+            Long userId
+    ) {
         List<CommunityEntity> communityList = communities.getContent();
 
         if (communityList.isEmpty()) {
@@ -158,24 +204,47 @@ public class CommunityFindService {
                 .map(CommunityEntity::getId)
                 .toList();
 
-        java.util.Map<Long, Long> likeCountMap = communityLikeRepository.countByCommunityIds(communityIds)
+        // 좋아요 수 일괄 조회
+        Map<Long, Long> likeCountMap = communityLikeRepository.countByCommunityIds(communityIds)
                 .stream()
-                .collect(java.util.stream.Collectors.toMap(
+                .collect(Collectors.toMap(
                         arr -> (Long) arr[0],
                         arr -> (Long) arr[1]
                 ));
 
-        java.util.Map<Long, Long> commentCountMap = communityCommentRepository.countByCommunityIds(communityIds)
+        // 댓글 수 일괄 조회
+        Map<Long, Long> commentCountMap = communityCommentRepository.countByCommunityIds(communityIds)
                 .stream()
-                .collect(java.util.stream.Collectors.toMap(
+                .collect(Collectors.toMap(
                         arr -> (Long) arr[0],
                         arr -> (Long) arr[1]
                 ));
+
+        // 사용자의 좋아요/북마크 여부 일괄 조회
+        Set<Long> likedCommunityIds = new HashSet<>();
+        Set<Long> bookmarkedCommunityIds = new HashSet<>();
+
+        if (userId != null) {
+            UserEntity user = userFindService.findUser(userId);
+            likedCommunityIds = new HashSet<>(
+                    communityLikeRepository.findLikedCommunityIdsByUserAndCommunityIds(user, communityIds)
+            );
+            bookmarkedCommunityIds = new HashSet<>(
+                    communityBookmarkRepository.findBookmarkedCommunityIdsByUserAndCommunityIds(user, communityIds)
+            );
+        }
+
+        // Response 생성
+        Set<Long> finalLikedIds = likedCommunityIds;
+        Set<Long> finalBookmarkedIds = bookmarkedCommunityIds;
 
         Page<CommunityListResponse> page = communities.map(community -> {
             long likeCount = likeCountMap.getOrDefault(community.getId(), 0L);
             long commentCount = commentCountMap.getOrDefault(community.getId(), 0L);
-            return CommunityListResponse.from(community, likeCount, commentCount);
+            boolean isLiked = finalLikedIds.contains(community.getId());
+            boolean isBookmarked = finalBookmarkedIds.contains(community.getId());
+
+            return CommunityListResponse.from(community, isLiked, isBookmarked, likeCount, commentCount);
         });
 
         return new PageResponse<>(page);
@@ -191,8 +260,7 @@ public class CommunityFindService {
 
         try {
             CharSequence normalized = OpenKoreanTextProcessorJava.normalize(text);
-            Seq<KoreanToken> tokens =
-                    OpenKoreanTextProcessorJava.tokenize(normalized);
+            Seq<KoreanToken> tokens = OpenKoreanTextProcessorJava.tokenize(normalized);
             return OpenKoreanTextProcessorJava.tokensToJavaStringList(tokens)
                     .stream()
                     .filter(keyword -> keyword.length() > 1)

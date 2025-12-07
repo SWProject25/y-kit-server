@@ -29,7 +29,7 @@ public class CommentResponse {
                 .id(entity.getId())
                 .content(entity.getContent())
                 .authorId(entity.getUser().getId())
-                .authorName(entity.getUser().getName())
+                .authorName(entity.getUser().getNickName())
                 .createdAt(entity.getCreatedAt())
                 .build();
     }
