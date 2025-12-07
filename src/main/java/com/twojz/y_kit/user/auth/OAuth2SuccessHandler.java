@@ -61,7 +61,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
             try {
                 userNotificationService.sendWelcomeNotification(user);
 
-                if (user.getProfileStatus() != ProfileStatus.COMPLETED) {
+                if (user.getProfileStatus() != ProfileStatus.COMPLETED
+                        && user.getProfileStatus() != ProfileStatus.SKIPPED) {
                     userNotificationService.sendProfileCompleteReminder(user);
                 }
             } catch (Exception e) {

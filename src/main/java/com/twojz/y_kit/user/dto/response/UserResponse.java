@@ -25,6 +25,7 @@ public class UserResponse {
     private final LocalDate birthDate;
     private final Gender gender;
     private final String region;
+    private final String regionCode;
     private final EmploymentStatus employmentStatus;
     private final EducationLevel educationLevel;
     private final MajorField major;
@@ -40,7 +41,8 @@ public class UserResponse {
                 .nickName(user.getNickName())
                 .birthDate(user.getBirthDate())
                 .gender(user.getGender())
-                .region(user.getRegion() != null ? user.getRegion().getName() : null)
+                .region(user.getRegion() != null ? user.getRegion().getFullName() : null)
+                .regionCode(user.getRegion() != null ? user.getRegion().getCode() : null)
                 .employmentStatus(user.getEmploymentStatus())
                 .educationLevel(user.getEducationLevel())
                 .major(user.getMajor())

@@ -34,4 +34,9 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
     @Query("SELECT n FROM NotificationEntity n WHERE n.id = :notificationId AND n.user.id = :userId")
     Optional<NotificationEntity> findByIdAndUserId(@Param("notificationId") Long notificationId,
                                                    @Param("userId") Long userId);
+
+    // 사용자의 모든 알림 삭제
+    @Modifying
+    @Query("DELETE FROM NotificationEntity n WHERE n.user.id = :userId")
+    void deleteByUserId(@Param("userId") Long userId);
 }

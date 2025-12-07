@@ -6,5 +6,6 @@ import lombok.Getter;
 public enum ProfileStatus {
     NOT_STARTED,
     IN_PROGRESS,
-    COMPLETED
+    COMPLETED,
+    SKIPPED
 }

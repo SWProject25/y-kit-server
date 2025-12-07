@@ -7,6 +7,7 @@ import com.twojz.y_kit.policy.domain.enumType.MajorField;
 import com.twojz.y_kit.region.entity.Region;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.Optional;
 import lombok.AccessLevel;
@@ -61,6 +62,12 @@ public class UserEntity extends BaseEntity {
     @Column(nullable = false)
     private ProfileStatus profileStatus;
 
+    /*@Column(nullable = false)
+    private boolean deleted = false;
+
+    @Column
+    private LocalDateTime deletedAt;*/
+
     @Builder
     public UserEntity(String email, String password, Role role, LoginProvider loginProvider,
                       String name, String nickName, String socialId,
@@ -86,7 +93,6 @@ public class UserEntity extends BaseEntity {
 
     public void completeProfile(
             String name,
-            String nickName,
             LocalDate birthDate,
             Gender gender,
             Region region,
@@ -94,8 +100,7 @@ public class UserEntity extends BaseEntity {
             EducationLevel educationLevel,
             MajorField major
     ) {
-        if (name != null) this.name = name;
-        if (nickName != null) this.nickName = nickName;
+        if (name != null && !name.isEmpty()) this.name = name;
         if (birthDate != null) this.birthDate = birthDate;
         if (gender != null) this.gender = gender;
         if (region != null) this.region = region;
@@ -106,9 +111,14 @@ public class UserEntity extends BaseEntity {
         updateProfileStatus();
     }
 
+    public void skipProfile() {
+        this.profileStatus = ProfileStatus.SKIPPED;
+    }
+
     private void updateProfileStatus() {
         boolean allFilled =
-                this.birthDate != null &&
+                this.name != null &&
+                        this.birthDate != null &&
                         this.gender != null &&
                         this.region != null &&
                         this.employmentStatus != null &&
@@ -116,7 +126,8 @@ public class UserEntity extends BaseEntity {
                         this.major != null;
 
         boolean noneFilled =
-                this.birthDate == null &&
+                this.name != null &&
+                        this.birthDate == null &&
                         this.gender == null &&
                         this.region == null &&
                         this.employmentStatus == null &&
@@ -135,4 +146,20 @@ public class UserEntity extends BaseEntity {
     public int calculateAge() {
         return Period.between(birthDate, LocalDate.now()).getYears();
     }
+
+    /*public void withdraw() {
+        this.deleted = true;
+        this.deletedAt = LocalDateTime.now();
+        this.email = "deleted_" + this.getId() + "_" + System.currentTimeMillis() + "@deleted.com";
+        this.password = null;
+        this.socialId = null;
+        this.name = "탈퇴한 사용자";
+        this.nickName = null;
+        this.birthDate = null;
+        this.gender = null;
+        this.region = null;
+        this.employmentStatus = null;
+        this.educationLevel = null;
+        this.major = null;
+    }*/
 }

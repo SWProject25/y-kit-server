@@ -15,4 +15,10 @@ public class LoginRequest {
     @Schema(description = "비밀번호", example = "password123!")
     @NotBlank(message = "비밀번호는 필수입니다")
     private String password;
+
+    @Schema(description = "FCM 디바이스 토큰 (선택)")
+    private String deviceToken;
+
+    @Schema(description = "디바이스 이름 (선택)", example = "iPhone 15 Pro")
+    private String deviceName;
 }

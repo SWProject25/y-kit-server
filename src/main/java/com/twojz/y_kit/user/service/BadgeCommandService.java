@@ -1,5 +1,7 @@
 package com.twojz.y_kit.user.service;
 
+import com.twojz.y_kit.notification.entity.NotificationType;
+import com.twojz.y_kit.notification.service.NotificationService;
 import com.twojz.y_kit.user.entity.BadgeEntity;
 import com.twojz.y_kit.user.entity.UserBadgeEntity;
 import com.twojz.y_kit.user.entity.UserEntity;
@@ -19,6 +21,7 @@ public class BadgeCommandService {
     private final UserBadgeRepository userBadgeRepository;
     private final UserFindService userFindService;
     private final BadgeFindService badgeFindService;
+    private final NotificationService notificationService;
 
     public void grantBadge(Long userId, Long badgeId) {
         try {
@@ -45,8 +48,13 @@ public class BadgeCommandService {
 
     public UserBadgeEntity grantBadgeIfNotExists(Long userId, Long badgeId) {
         try {
-            return userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
-                    .orElseGet(() -> createUserBadge(userId, badgeId));
+            UserBadgeEntity userBadge = userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
+                    .orElseGet(() -> {
+                        UserBadgeEntity newBadge = createUserBadge(userId, badgeId);
+                        sendBadgeNotification(newBadge);
+                        return newBadge;
+                    });
+            return userBadge;
         } catch (DataIntegrityViolationException e) {
             log.warn("동시성 이슈 감지 - 재조회 시도. userId: {}, badgeId: {}", userId, badgeId);
             return userBadgeRepository.findByUserIdAndBadgeId(userId, badgeId)
@@ -54,7 +62,22 @@ public class BadgeCommandService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    private void sendBadgeNotification(UserBadgeEntity userBadge) {
+        try {
+            UserEntity user = userBadge.getUser();
+            BadgeEntity badge = userBadge.getBadge();
+
+            String title = "🏅 새로운 뱃지를 획득했습니다!";
+            String body = String.format("'%s' 뱃지를 획득하셨습니다! 축하합니다!", badge.getName());
+            String deepLink = "/mypage?tab=badges"; // 마이페이지 뱃지 탭으로 이동
+
+            notificationService.sendNotification(user, title, body, NotificationType.BADGE, deepLink);
+        } catch (Exception e) {
+            log.error("뱃지 획득 알림 전송 실패", e);
+        }
+    }
+
+    @Transactional
     public UserBadgeEntity createUserBadge(Long userId, Long badgeId) {
         UserEntity user = userFindService.findUser(userId);
         BadgeEntity badge = badgeFindService.findBadge(badgeId);

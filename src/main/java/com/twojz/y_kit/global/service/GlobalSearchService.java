@@ -31,6 +31,7 @@ public class GlobalSearchService {
     private final HotDealFindService hotDealFindService;
     private final GroupPurchaseFindService groupPurchaseFindService;
     private final PolicyFindService policyFindService;
+
     /**
      * 통합 검색 - 전체 카테고리
      */
@@ -40,14 +41,16 @@ public class GlobalSearchService {
         List<String> extractedKeywords = extractKeywords(keyword);
         log.info("추출된 키워드: {}", extractedKeywords);
 
+        // 🔥 userId 매개변수 추가
         PageResponse<CommunityListResponse> communities =
-                communityFindService.searchCommunities(null, keyword, pageable);
+                communityFindService.searchCommunities(null, keyword, userId, pageable);
 
         PageResponse<HotDealListResponse> hotDeals =
                 hotDealFindService.searchHotDeals(null, null, keyword, userId, pageable);
 
+        // 🔥 userId 매개변수 추가
         PageResponse<GroupPurchaseListResponse> groupPurchases =
-                groupPurchaseFindService.searchGroupPurchases(keyword, null, null, pageable);
+                groupPurchaseFindService.searchGroupPurchases(keyword, null, null, userId, pageable);
 
         PageResponse<PolicyListResponse> policies =
                 policyFindService.searchPolicies(keyword, null, null, userId, pageable);
@@ -91,8 +94,9 @@ public class GlobalSearchService {
 
         switch (category) {
             case COMMUNITY -> {
+                // 🔥 userId 매개변수 추가
                 PageResponse<CommunityListResponse> communities =
-                        communityFindService.searchCommunities(null, keyword, pageable);
+                        communityFindService.searchCommunities(null, keyword, userId, pageable);
                 builder.communities(communities);
                 totalCount = communities.getTotalElements();
             }
@@ -103,8 +107,9 @@ public class GlobalSearchService {
                 totalCount = hotDeals.getTotalElements();
             }
             case GROUP_PURCHASE -> {
+                // 🔥 userId 매개변수 추가
                 PageResponse<GroupPurchaseListResponse> groupPurchases =
-                        groupPurchaseFindService.searchGroupPurchases(keyword, null, null, pageable);
+                        groupPurchaseFindService.searchGroupPurchases(keyword, null, null, userId, pageable);
                 builder.groupPurchases(groupPurchases);
                 totalCount = groupPurchases.getTotalElements();
             }
@@ -120,7 +125,7 @@ public class GlobalSearchService {
     }
 
     /**
-     * 통합 검색 - 미리보기 (각 카테고리당 3개씩)
+     * 통합 검색 - 미리보기 (각 카테고리당 5개씩)
      */
     public GlobalSearchResponse searchPreview(String keyword, Long userId) {
         log.info("통합 검색 미리보기 - 검색어: {}", keyword);
@@ -130,14 +135,16 @@ public class GlobalSearchService {
 
         Pageable pageable = PageRequest.of(0, 5);
 
+        // 🔥 userId 매개변수 추가
         PageResponse<CommunityListResponse> communities =
-                communityFindService.searchCommunities(null, keyword, pageable);
+                communityFindService.searchCommunities(null, keyword, userId, pageable);
 
         PageResponse<HotDealListResponse> hotDeals =
                 hotDealFindService.searchHotDeals(null, null, keyword, userId, pageable);
 
+        // 🔥 userId 매개변수 추가
         PageResponse<GroupPurchaseListResponse> groupPurchases =
-                groupPurchaseFindService.searchGroupPurchases(keyword, null, null, pageable);
+                groupPurchaseFindService.searchGroupPurchases(keyword, null, null, userId, pageable);
 
         PageResponse<PolicyListResponse> policies =
                 policyFindService.searchPolicies(keyword, null, null, userId, pageable);
