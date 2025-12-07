@@ -113,7 +113,33 @@ public class HotDealController {
     ) {
         Long userId = extractUserId(authentication);
         return hotDealFindService.getMyHotDeals(userId, pageable);
+    }
 
+    @GetMapping("/my-bookmarks")
+    @Operation(summary = "내가 북마크한 핫딜 목록")
+    public java.util.List<HotDealListResponse> getMyBookmarks(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return hotDealFindService.getMyBookmarks(userId);
+    }
+
+    @GetMapping("/my-liked")
+    @Operation(summary = "내가 좋아요한 핫딜 목록")
+    public java.util.List<HotDealListResponse> getMyLiked(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return hotDealFindService.getMyLikedHotDeals(userId);
+    }
+
+    @GetMapping("/my-comments")
+    @Operation(summary = "내가 작성한 댓글 목록")
+    public java.util.List<HotDealCommentResponse> getMyComments(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return hotDealFindService.getMyComments(userId);
     }
 
     private Long extractUserId(Authentication authentication) {

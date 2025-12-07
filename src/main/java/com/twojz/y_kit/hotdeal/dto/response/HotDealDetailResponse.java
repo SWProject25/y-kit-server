@@ -1,5 +1,6 @@
 package com.twojz.y_kit.hotdeal.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.twojz.y_kit.hotdeal.domain.dto.HotDealDetailDto;
 import com.twojz.y_kit.hotdeal.domain.entity.DealType;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealCategory;
@@ -51,9 +52,11 @@ public class HotDealDetailResponse {
     private String authorName;
 
     @Schema(description = "좋아요 여부", example = "true")
+    @JsonProperty("isLiked")
     private boolean isLiked;
 
     @Schema(description = "북마크 여부", example = "false")
+    @JsonProperty("isBookmarked")
     private boolean isBookmarked;
 
     @Schema(description = "좋아요 개수", example = "23")
@@ -93,7 +96,7 @@ public class HotDealDetailResponse {
                 .dealType(hotDeal.getDealType())
                 .category(hotDeal.getCategory())
                 .authorId(hotDeal.getUser().getId())
-                .authorName(hotDeal.getUser().getName())
+                .authorName(hotDeal.getUser().getNickName())
                 .isLiked(isLiked)
                 .isBookmarked(isBookmarked)
                 .likeCount(likeCount)

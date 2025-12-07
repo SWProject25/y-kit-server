@@ -46,8 +46,17 @@ public class HotDealCreateRequest {
     @Schema(description = "카테고리", example = "ELECTRONICS")
     private HotDealCategory category;
 
-    @Schema(description = "지역 코드", example = "11010")
+    @Schema(description = "지역 코드 (직접 지정 시)", example = "11010")
     private String regionCode;
+
+    @Schema(description = "시/도 (주소 기반 자동 매핑 시)", example = "서울특별시")
+    private String sido;
+
+    @Schema(description = "시/군/구 (주소 기반 자동 매핑 시)", example = "마포구")
+    private String sigungu;
+
+    @Schema(description = "읍/면/동 (주소 기반 자동 매핑 시)", example = "서교동")
+    private String dong;
 
     @Schema(description = "만료 시간", example = "2025-01-15T18:00:00")
     private LocalDateTime expiresAt;

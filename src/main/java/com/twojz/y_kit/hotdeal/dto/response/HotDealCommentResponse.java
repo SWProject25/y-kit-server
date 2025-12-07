@@ -12,8 +12,11 @@ public class HotDealCommentResponse {
     @Schema(description = "댓글 ID", example = "12")
     private Long id;
 
-    @Schema(description = "작성자 ID", example = "5")
-    private Long userId;
+    @Schema(description = "작성자 ID", example = "123")
+    private Long authorId;
+
+    @Schema(description = "작성자 닉네임", example = "김철수")
+    private String authorName;
 
     @Schema(description = "댓글 내용", example = "정말 득템했어요!")
     private String content;
@@ -24,7 +27,8 @@ public class HotDealCommentResponse {
     public static HotDealCommentResponse from(HotDealCommentEntity comment) {
         return HotDealCommentResponse.builder()
                 .id(comment.getId())
-                .userId(comment.getUser().getId())
+                .authorId(comment.getUser().getId())
+                .authorName(comment.getUser().getNickName())
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
                 .build();

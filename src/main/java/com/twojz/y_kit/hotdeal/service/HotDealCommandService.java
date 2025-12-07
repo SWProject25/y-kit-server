@@ -13,7 +13,10 @@ import com.twojz.y_kit.hotdeal.repository.HotDealLikeRepository;
 import com.twojz.y_kit.hotdeal.repository.HotDealRepository;
 import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.region.service.RegionFindService;
+import com.twojz.y_kit.user.entity.BadgeEntity;
 import com.twojz.y_kit.user.entity.UserEntity;
+import com.twojz.y_kit.user.service.BadgeCommandService;
+import com.twojz.y_kit.user.service.BadgeFindService;
 import com.twojz.y_kit.user.service.UserFindService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,13 +35,25 @@ public class HotDealCommandService {
     private final UserFindService userFindService;
     private final RegionFindService regionFindService;
     private final HotDealFindService hotDealFindService;
+    private final BadgeCommandService badgeCommandService;
+    private final BadgeFindService badgeFindService;
 
     /**
      * 핫딜 생성
      */
     public Long createHotDeal(Long userId, HotDealCreateRequest request) {
         UserEntity user = userFindService.findUser(userId);
-        Region region = regionFindService.findRegionCode(request.getRegionCode());
+
+        // 첫 게시물인지 확인
+        long userPostCount = hotDealRepository.countByUser(user);
+        boolean isFirstPost = (userPostCount == 0);
+
+        // 지역 정보 결정: regionCode가 있으면 우선 사용, 없으면 주소 기반 검색
+        Region region = regionFindService.findRegionByAddress(
+                request.getSido(),
+                request.getSigungu(),
+                request.getDong()
+        );
 
         HotDealEntity hotDeal = HotDealEntity.builder()
                 .user(user)
@@ -55,7 +70,20 @@ public class HotDealCommandService {
                 .expiresAt(request.getExpiresAt())
                 .build();
 
-        return hotDealRepository.save(hotDeal).getId();
+        Long hotDealId = hotDealRepository.save(hotDeal).getId();
+
+        // 첫 게시물이면 뱃지 부여
+        if (isFirstPost) {
+            try {
+                BadgeEntity badge = badgeFindService.findByName("핫딜 첫 공유");
+                badgeCommandService.grantBadgeIfNotExists(userId, badge.getId());
+                log.info("🏅 '핫딜 첫 공유' 뱃지 부여 완료 - userId: {}", userId);
+            } catch (Exception e) {
+                log.warn("뱃지 부여 실패 - userId: {}, error: {}", userId, e.getMessage());
+            }
+        }
+
+        return hotDealId;
     }
 
     /**
