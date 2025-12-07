@@ -19,6 +19,8 @@ import org.springframework.stereotype.Repository;
 public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
     Optional<PolicyEntity> findByPolicyNo(String policyNo);
 
+    List<PolicyEntity> findAllByIsActiveTrue();
+
     List<PolicyEntity> findAllByPolicyNoIn(Collection<String> policyNos);
 
     /**

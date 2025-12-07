@@ -85,4 +85,12 @@ public class PolicyEntity extends BaseEntity {
         this.aiAnalysis = aiAnalysis;
         this.aiGeneratedAt = LocalDateTime.now();
     }
+
+    public void activate() {
+        this.isActive = true;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
+    }
 }

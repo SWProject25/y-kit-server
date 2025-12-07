@@ -6,17 +6,21 @@ import com.twojz.y_kit.policy.dto.response.PolicyComparisonResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyDetailResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyKeywordResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyListResponse;
+import com.twojz.y_kit.policy.dto.response.PolicyNotificationResponse;
+import com.twojz.y_kit.policy.service.PolicyBookmarkService;
 import com.twojz.y_kit.policy.service.PolicyComparisonService;
 import com.twojz.y_kit.policy.service.PolicyFindService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -33,6 +37,7 @@ import org.springframework.web.server.ResponseStatusException;
 public class PolicyController {
     private final PolicyFindService policyFindService;
     private final PolicyComparisonService policyComparisonService;
+    private final PolicyBookmarkService policyBookmarkService;
 
     @GetMapping
     @Operation(summary = "정책 목록 조회", description = "로그인 시 북마크 여부 포함, 비로그인 시 북마크는 false")
@@ -74,7 +79,7 @@ public class PolicyController {
             Authentication authentication,
             @ParameterObject Pageable pageable
     ) {
-        Long userId = extractUserIdOrNull(authentication);
+        Long userId = extractUserId(authentication);
         return policyFindService.getRecommendedPoliciesByUser(userId, pageable);
     }
 
@@ -131,6 +136,59 @@ public class PolicyController {
         Long userId = extractUserId(authentication);
         PolicyComparisonResponse response = policyComparisonService.comparePolicies(userId, policyIds);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{policyId}/bookmark")
+    @Operation(summary = "정책 북마크 토글 (로그인 필수)", description = "정책 북마크를 추가하거나 제거합니다.")
+    public ResponseEntity<Void> toggleBookmark(
+            @PathVariable Long policyId,
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        policyBookmarkService.toggleBookmark(policyId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/{policyId}/notification")
+    @Operation(summary = "정책 마감 알림 신청 토글 (로그인 필수)", description = "정책 마감 알림을 신청하거나 취소합니다.")
+    public ResponseEntity<Void> toggleNotification(
+            @PathVariable Long policyId,
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        policyBookmarkService.toggleNotification(policyId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/notifications/my")
+    @Operation(summary = "내가 신청한 정책 알림 목록 조회 (로그인 필수)", description = "내가 신청한 정책 마감 알림 목록을 조회합니다.")
+    public ResponseEntity<List<PolicyNotificationResponse>> getMyNotifications(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        List<PolicyNotificationResponse> notifications = policyBookmarkService.getMyNotifications(userId);
+        return ResponseEntity.ok(notifications);
+    }
+
+    @DeleteMapping("/{policyId}/notification")
+    @Operation(summary = "정책 알림 신청 삭제 (로그인 필수)", description = "정책 마감 알림 신청을 삭제합니다.")
+    public ResponseEntity<Void> cancelNotification(
+            @PathVariable Long policyId,
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        policyBookmarkService.cancelNotification(policyId, userId);
+        return ResponseEntity.ok().build();
+    }
+
+    @GetMapping("/my-bookmarks")
+    @Operation(summary = "내가 북마크한 정책 목록 조회 (로그인 필수)",
+            description = "내가 북마크한 정책 목록을 조회합니다.")
+    public List<PolicyListResponse> getMyBookmarks(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return policyBookmarkService.getMyBookmarks(userId);
     }
 
     /**
