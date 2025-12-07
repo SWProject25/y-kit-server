@@ -4,10 +4,12 @@ import com.twojz.y_kit.hotdeal.domain.entity.DealType;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealCategory;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealEntity;
 import com.twojz.y_kit.user.entity.UserEntity;
+import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -22,6 +24,8 @@ public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
 
     @EntityGraph(attributePaths = {"user", "region"})
     Page<HotDealEntity> findByUser(UserEntity user, Pageable pageable);
+
+    long countByUser(UserEntity user);
 
     @EntityGraph(attributePaths = {"user", "region"})
     @Query("SELECT DISTINCT h FROM HotDealEntity h " +
@@ -44,4 +48,17 @@ public interface HotDealRepository extends JpaRepository<HotDealEntity, Long> {
             @Param("keyword5") String keyword5,
             Pageable pageable
     );
+
+    // 실시간 순위 조회 (조회수 + 북마크 수 기준으로 정렬)
+    @EntityGraph(attributePaths = "user")
+    @Query("SELECT h FROM HotDealEntity h " +
+            "LEFT JOIN HotDealBookmarkEntity b ON b.hotDeal = h " +
+            "GROUP BY h " +
+            "ORDER BY (h.viewCount + COUNT(b)) DESC")
+    List<HotDealEntity> findTrendingHotDeals(Pageable pageable);
+
+    // 사용자의 모든 핫딜 게시글 삭제
+    @Modifying
+    @Query("DELETE FROM HotDealEntity h WHERE h.user = :user")
+    void deleteByUser(@Param("user") UserEntity user);
 }

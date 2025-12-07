@@ -1,5 +1,6 @@
 package com.twojz.y_kit.policy.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.twojz.y_kit.policy.domain.entity.PolicyKeywordMapping;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
@@ -43,6 +44,7 @@ public class PolicyDetailResponse {
     private AiAnalysisInfo aiAnalysis;
 
     @Schema(description = "북마크 여부")
+    @JsonProperty("isBookmarked")
     private boolean isBookmarked;
 
     public static List<String> toKeywords(List<PolicyKeywordMapping> mappings) {

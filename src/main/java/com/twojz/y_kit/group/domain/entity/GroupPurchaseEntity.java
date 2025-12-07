@@ -60,9 +60,35 @@ public class GroupPurchaseEntity extends BaseEntity {
     @JoinColumn(name = "region_id")
     private Region region;
 
+    @Column
+    private Double latitude;
+
+    @Column
+    private Double longitude;
+
+    @Column
+    private String address;
+
+    @Enumerated(EnumType.STRING)
+    @Column
+    private GroupPurchaseCategory category;
+
+    @Builder.Default
+    @Column
+    private int viewCount = 0;
+
+    @Column(nullable = false)
+    private int commentCount = 0;
+
+    @Column(nullable = false)
+    private int likeCount = 0;
+
+    @Column(nullable = false)
+    private int bookmarkCount = 0;
+
     public void update(String title, String content, String productName, String productLink, String contact,
                        BigDecimal price, Integer minParticipants, Integer maxParticipants,
-                       LocalDate deadline, Region region) {
+                       LocalDate deadline, Region region, Double latitude, Double longitude, String address, GroupPurchaseCategory category) {
         this.title = title;
         this.content = content;
         this.productName = productName;
@@ -73,9 +99,47 @@ public class GroupPurchaseEntity extends BaseEntity {
         this.maxParticipants = maxParticipants;
         this.deadline = deadline;
         this.region = region;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.address = address;
+        this.category = category;
     }
 
     public void increaseParticipants() {
         this.currentParticipants += 1;
+    }
+
+    public void increaseViewCount() {
+        this.viewCount++;
+    }
+
+    public void increaseLikeCount() {
+        this.likeCount++;
+    }
+
+    public void decreaseLikeCount() {
+        if (this.likeCount > 0) {
+            this.likeCount--;
+        }
+    }
+
+    public void increaseCommentCount() {
+        this.commentCount++;
+    }
+
+    public void decreaseCommentCount() {
+        if (this.commentCount > 0) {
+            this.commentCount--;
+        }
+    }
+
+    public void increaseBookmarkCount() {
+        this.bookmarkCount++;
+    }
+
+    public void decreaseBookmarkCount() {
+        if (this.bookmarkCount > 0) {
+            this.bookmarkCount--;
+        }
     }
 }

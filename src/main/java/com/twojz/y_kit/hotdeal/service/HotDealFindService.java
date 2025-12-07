@@ -120,6 +120,18 @@ public class HotDealFindService {
     }
 
     /**
+     * 내가 작성한 댓글 목록
+     */
+    public List<HotDealCommentResponse> getMyComments(Long userId) {
+        UserEntity user = userFindService.findUser(userId);
+
+        return hotDealCommentRepository.findByUserOrderByCreatedAtDesc(user)
+                .stream()
+                .map(HotDealCommentResponse::from)
+                .toList();
+    }
+
+    /**
      * LIKE + OR를 사용한 통합 검색 (카테고리, 딜타입 필터 옵션, OR 조건)
      */
     public PageResponse<HotDealListResponse> searchHotDeals(

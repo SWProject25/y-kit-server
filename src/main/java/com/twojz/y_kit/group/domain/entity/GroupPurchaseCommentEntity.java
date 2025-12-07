@@ -28,4 +28,8 @@ public class GroupPurchaseCommentEntity extends BaseEntity {
 
     @Column(nullable = false, length = 500)
     private String content;
+
+    public void updateContent(String content) {
+        this.content = content;
+    }
 }

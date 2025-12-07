@@ -1,6 +1,7 @@
 package com.twojz.y_kit.notification.repository;
 
 import com.twojz.y_kit.notification.entity.NotificationEntity;
+import com.twojz.y_kit.user.entity.UserEntity;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
@@ -34,4 +35,7 @@ public interface NotificationRepository extends JpaRepository<NotificationEntity
     @Query("SELECT n FROM NotificationEntity n WHERE n.id = :notificationId AND n.user.id = :userId")
     Optional<NotificationEntity> findByIdAndUserId(@Param("notificationId") Long notificationId,
                                                    @Param("userId") Long userId);
+
+    @Modifying
+    void deleteByUser(@Param("user") UserEntity user);
 }

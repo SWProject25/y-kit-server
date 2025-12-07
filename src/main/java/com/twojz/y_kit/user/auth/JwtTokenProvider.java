@@ -24,7 +24,7 @@ public class JwtTokenProvider {
     @Value("${JWT_SECRET}")
     private String secretKeyString;
 
-    @Value("${JWT_ACCESS_TOKEN_VALIDAITY}")
+    @Value("${JWT_ACCESS_TOKEN_VALIDITY}")
     private long accessTokenValidityInMilliseconds;
 
     @Value("${JWT_REFRESH_TOKEN_VALIDITY}")

@@ -11,11 +11,11 @@ public class GroupPurchaseCommentResponse {
     @Schema(description = "댓글 ID", example = "1")
     private Long id;
 
-    @Schema(description = "작성자 ID", example = "42")
-    private Long userId;
+    @Schema(description = "작성자 ID", example = "123")
+    private Long authorId;
 
-    @Schema(description = "작성자 이름", example = "홍길동")
-    private String username;
+    @Schema(description = "작성자 닉네임", example = "김철수")
+    private String authorName;
 
     @Schema(description = "댓글 내용", example = "저도 참여하고 싶어요!")
     private String content;
@@ -26,8 +26,8 @@ public class GroupPurchaseCommentResponse {
     public static GroupPurchaseCommentResponse from(com.twojz.y_kit.group.domain.entity.GroupPurchaseCommentEntity comment) {
         return GroupPurchaseCommentResponse.builder()
                 .id(comment.getId())
-                .userId(comment.getUser().getId())
-                .username(comment.getUser().getName())
+                .authorId(comment.getUser().getId())
+                .authorName(comment.getUser().getNickName())
                 .content(comment.getContent())
                 .createdAt(comment.getCreatedAt())
                 .build();

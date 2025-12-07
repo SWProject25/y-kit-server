@@ -1,5 +1,6 @@
 package com.twojz.y_kit.policy.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -64,6 +65,7 @@ public class PolicyListResponse {
     private Integer applicationCount;
 
     @Schema(description = "북마크 여부")
+    @JsonProperty("isBookmarked")
     private boolean isBookmarked;
 
     @Schema(description = "등록일시")

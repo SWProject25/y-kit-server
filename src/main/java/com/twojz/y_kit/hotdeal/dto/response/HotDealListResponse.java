@@ -1,5 +1,6 @@
 package com.twojz.y_kit.hotdeal.dto.response;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.twojz.y_kit.hotdeal.domain.dto.HotDealListDto;
 import com.twojz.y_kit.hotdeal.domain.entity.DealType;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealCategory;
@@ -38,16 +39,21 @@ public class HotDealListResponse {
     private long commentCount;
 
     @Schema(description = "좋아요 여부", example = "true")
-    private boolean liked;
+    @JsonProperty("isLiked")
+    private boolean isLiked;
 
     @Schema(description = "북마크 여부", example = "false")
-    private boolean bookmarked;
+    @JsonProperty("isBookmarked")
+    private boolean isBookmarked;
 
     @Schema(description = "조회수", example = "120")
     private int viewCount;
 
     @Schema(description = "지역명", example = "서울특별시 종로구")
     private String regionName;
+
+    @Schema(description = "지역 코드", example = "1111000000")
+    private String regionCode;
 
     @Schema(description = "작성일", example = "2024-12-01T14:22:00")
     private LocalDateTime createdAt;
@@ -65,10 +71,11 @@ public class HotDealListResponse {
                 .category(hotDeal.getCategory())
                 .likeCount(likeCount)
                 .commentCount(commentCount)
-                .liked(liked)
-                .bookmarked(bookmarked)
+                .isLiked(liked)
+                .isBookmarked(bookmarked)
                 .viewCount(hotDeal.getViewCount())
                 .regionName(hotDeal.getRegion() != null ? hotDeal.getRegion().getFullName() : null)
+                .regionCode(hotDeal.getRegion() != null ? hotDeal.getRegion().getCode() : null)
                 .expiresAt(hotDeal.getExpiresAt())
                 .createdAt(hotDeal.getCreatedAt())
                 .build();

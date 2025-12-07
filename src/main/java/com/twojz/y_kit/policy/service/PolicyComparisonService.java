@@ -89,7 +89,7 @@ public class PolicyComparisonService {
 
     private String buildUserContent(UserEntity user) {
         return """
-- 나이: %d세
+- 나이: %s세
 - 지역: %s
 - 성별: %s
 - 학력: %s

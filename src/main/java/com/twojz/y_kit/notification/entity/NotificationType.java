@@ -8,6 +8,7 @@ import lombok.Getter;
 public enum NotificationType {
     WELCOME("환영"),
     PROFILE_COMPLETE_REMINDER("프로필 완성 요청"),
+    BADGE("뱃지"),
     USER("사용자"),
     POLICY("정책"),
     HOT_DEAL("핫딜"),

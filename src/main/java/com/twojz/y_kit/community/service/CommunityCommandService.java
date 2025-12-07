@@ -12,12 +12,19 @@ import com.twojz.y_kit.community.repository.CommunityBookmarkRepository;
 import com.twojz.y_kit.community.repository.CommunityCommentRepository;
 import com.twojz.y_kit.community.repository.CommunityLikeRepository;
 import com.twojz.y_kit.community.repository.CommunityRepository;
+import com.twojz.y_kit.user.entity.BadgeEntity;
 import com.twojz.y_kit.user.entity.UserEntity;
+import com.twojz.y_kit.user.service.BadgeCommandService;
+import com.twojz.y_kit.user.service.BadgeFindService;
 import com.twojz.y_kit.user.service.UserFindService;
+import com.twojz.y_kit.notification.service.NotificationService;
+import com.twojz.y_kit.notification.entity.NotificationType;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -28,9 +35,16 @@ public class CommunityCommandService {
     private final CommunityCommentRepository communityCommentRepository;
     private final UserFindService userFindService;
     private final CommunityFindService communityFindService;
+    private final BadgeCommandService badgeCommandService;
+    private final BadgeFindService badgeFindService;
+    private final NotificationService notificationService;
 
     public Long createCommunity(Long userId, CommunityCreateRequest request) {
         UserEntity user = userFindService.findUser(userId);
+
+        // 첫 게시물인지 확인
+        long userPostCount = communityRepository.countByUser(user);
+        boolean isFirstPost = (userPostCount == 0);
 
         CommunityEntity community = CommunityEntity.builder()
                 .title(request.getTitle())
@@ -39,7 +53,20 @@ public class CommunityCommandService {
                 .user(user)
                 .build();
 
-        return communityRepository.save(community).getId();
+        Long communityId = communityRepository.save(community).getId();
+
+        // 첫 게시물이면 뱃지 부여
+        if (isFirstPost) {
+            try {
+                BadgeEntity badge = badgeFindService.findByName("커뮤니티 첫 글");
+                badgeCommandService.grantBadgeIfNotExists(userId, badge.getId());
+                log.info("🏅 '커뮤니티 첫 글' 뱃지 부여 완료 - userId: {}", userId);
+            } catch (Exception e) {
+                log.warn("뱃지 부여 실패 - userId: {}, error: {}", userId, e.getMessage());
+            }
+        }
+
+        return communityId;
     }
 
     public void updateCommunity(Long communityId, Long userId, CommunityUpdateRequest request) {
@@ -73,12 +100,26 @@ public class CommunityCommandService {
         communityLikeRepository.findByCommunityAndUser(community, user)
                 .ifPresentOrElse(
                         communityLikeRepository::delete,
-                        () -> communityLikeRepository.save(
-                                CommunityLikeEntity.builder()
-                                        .community(community)
-                                        .user(user)
-                                        .build()
-                        )
+                        () -> {
+                            communityLikeRepository.save(
+                                    CommunityLikeEntity.builder()
+                                            .community(community)
+                                            .user(user)
+                                            .build()
+                            );
+
+                            // 좋아요 알림 전송 (자기 게시물이 아닐 때만)
+                            if (!community.getUser().getId().equals(userId)) {
+                                try {
+                                    String title = "커뮤니티 좋아요";
+                                    String body = user.getNickName() + "님이 회원님의 게시글 '" + community.getTitle() + "'에 좋아요를 눌렀습니다.";
+                                    String deepLink = "/community/" + communityId;
+                                    notificationService.sendNotification(community.getUser(), title, body, NotificationType.COMMUNITY, deepLink);
+                                } catch (Exception e) {
+                                    log.error("좋아요 알림 전송 실패 - communityId: {}, userId: {}", communityId, userId, e);
+                                }
+                            }
+                        }
                 );
     }
 
@@ -108,7 +149,21 @@ public class CommunityCommandService {
                 .content(request.getContent())
                 .build();
 
-        return communityCommentRepository.save(comment).getId();
+        Long commentId = communityCommentRepository.save(comment).getId();
+
+        // 댓글 알림 전송 (자기 게시물이 아닐 때만)
+        if (!community.getUser().getId().equals(userId)) {
+            try {
+                String title = "커뮤니티 댓글";
+                String body = user.getNickName() + "님이 회원님의 게시글 '" + community.getTitle() + "'에 댓글을 남겼습니다.";
+                String deepLink = "/community/" + communityId;
+                notificationService.sendNotification(community.getUser(), title, body, NotificationType.COMMENT, deepLink);
+            } catch (Exception e) {
+                log.error("댓글 알림 전송 실패 - communityId: {}, userId: {}", communityId, userId, e);
+            }
+        }
+
+        return commentId;
     }
 
     public void deleteComment(Long commentId, Long userId) {
@@ -120,6 +175,18 @@ public class CommunityCommandService {
         }
 
         communityCommentRepository.delete(comment);
+    }
+
+    public void updateComment(Long commentId, Long userId, CommentCreateRequest request) {
+        CommunityCommentEntity comment = communityCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("댓글 수정 권한이 없습니다.");
+        }
+
+        // 내용 수정
+        comment.updateContent(request.getContent());
     }
 
     public void increaseViewCount(Long communityId) {

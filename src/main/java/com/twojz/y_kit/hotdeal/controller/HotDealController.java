@@ -93,6 +93,13 @@ public class HotDealController {
         hotDealCommandService.deleteComment(commentId, userId);
     }
 
+    @PutMapping("/comments/{commentId}")
+    @Operation(summary = "댓글 수정")
+    public void editComment(@PathVariable Long commentId, Authentication authentication, @RequestBody HotDealCommentCreateRequest request)  {
+        Long userId = extractUserId(authentication);
+        hotDealCommandService.updateComment(commentId, userId, request);
+    }
+
     @GetMapping("/search")
     @Operation(summary = "핫딜 검색", description = "제목, 내용, 장소명으로 핫딜을 검색합니다")
     public PageResponse<HotDealListResponse> searchHotDeals(
@@ -113,7 +120,33 @@ public class HotDealController {
     ) {
         Long userId = extractUserId(authentication);
         return hotDealFindService.getMyHotDeals(userId, pageable);
+    }
 
+    @GetMapping("/my-bookmarks")
+    @Operation(summary = "내가 북마크한 핫딜 목록")
+    public java.util.List<HotDealListResponse> getMyBookmarks(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return hotDealFindService.getMyBookmarks(userId);
+    }
+
+    @GetMapping("/my-liked")
+    @Operation(summary = "내가 좋아요한 핫딜 목록")
+    public java.util.List<HotDealListResponse> getMyLiked(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return hotDealFindService.getMyLikedHotDeals(userId);
+    }
+
+    @GetMapping("/my-comments")
+    @Operation(summary = "내가 작성한 댓글 목록")
+    public java.util.List<HotDealCommentResponse> getMyComments(
+            Authentication authentication
+    ) {
+        Long userId = extractUserId(authentication);
+        return hotDealFindService.getMyComments(userId);
     }
 
     private Long extractUserId(Authentication authentication) {

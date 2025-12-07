@@ -29,4 +29,9 @@ public class BadgeFindService {
     public boolean existsBadge(Long badgeId) {
         return badgeRepository.existsById(badgeId);
     }
+
+    public BadgeEntity findByName(String name) {
+        return badgeRepository.findByName(name)
+                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 뱃지입니다: " + name));
+    }
 }

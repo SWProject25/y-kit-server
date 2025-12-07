@@ -1,5 +1,6 @@
 package com.twojz.y_kit.user.entity;
 
+import com.twojz.y_kit.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,6 +32,11 @@ public class UserDeviceEntity {
     @Column(nullable = false)
     private String deviceToken;
 
+    @Column(unique = true, length = 500)
+    private String refreshToken;
+
+    private LocalDateTime refreshTokenExpiresAt;
+
     @Column(nullable = false)
     private boolean isActive = true;
 
@@ -44,10 +50,14 @@ public class UserDeviceEntity {
     private LocalDateTime createdAt;
 
     @Builder
-    public UserDeviceEntity(UserEntity user, String deviceName, String deviceToken, Boolean isActive, Boolean notificationEnabled, LocalDateTime lastLogin) {
+    public UserDeviceEntity(UserEntity user, String deviceName, String deviceToken,
+                            String refreshToken, LocalDateTime refreshTokenExpiresAt,
+                            Boolean isActive, Boolean notificationEnabled, LocalDateTime lastLogin) {
         this.user = user;
         this.deviceName = deviceName;
         this.deviceToken = deviceToken;
+        this.refreshToken = refreshToken;
+        this.refreshTokenExpiresAt = refreshTokenExpiresAt;
         this.isActive = isActive != null ? isActive : true;
         this.notificationEnabled = notificationEnabled != null ? notificationEnabled : true;
         this.lastLogin = lastLogin;
@@ -60,8 +70,21 @@ public class UserDeviceEntity {
         this.lastLogin = LocalDateTime.now();
     }
 
+    public void updateRefreshToken(String refreshToken, LocalDateTime expiresAt) {
+        this.refreshToken = refreshToken;
+        this.refreshTokenExpiresAt = expiresAt;
+        this.lastLogin = LocalDateTime.now();
+    }
+
     public void deactivate() {
         this.isActive = false;
+        this.refreshToken = null;
+        this.refreshTokenExpiresAt = null;
+    }
+
+    public boolean isRefreshTokenExpired() {
+        return refreshTokenExpiresAt == null ||
+                LocalDateTime.now().isAfter(refreshTokenExpiresAt);
     }
 
     public void enableNotification() {
@@ -70,9 +93,5 @@ public class UserDeviceEntity {
 
     public void disableNotification() {
         this.notificationEnabled = false;
-    }
-
-    public void toggleNotification() {
-        this.notificationEnabled = !this.notificationEnabled;
     }
 }

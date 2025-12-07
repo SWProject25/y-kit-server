@@ -24,7 +24,7 @@ public class UserNotificationService {
         notificationService.sendNotification(user,
                 "📝 프로필 완성하고 맞춤 추천 받기",
                 "추가 정보를 입력하면 더 정확한 정책을 추천해드려요!",
-                NotificationType.USER,
+                NotificationType.PROFILE_COMPLETE_REMINDER,
                 "/profile/complete"
         );
     }

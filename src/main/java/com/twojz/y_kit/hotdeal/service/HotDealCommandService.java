@@ -13,8 +13,13 @@ import com.twojz.y_kit.hotdeal.repository.HotDealLikeRepository;
 import com.twojz.y_kit.hotdeal.repository.HotDealRepository;
 import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.region.service.RegionFindService;
+import com.twojz.y_kit.user.entity.BadgeEntity;
 import com.twojz.y_kit.user.entity.UserEntity;
+import com.twojz.y_kit.user.service.BadgeCommandService;
+import com.twojz.y_kit.user.service.BadgeFindService;
 import com.twojz.y_kit.user.service.UserFindService;
+import com.twojz.y_kit.notification.service.NotificationService;
+import com.twojz.y_kit.notification.entity.NotificationType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -32,13 +37,26 @@ public class HotDealCommandService {
     private final UserFindService userFindService;
     private final RegionFindService regionFindService;
     private final HotDealFindService hotDealFindService;
+    private final BadgeCommandService badgeCommandService;
+    private final BadgeFindService badgeFindService;
+    private final NotificationService notificationService;
 
     /**
      * 핫딜 생성
      */
     public Long createHotDeal(Long userId, HotDealCreateRequest request) {
         UserEntity user = userFindService.findUser(userId);
-        Region region = regionFindService.findRegionCode(request.getRegionCode());
+
+        // 첫 게시물인지 확인
+        long userPostCount = hotDealRepository.countByUser(user);
+        boolean isFirstPost = (userPostCount == 0);
+
+        // 지역 정보 결정: regionCode가 있으면 우선 사용, 없으면 주소 기반 검색
+        Region region = regionFindService.findRegionByAddress(
+                request.getSido(),
+                request.getSigungu(),
+                request.getDong()
+        );
 
         HotDealEntity hotDeal = HotDealEntity.builder()
                 .user(user)
@@ -55,7 +73,20 @@ public class HotDealCommandService {
                 .expiresAt(request.getExpiresAt())
                 .build();
 
-        return hotDealRepository.save(hotDeal).getId();
+        Long hotDealId = hotDealRepository.save(hotDeal).getId();
+
+        // 첫 게시물이면 뱃지 부여
+        if (isFirstPost) {
+            try {
+                BadgeEntity badge = badgeFindService.findByName("핫딜 첫 공유");
+                badgeCommandService.grantBadgeIfNotExists(userId, badge.getId());
+                log.info("🏅 '핫딜 첫 공유' 뱃지 부여 완료 - userId: {}", userId);
+            } catch (Exception e) {
+                log.warn("뱃지 부여 실패 - userId: {}, error: {}", userId, e.getMessage());
+            }
+        }
+
+        return hotDealId;
     }
 
     /**
@@ -66,7 +97,11 @@ public class HotDealCommandService {
 
         validateOwnership(hotDeal, userId, "수정");
 
-        Region region = regionFindService.findRegionCode(request.getRegionCode());
+        Region region = regionFindService.findRegionByAddress(
+                request.getSido(),
+                request.getSigungu(),
+                request.getDong()
+        );
 
         hotDeal.update(
                 request.getTitle(),
@@ -114,6 +149,18 @@ public class HotDealCommandService {
                                     .build();
                             hotDealLikeRepository.save(newLike);
                             hotDeal.increaseLikeCount();
+
+                            // 좋아요 알림 전송 (자기 게시물이 아닐 때만)
+                            if (!hotDeal.getUser().getId().equals(userId)) {
+                                try {
+                                    String title = "핫딜 좋아요";
+                                    String body = user.getNickName() + "님이 회원님의 핫딜 '" + hotDeal.getTitle() + "'에 좋아요를 눌렀습니다.";
+                                    String deepLink = "/hot-deals/" + hotDealId;
+                                    notificationService.sendNotification(hotDeal.getUser(), title, body, NotificationType.HOT_DEAL, deepLink);
+                                } catch (Exception e) {
+                                    log.error("좋아요 알림 전송 실패 - hotDealId: {}, userId: {}", hotDealId, userId, e);
+                                }
+                            }
                         }
                 );
     }
@@ -158,6 +205,18 @@ public class HotDealCommandService {
         HotDealCommentEntity saved = hotDealCommentRepository.save(comment);
         hotDeal.increaseCommentCount();
 
+        // 댓글 알림 전송 (자기 게시물이 아닐 때만)
+        if (!hotDeal.getUser().getId().equals(userId)) {
+            try {
+                String title = "핫딜 댓글";
+                String body = user.getNickName() + "님이 회원님의 핫딜 '" + hotDeal.getTitle() + "'에 댓글을 남겼습니다.";
+                String deepLink = "/hot-deals/" + hotDealId;
+                notificationService.sendNotification(hotDeal.getUser(), title, body, NotificationType.COMMENT, deepLink);
+            } catch (Exception e) {
+                log.error("댓글 알림 전송 실패 - hotDealId: {}, userId: {}", hotDealId, userId, e);
+            }
+        }
+
         return saved.getId();
     }
 
@@ -174,6 +233,19 @@ public class HotDealCommandService {
         }
         hotDeal.decreaseCommentCount();
         hotDealCommentRepository.delete(comment);
+    }
+
+    public void updateComment(Long commentId, Long userId, HotDealCommentCreateRequest request) {
+        HotDealCommentEntity comment = hotDealCommentRepository.findById(commentId)
+                .orElseThrow(() -> new IllegalArgumentException("댓글을 찾을 수 없습니다."));
+
+        // 작성자 검증
+        if (!comment.getUser().getId().equals(userId)) {
+            throw new IllegalArgumentException("댓글 수정 권한이 없습니다.");
+        }
+
+        // 내용 수정
+        comment.updateContent(request.getContent());
     }
 
     /**

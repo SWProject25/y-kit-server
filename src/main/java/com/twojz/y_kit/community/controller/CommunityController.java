@@ -21,9 +21,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 @Tag(name = "커뮤니티 API")
 @RestController
@@ -33,17 +35,21 @@ public class CommunityController {
     private final CommunityCommandService communityCommandService;
     private final CommunityFindService communityFindService;
 
-    @Operation(summary = "게시글 목록 조회")
+    @Operation(summary = "게시글 목록 조회",
+            description = "로그인 시 좋아요/북마크 여부 포함")
     @GetMapping
     public ResponseEntity<PageResponse<CommunityListResponse>> getCommunityList(
+            Authentication authentication,  // 🔥 추가
             @RequestParam(required = false) CommunityCategory category,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        PageResponse<CommunityListResponse> page = communityFindService.getCommunityList(category, pageable);
+        Long userId = extractUserIdOrNull(authentication);  // 🔥 추가
+        PageResponse<CommunityListResponse> page = communityFindService.getCommunityList(category, userId, pageable);
         return ResponseEntity.ok(page);
     }
 
-    @Operation(summary = "게시글 상세 조회")
+    @Operation(summary = "게시글 상세 조회",
+            description = "로그인 시 좋아요/북마크 여부 포함")
     @GetMapping("/{communityId}")
     public ResponseEntity<CommunityDetailResponse> getCommunityDetail(
             @Parameter(description = "게시글 ID", required = true) @PathVariable Long communityId,
@@ -51,7 +57,7 @@ public class CommunityController {
 
         communityCommandService.increaseViewCount(communityId);
 
-        Long userId = extractUserId(authentication);
+        Long userId = extractUserIdOrNull(authentication);  // 🔥 로그인 선택으로 변경
         CommunityDetailResponse response = communityFindService.getCommunityDetail(communityId, userId);
         return ResponseEntity.ok(response);
     }
@@ -140,6 +146,17 @@ public class CommunityController {
         return ResponseEntity.ok().build();
     }
 
+    @Operation(summary = "댓글 수정")
+    @PutMapping("/comments/{commentId}")
+    public void editComment(
+            @PathVariable Long commentId,
+            Authentication authentication,
+            @Valid @RequestBody CommentCreateRequest request) {
+
+        Long userId = extractUserId(authentication);
+        communityCommandService.updateComment(commentId, userId, request);
+    }
+
     @Operation(summary = "내가 작성한 게시글 목록")
     @GetMapping("/my-posts")
     public ResponseEntity<PageResponse<CommunityListResponse>> getMyPosts(
@@ -159,24 +176,46 @@ public class CommunityController {
         return ResponseEntity.ok(bookmarks);
     }
 
-    @Operation(summary = "게시글 검색", description = "제목 또는 내용으로 게시글을 검색합니다.")
+    @Operation(summary = "내가 좋아요한 게시글 목록")
+    @GetMapping("/my-liked")
+    public ResponseEntity<List<CommunityListResponse>> getMyLiked(Authentication authentication) {
+        Long userId = extractUserId(authentication);
+        List<CommunityListResponse> liked = communityFindService.getMyLiked(userId);
+        return ResponseEntity.ok(liked);
+    }
+
+    @Operation(summary = "내가 작성한 댓글 목록")
+    @GetMapping("/my-comments")
+    public ResponseEntity<List<com.twojz.y_kit.community.dto.response.CommentResponse>> getMyComments(Authentication authentication) {
+        Long userId = extractUserId(authentication);
+        List<com.twojz.y_kit.community.dto.response.CommentResponse> comments = communityFindService.getMyComments(userId);
+        return ResponseEntity.ok(comments);
+    }
+
+    @Operation(summary = "게시글 검색",
+            description = "제목 또는 내용으로 게시글을 검색합니다. 로그인 시 좋아요/북마크 여부 포함")
     @GetMapping("/search")
     public ResponseEntity<PageResponse<CommunityListResponse>> searchCommunities(
+            Authentication authentication,  // 🔥 추가
             @RequestParam @Size(min = 2, message = "검색어는 최소 2자 이상이어야 합니다") String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
 
-        PageResponse<CommunityListResponse> page = communityFindService.searchCommunities(null, keyword, pageable);
+        Long userId = extractUserIdOrNull(authentication);  // 🔥 추가
+        PageResponse<CommunityListResponse> page = communityFindService.searchCommunities(null, keyword, userId, pageable);
         return ResponseEntity.ok(page);
     }
 
-    @Operation(summary = "카테고리별 검색")
+    @Operation(summary = "카테고리별 검색",
+            description = "로그인 시 좋아요/북마크 여부 포함")
     @GetMapping("/search/category")
     public ResponseEntity<PageResponse<CommunityListResponse>> searchByCategory(
+            Authentication authentication,  // 🔥 추가
             @RequestParam CommunityCategory category,
             @RequestParam String keyword,
             @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
     ) {
-        PageResponse<CommunityListResponse> results = communityFindService.searchCommunities(category, keyword, pageable);
+        Long userId = extractUserIdOrNull(authentication);  // 🔥 추가
+        PageResponse<CommunityListResponse> results = communityFindService.searchCommunities(category, keyword, userId, pageable);
         return ResponseEntity.ok(results);
     }
 
@@ -187,14 +226,31 @@ public class CommunityController {
         return ResponseEntity.ok(trending);
     }
 
+    /**
+     * 🔥 로그인 필수 - userId 추출 (로그인 안되어 있으면 예외 발생)
+     */
     private Long extractUserId(Authentication authentication) {
         if (authentication == null) {
-            throw new IllegalArgumentException("인증이 필요합니다.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.");
         }
         try {
             return Long.parseLong(authentication.getName());
         } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("잘못된 사용자 정보입니다.", e);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "잘못된 사용자 정보입니다.", e);
+        }
+    }
+
+    /**
+     * 🔥 로그인 선택 - userId 추출 (로그인 안되어 있으면 null 반환)
+     */
+    private Long extractUserIdOrNull(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(authentication.getName());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 }

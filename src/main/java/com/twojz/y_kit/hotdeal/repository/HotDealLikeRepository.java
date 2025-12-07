@@ -6,6 +6,7 @@ import com.twojz.y_kit.user.entity.UserEntity;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -16,6 +17,9 @@ public interface HotDealLikeRepository extends JpaRepository<HotDealLikeEntity, 
     boolean existsByHotDealAndUser(HotDealEntity hotDeal, UserEntity user);
 
     long countByHotDeal(HotDealEntity hotDeal);
+
+    @Modifying
+    void deleteByHotDeal(HotDealEntity hotDeal);
 
     @Query("SELECT h.id, COUNT(l) FROM HotDealLikeEntity l " +
             "JOIN l.hotDeal h WHERE h.id IN :hotDealIds GROUP BY h.id")
@@ -38,4 +42,9 @@ public interface HotDealLikeRepository extends JpaRepository<HotDealLikeEntity, 
 
     @Query("SELECT l.hotDeal.id FROM HotDealLikeEntity l WHERE l.user = :user AND l.hotDeal.id IN :hotDealIds")
     List<Long> findLikedHotDealIdsByUserAndHotDealIds(@Param("user") UserEntity user, @Param("hotDealIds") List<Long> hotDealIds);
+
+    // 사용자의 모든 핫딜 좋아요 삭제
+    @Modifying
+    @Query("DELETE FROM HotDealLikeEntity l WHERE l.user = :user")
+    void deleteByUser(@Param("user") UserEntity user);
 }

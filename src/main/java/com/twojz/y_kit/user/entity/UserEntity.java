@@ -7,6 +7,7 @@ import com.twojz.y_kit.policy.domain.enumType.MajorField;
 import com.twojz.y_kit.region.entity.Region;
 import jakarta.persistence.*;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.Period;
 import java.util.Optional;
 import lombok.AccessLevel;
@@ -86,7 +87,6 @@ public class UserEntity extends BaseEntity {
 
     public void completeProfile(
             String name,
-            String nickName,
             LocalDate birthDate,
             Gender gender,
             Region region,
@@ -94,8 +94,7 @@ public class UserEntity extends BaseEntity {
             EducationLevel educationLevel,
             MajorField major
     ) {
-        if (name != null) this.name = name;
-        if (nickName != null) this.nickName = nickName;
+        if (name != null && !name.isEmpty()) this.name = name;
         if (birthDate != null) this.birthDate = birthDate;
         if (gender != null) this.gender = gender;
         if (region != null) this.region = region;
@@ -106,9 +105,14 @@ public class UserEntity extends BaseEntity {
         updateProfileStatus();
     }
 
+    public void skipProfile() {
+        this.profileStatus = ProfileStatus.SKIPPED;
+    }
+
     private void updateProfileStatus() {
         boolean allFilled =
-                this.birthDate != null &&
+                this.name != null &&
+                        this.birthDate != null &&
                         this.gender != null &&
                         this.region != null &&
                         this.employmentStatus != null &&
@@ -116,7 +120,8 @@ public class UserEntity extends BaseEntity {
                         this.major != null;
 
         boolean noneFilled =
-                this.birthDate == null &&
+                this.name != null &&
+                        this.birthDate == null &&
                         this.gender == null &&
                         this.region == null &&
                         this.employmentStatus == null &&
