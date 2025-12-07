@@ -11,8 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationCredentialsNotFoundException;
-import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
@@ -223,9 +221,20 @@ public class GroupPurchaseController {
         if (authentication == null) {
             return null;
         }
+
+        Object principal = authentication.getPrincipal();
+        if ("anonymousUser".equals(principal)) {
+            return null;
+        }
+
         try {
-            return Long.parseLong(authentication.getName());
+            String name = authentication.getName();
+            if (name == null || name.isEmpty() || "anonymousUser".equals(name)) {
+                return null;
+            }
+            return Long.parseLong(name);
         } catch (NumberFormatException e) {
+            // 파싱 실패 시 그냥 null 반환 (예외 발생 안함)
             return null;
         }
     }

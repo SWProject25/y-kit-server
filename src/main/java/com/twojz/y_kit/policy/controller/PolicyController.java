@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -212,9 +211,20 @@ public class PolicyController {
         if (authentication == null) {
             return null;
         }
+
+        Object principal = authentication.getPrincipal();
+        if ("anonymousUser".equals(principal)) {
+            return null;
+        }
+
         try {
-            return Long.parseLong(authentication.getName());
+            String name = authentication.getName();
+            if (name == null || name.isEmpty() || "anonymousUser".equals(name)) {
+                return null;
+            }
+            return Long.parseLong(name);
         } catch (NumberFormatException e) {
+            // 파싱 실패 시 그냥 null 반환 (예외 발생 안함)
             return null;
         }
     }

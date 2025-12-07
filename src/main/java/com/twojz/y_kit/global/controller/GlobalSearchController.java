@@ -47,9 +47,20 @@ public class GlobalSearchController {
         if (authentication == null) {
             return null;
         }
+
+        Object principal = authentication.getPrincipal();
+        if ("anonymousUser".equals(principal)) {
+            return null;
+        }
+
         try {
-            return Long.parseLong(authentication.getName());
+            String name = authentication.getName();
+            if (name == null || name.isEmpty() || "anonymousUser".equals(name)) {
+                return null;
+            }
+            return Long.parseLong(name);
         } catch (NumberFormatException e) {
+            // 파싱 실패 시 그냥 null 반환 (예외 발생 안함)
             return null;
         }
     }
