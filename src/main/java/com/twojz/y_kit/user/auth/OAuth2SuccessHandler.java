@@ -13,7 +13,6 @@ import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -28,7 +27,6 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     private final JwtTokenProvider jwtTokenProvider;
     private final UserRepository userRepository;
     private final UserNotificationService userNotificationService;
-    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${app.oauth2.redirect-url}")
     private String redirectUrl;
@@ -42,8 +40,18 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String email = extractEmail(oAuth2User);
 
         Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+
+        // 회원가입이 안되어 있으면 → 회원가입 필요 상태로 리다이렉트
         if (optionalUser.isEmpty()) {
-            response.sendError(HttpStatus.UNAUTHORIZED.value(), "사용자 정보를 찾을 수 없습니다.");
+            log.info("미가입 사용자 - 회원가입 필요: {}", email);
+
+            String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
+                    .queryParam("needSignup", true)
+                    .queryParam("email", email)
+                    .build()
+                    .toUriString();
+
+            getRedirectStrategy().sendRedirect(request, response, targetUrl);
             return;
         }
 

@@ -213,18 +213,24 @@ public class PolicyController {
         }
 
         Object principal = authentication.getPrincipal();
-        if ("anonymousUser".equals(principal)) {
+        if (principal == null || "anonymousUser".equals(principal.toString())) {
+            return null;
+        }
+
+        String name = null;
+        try {
+            name = authentication.getName();
+        } catch (Exception e) {
+            return null;
+        }
+
+        if (name == null || name.trim().isEmpty() || "anonymousUser".equalsIgnoreCase(name)) {
             return null;
         }
 
         try {
-            String name = authentication.getName();
-            if (name == null || name.isEmpty() || "anonymousUser".equals(name)) {
-                return null;
-            }
-            return Long.parseLong(name);
+            return Long.parseLong(name.trim());
         } catch (NumberFormatException e) {
-            // 파싱 실패 시 그냥 null 반환 (예외 발생 안함)
             return null;
         }
     }
