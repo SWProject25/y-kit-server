@@ -146,10 +146,12 @@ public class UserController {
 
         UserEntity user = userFindService.findUser(userId);
 
-        try {
-            userNotificationService.sendProfileCompletedNotification(user);
-        } catch (Exception e) {
-            log.warn("프로필 완료 알림 전송 실패 - userId: {}", user.getId(), e);
+        if(user.getProfileStatus() == ProfileStatus.COMPLETED) {
+            try {
+                userNotificationService.sendProfileCompletedNotification(user);
+            } catch (Exception e) {
+                log.warn("프로필 완료 알림 전송 실패 - userId: {}", user.getId(), e);
+            }
         }
 
         return ResponseEntity.ok().build();
