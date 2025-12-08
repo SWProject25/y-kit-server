@@ -19,7 +19,7 @@ public class UserDeviceResponse {
     @Schema(description = "디바이스명", example = "Chrome on Windows")
     private String deviceName;
 
-    @Schema(description = "디바이스 토큰 (마스킹)", example = "dcR79...curB")
+    @Schema(description = "디바이스 토큰 (전체)", example = "dcR79hw8TgUVqkH6lRcurB:APA91b...")
     private String deviceToken;
 
     @Schema(description = "활성 상태", example = "true")
@@ -38,21 +38,11 @@ public class UserDeviceResponse {
         return UserDeviceResponse.builder()
                 .id(device.getId())
                 .deviceName(device.getDeviceName())
-                .deviceToken(maskToken(device.getDeviceToken()))
+                .deviceToken(device.getDeviceToken())
                 .isActive(device.isActive())
                 .notificationEnabled(device.isNotificationEnabled())
                 .lastLogin(device.getLastLogin())
                 .createdAt(device.getCreatedAt())
                 .build();
-    }
-
-    /**
-     * 토큰 마스킹 (보안)
-     */
-    private static String maskToken(String token) {
-        if (token == null || token.length() < 10) {
-            return "***";
-        }
-        return token.substring(0, 5) + "..." + token.substring(token.length() - 5);
     }
 }
