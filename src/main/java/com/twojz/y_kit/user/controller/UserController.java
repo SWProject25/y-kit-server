@@ -227,38 +227,38 @@ public class UserController {
 
     @Operation(summary = "알림 켜기 (특정 디바이스)")
     @PutMapping("/notification/enable")
-    public ResponseEntity<Void> enableNotification(
+    public ResponseEntity<Boolean> enableNotification(
             Authentication authentication,
             @Valid @RequestBody DeviceTokenRequest request) {
         Long userId = extractUserId(authentication);
         userDeviceService.enableNotification(userId, request.getDeviceToken());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(true);
     }
 
     @Operation(summary = "알림 끄기 (특정 디바이스)")
     @PutMapping("/notification/disable")
-    public ResponseEntity<Void> disableNotification(
+    public ResponseEntity<Boolean> disableNotification(
             Authentication authentication,
             @Valid @RequestBody DeviceTokenRequest request) {
         Long userId = extractUserId(authentication);
         userDeviceService.disableNotification(userId, request.getDeviceToken());
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(false);
     }
 
     @Operation(summary = "모든 디바이스 알림 켜기")
     @PostMapping("/notification/enable-all")
-    public ResponseEntity<Void> enableAllNotifications(Authentication authentication) {
+    public ResponseEntity<Boolean> enableAllNotifications(Authentication authentication) {
         Long userId = extractUserId(authentication);
         userDeviceService.enableAllNotifications(userId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(true);
     }
 
     @Operation(summary = "모든 디바이스 알림 끄기")
     @PostMapping("/notification/disable-all")
-    public ResponseEntity<Void> disableAllNotifications(Authentication authentication) {
+    public ResponseEntity<Boolean> disableAllNotifications(Authentication authentication) {
         Long userId = extractUserId(authentication);
         userDeviceService.disableAllNotifications(userId);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(false);
     }
 
     @Operation(summary = "내 디바이스 목록 조회")

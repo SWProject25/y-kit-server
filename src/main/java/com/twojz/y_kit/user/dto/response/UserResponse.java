@@ -10,6 +10,7 @@ import com.twojz.y_kit.user.entity.Gender;
 import com.twojz.y_kit.user.entity.UserEntity;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -30,6 +31,7 @@ public class UserResponse {
     private final EducationLevel educationLevel;
     private final MajorField major;
     private final ProfileStatus profileStatus;
+    private final LocalDateTime createdAt;
 
     public static UserResponse from(UserEntity user) {
         return UserResponse.builder()
@@ -47,6 +49,7 @@ public class UserResponse {
                 .educationLevel(user.getEducationLevel())
                 .major(user.getMajor())
                 .profileStatus(user.getProfileStatus())
+                .createdAt(user.getCreatedAt())
                 .build();
     }
 }
