@@ -102,6 +102,7 @@ public class UserService {
 
         user.completeProfile(
                 request.getName(),
+                request.getNickName(),
                 request.getBirthDate(),
                 request.getGender(),
                 region,

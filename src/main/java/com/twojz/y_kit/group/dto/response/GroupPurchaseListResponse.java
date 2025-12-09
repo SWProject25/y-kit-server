@@ -73,6 +73,7 @@ public class GroupPurchaseListResponse {
                 .id(groupPurchase.getId())
                 .title(groupPurchase.getTitle())
                 .productName(groupPurchase.getProductName())
+                .category(groupPurchase.getCategory())
                 .price(groupPurchase.getPrice())
                 .maxParticipants(groupPurchase.getMaxParticipants())
                 .currentParticipants(groupPurchase.getCurrentParticipants())

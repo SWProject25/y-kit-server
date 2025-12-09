@@ -1,6 +1,7 @@
 package com.twojz.y_kit.group.service;
 
 import com.twojz.y_kit.global.dto.PageResponse;
+import com.twojz.y_kit.group.domain.entity.GroupPurchaseCategory;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseEntity;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseStatus;
 import com.twojz.y_kit.group.dto.response.GroupPurchaseCommentResponse;
@@ -15,9 +16,7 @@ import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.UserFindService;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openkoreantext.processor.OpenKoreanTextProcessorJava;
@@ -63,7 +62,6 @@ public class GroupPurchaseFindService {
             isParticipating = groupPurchaseParticipantRepository.existsByUserIdAndGroupPurchaseId(userId, groupPurchaseId);
         }
 
-        // 엔티티의 카운트 필드 사용
         long likeCount = groupPurchase.getLikeCount();
         long commentCount = groupPurchase.getCommentCount();
 
@@ -76,15 +74,15 @@ public class GroupPurchaseFindService {
         return GroupPurchaseDetailResponse.from(groupPurchase, isLiked, isBookmarked, isParticipating, likeCount, commentCount, comments);
     }
 
-    // 🔥 userId 매개변수 추가
     public PageResponse<GroupPurchaseListResponse> getGroupPurchaseList(
             GroupPurchaseStatus status,
             String regionCode,
+            GroupPurchaseCategory category,
             Long userId,
             Pageable pageable
     ) {
         Page<GroupPurchaseEntity> groupPurchases = groupPurchaseRepository
-                .findByFilters(status, regionCode, pageable);
+                .findByFilters(status, regionCode, category, pageable);
         return convertToPageResponse(groupPurchases, userId);
     }
 
@@ -103,10 +101,9 @@ public class GroupPurchaseFindService {
                     GroupPurchaseEntity groupPurchase = like.getGroupPurchase();
                     boolean isBookmarked = groupPurchaseBookmarkRepository.existsByGroupPurchaseAndUser(groupPurchase, user);
                     boolean isParticipating = groupPurchaseParticipantRepository.existsByUserIdAndGroupPurchaseId(userId, groupPurchase.getId());
-                    // 🔥 좋아요 목록이므로 isLiked는 항상 true
                     return GroupPurchaseListResponse.from(
                             groupPurchase,
-                            true,  // isLiked
+                            true,
                             isBookmarked,
                             isParticipating,
                             groupPurchase.getLikeCount(),
@@ -125,11 +122,10 @@ public class GroupPurchaseFindService {
                     GroupPurchaseEntity groupPurchase = bookmark.getGroupPurchase();
                     boolean isLiked = groupPurchaseLikeRepository.existsByGroupPurchaseAndUser(groupPurchase, user);
                     boolean isParticipating = groupPurchaseParticipantRepository.existsByUserIdAndGroupPurchaseId(userId, groupPurchase.getId());
-                    // 🔥 북마크 목록이므로 isBookmarked는 항상 true
                     return GroupPurchaseListResponse.from(
                             groupPurchase,
                             isLiked,
-                            true,  // isBookmarked
+                            true,
                             isParticipating,
                             groupPurchase.getLikeCount(),
                             groupPurchase.getCommentCount()
@@ -147,12 +143,11 @@ public class GroupPurchaseFindService {
                     GroupPurchaseEntity groupPurchase = participant.getGroupPurchase();
                     boolean isLiked = groupPurchaseLikeRepository.existsByGroupPurchaseAndUser(groupPurchase, user);
                     boolean isBookmarked = groupPurchaseBookmarkRepository.existsByGroupPurchaseAndUser(groupPurchase, user);
-                    // 🔥 참여 목록이므로 isParticipating은 항상 true
                     return GroupPurchaseListResponse.from(
                             groupPurchase,
                             isLiked,
                             isBookmarked,
-                            true,  // isParticipating
+                            true,
                             groupPurchase.getLikeCount(),
                             groupPurchase.getCommentCount()
                     );
@@ -169,14 +164,11 @@ public class GroupPurchaseFindService {
                 .toList();
     }
 
-    /**
-     * LIKE + OR를 사용한 통합 검색 (상태/지역 필터 옵션, OR 조건)
-     */
-    // 🔥 userId 매개변수 추가
     public PageResponse<GroupPurchaseListResponse> searchGroupPurchases(
             String keyword,
             GroupPurchaseStatus status,
             String regionCode,
+            GroupPurchaseCategory category,
             Long userId,
             Pageable pageable
     ) {
@@ -185,6 +177,7 @@ public class GroupPurchaseFindService {
         Page<GroupPurchaseEntity> groupPurchases = groupPurchaseRepository.searchByKeywords(
                 status,
                 regionCode,
+                category,
                 getKeywordOrNull(extractedKeywords, 0),
                 getKeywordOrNull(extractedKeywords, 1),
                 getKeywordOrNull(extractedKeywords, 2),
@@ -196,9 +189,6 @@ public class GroupPurchaseFindService {
         return convertToPageResponse(groupPurchases, userId);
     }
 
-    /**
-     * 🔥 HotDeal처럼 N+1 문제 해결하면서 좋아요/북마크 여부 포함
-     */
     private PageResponse<GroupPurchaseListResponse> convertToPageResponse(
             Page<GroupPurchaseEntity> groupPurchases,
             Long userId
@@ -213,7 +203,6 @@ public class GroupPurchaseFindService {
                 .map(GroupPurchaseEntity::getId)
                 .toList();
 
-        // 사용자의 좋아요/북마크/참여 여부 일괄 조회
         Set<Long> likedGroupPurchaseIds = new HashSet<>();
         Set<Long> bookmarkedGroupPurchaseIds = new HashSet<>();
         Set<Long> participatingGroupPurchaseIds = new HashSet<>();
@@ -234,7 +223,6 @@ public class GroupPurchaseFindService {
             );
         }
 
-        // Response 생성
         Set<Long> finalLikedIds = likedGroupPurchaseIds;
         Set<Long> finalBookmarkedIds = bookmarkedGroupPurchaseIds;
         Set<Long> finalParticipatingIds = participatingGroupPurchaseIds;

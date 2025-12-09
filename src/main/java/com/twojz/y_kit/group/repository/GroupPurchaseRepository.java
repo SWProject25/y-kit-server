@@ -1,5 +1,6 @@
 package com.twojz.y_kit.group.repository;
 
+import com.twojz.y_kit.group.domain.entity.GroupPurchaseCategory;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseEntity;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseStatus;
 import com.twojz.y_kit.user.entity.UserEntity;
@@ -21,10 +22,14 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
     @EntityGraph(attributePaths = {"user", "region"})
     @Query("SELECT g FROM GroupPurchaseEntity g " +
             "WHERE (:status IS NULL OR g.status = :status) " +
-            "AND (:regionCode IS NULL OR g.region.code = :regionCode)")
+            "AND (:regionCode IS NULL OR g.region.code = :regionCode)" +
+            "AND (:category IS NULL OR g.category = :category)" +
+            "ORDER BY g.createdAt DESC"
+    )
     Page<GroupPurchaseEntity> findByFilters(
             @Param("status") GroupPurchaseStatus status,
             @Param("regionCode") String regionCode,
+            @Param("category") GroupPurchaseCategory category,
             Pageable pageable
     );
 
@@ -37,6 +42,7 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
     @Query("SELECT DISTINCT g FROM GroupPurchaseEntity g " +
             "WHERE (:status IS NULL OR g.status = :status) " +
             "AND (:regionCode IS NULL OR g.region.code = :regionCode) " +
+            "AND (:category IS NULL OR g.category = :category)" +
             "AND (" +
             "(:keyword1 IS NULL AND :keyword2 IS NULL AND :keyword3 IS NULL AND :keyword4 IS NULL AND :keyword5 IS NULL) OR " +
             "(:keyword1 IS NOT NULL AND (g.title LIKE %:keyword1% OR g.productName LIKE %:keyword1% OR g.content LIKE %:keyword1%)) OR " +
@@ -44,10 +50,11 @@ public interface GroupPurchaseRepository extends JpaRepository<GroupPurchaseEnti
             "(:keyword3 IS NOT NULL AND (g.title LIKE %:keyword3% OR g.productName LIKE %:keyword3% OR g.content LIKE %:keyword3%)) OR " +
             "(:keyword4 IS NOT NULL AND (g.title LIKE %:keyword4% OR g.productName LIKE %:keyword4% OR g.content LIKE %:keyword4%)) OR " +
             "(:keyword5 IS NOT NULL AND (g.title LIKE %:keyword5% OR g.productName LIKE %:keyword5% OR g.content LIKE %:keyword5%))" +
-            ")")
+            ")" + "ORDER BY g.createdAt DESC")
     Page<GroupPurchaseEntity> searchByKeywords(
             @Param("status") GroupPurchaseStatus status,
             @Param("regionCode") String regionCode,
+            @Param("category") GroupPurchaseCategory category,
             @Param("keyword1") String keyword1,
             @Param("keyword2") String keyword2,
             @Param("keyword3") String keyword3,

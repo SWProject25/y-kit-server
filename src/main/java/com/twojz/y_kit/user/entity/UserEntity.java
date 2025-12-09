@@ -87,6 +87,7 @@ public class UserEntity extends BaseEntity {
 
     public void completeProfile(
             String name,
+            String nickName,
             LocalDate birthDate,
             Gender gender,
             Region region,
@@ -95,6 +96,7 @@ public class UserEntity extends BaseEntity {
             MajorField major
     ) {
         if (name != null && !name.isEmpty()) this.name = name;
+        if(nickName != null && !nickName.isEmpty()) this.nickName = nickName;
         if (birthDate != null) this.birthDate = birthDate;
         if (gender != null) this.gender = gender;
         if (region != null) this.region = region;

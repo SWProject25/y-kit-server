@@ -1,6 +1,7 @@
 package com.twojz.y_kit.group.controller;
 
 import com.twojz.y_kit.global.dto.PageResponse;
+import com.twojz.y_kit.group.domain.entity.GroupPurchaseCategory;
 import com.twojz.y_kit.group.domain.entity.GroupPurchaseStatus;
 import com.twojz.y_kit.group.dto.request.*;
 import com.twojz.y_kit.group.dto.response.*;
@@ -40,35 +41,37 @@ public class GroupPurchaseController {
             @PathVariable Long id,
             Authentication authentication
     ) {
-        Long userId = extractUserIdOrNull(authentication);  // 🔥 로그인 선택으로 변경
+        Long userId = extractUserIdOrNull(authentication);
         return groupPurchaseFindService.getGroupPurchaseDetail(id, userId);
     }
 
     @GetMapping
-    @Operation(summary = "공동구매 목록 조회 (전체/상태/지역/상태+지역 필터)",
+    @Operation(summary = "공동구매 목록 조회 (전체/상태/지역/카테고리 필터)",
             description = "로그인 시 좋아요/북마크/참여 여부 포함")
     public PageResponse<GroupPurchaseListResponse> getGroupPurchases(
-            Authentication authentication,  // 🔥 추가
+            Authentication authentication,
             @RequestParam(required = false) GroupPurchaseStatus status,
             @RequestParam(required = false) String regionCode,
+            @RequestParam(required = false) GroupPurchaseCategory category,
             Pageable pageable
     ) {
-        Long userId = extractUserIdOrNull(authentication);  // 🔥 추가
-        return groupPurchaseFindService.getGroupPurchaseList(status, regionCode, userId, pageable);
+        Long userId = extractUserIdOrNull(authentication);
+        return groupPurchaseFindService.getGroupPurchaseList(status, regionCode, category, userId, pageable);
     }
 
     @GetMapping("/search")
-    @Operation(summary = "공동구매 통합 검색 (형태소 분석 + 상태/지역 필터)",
+    @Operation(summary = "공동구매 통합 검색 (형태소 분석 + 상태/지역/카테고리 필터)",
             description = "로그인 시 좋아요/북마크/참여 여부 포함")
     public PageResponse<GroupPurchaseListResponse> searchGroupPurchases(
-            Authentication authentication,  // 🔥 추가
+            Authentication authentication,
             @RequestParam String keyword,
             @RequestParam(required = false) GroupPurchaseStatus status,
             @RequestParam(required = false) String regionCode,
+            @RequestParam(required = false) GroupPurchaseCategory category,
             Pageable pageable
     ) {
-        Long userId = extractUserIdOrNull(authentication);  // 🔥 추가
-        return groupPurchaseFindService.searchGroupPurchases(keyword, status, regionCode, userId, pageable);
+        Long userId = extractUserIdOrNull(authentication);
+        return groupPurchaseFindService.searchGroupPurchases(keyword, status, regionCode, category, userId, pageable);
     }
 
     @PutMapping("/{id}")
@@ -200,9 +203,6 @@ public class GroupPurchaseController {
         return groupPurchaseFindService.getMyParticipatingGroupPurchases(userId);
     }
 
-    /**
-     * 🔥 로그인 필수 - userId 추출 (로그인 안되어 있으면 예외 발생)
-     */
     private Long extractUserId(Authentication authentication) {
         if (authentication == null) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "인증이 필요합니다.");
@@ -214,9 +214,6 @@ public class GroupPurchaseController {
         }
     }
 
-    /**
-     * 🔥 로그인 선택 - userId 추출 (로그인 안되어 있으면 null 반환)
-     */
     private Long extractUserIdOrNull(Authentication authentication) {
         if (authentication == null) {
             return null;
