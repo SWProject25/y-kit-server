@@ -9,6 +9,7 @@ import com.twojz.y_kit.policy.repository.PolicyDetailRepository;
 import com.twojz.y_kit.policy.repository.PolicyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,9 @@ public class PolicyAiAnalysisService {
     private final PolicyRepository policyRepository;
     private final PolicyDetailRepository policyDetailRepository;
 
+    @Value("${OPENAI_API_ANALYSIS_MODEL}")
+    private String analysisAi;
+
     /**
      * 정책명과 설명을 기반으로 AI 분석을 요청하고, 결과를 비동기적으로 반환합니다.
      * @param policyName 정책명
@@ -35,7 +39,7 @@ public class PolicyAiAnalysisService {
     public Mono<AiAnalysis> generateAnalysis(String policyName, String policyDescription) {
         String prompt = buildAiPrompt(policyName, policyDescription);
 
-        return openAIService.getCompletion(prompt)
+        return openAIService.getCompletion(analysisAi, prompt)
                 .flatMap(this::parseJsonToAiAnalysis);
     }
 

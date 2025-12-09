@@ -104,7 +104,8 @@ jobs:
             FIREBASE_CONFIG_PATH=/app/service-account.json
             OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
             OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-            OPENAI_API_MODEL=${{ secrets.OPENAI_API_MODEL }}
+            OPEN_API_COMPARE_MODEL=${{ secrets.OPEN_API_COMPARE_MODEL }}
+            OPENAI_API_ANALYSIS_MODEL=${{ secrets.OPENAI_API_ANALYSIS_MODEL }}
             POLICY_API_KEY=${{ secrets.POLICY_API_KEY }}
             POLICY_API_URL=${{ secrets.POLICY_API_URL }}
             PUBLIC_RESOURCE_API_KEY=${{ secrets.PUBLIC_RESOURCE_API_KEY }}

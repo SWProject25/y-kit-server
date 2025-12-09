@@ -12,6 +12,7 @@ import java.time.Period;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,9 @@ public class PolicyComparisonService {
     private final PolicyFindService policyFindService;
     private final UserFindService userFindService;
     private final ObjectMapper objectMapper;
+
+    @Value("${OPEN_API_COMPARE_MODEL}")
+    private String model;
 
     @Transactional(readOnly = true)
     public PolicyComparisonResponse comparePolicies(Long userId, List<Long> policyIds) {
@@ -39,7 +43,7 @@ public class PolicyComparisonService {
 
         String prompt = buildPrompt(user, policies);
 
-        String aiResponse = openAIService.getCompletion(prompt).block();
+        String aiResponse = openAIService.getCompletion(model, prompt).block();
         if (aiResponse == null || aiResponse.isBlank()) {
             throw new RuntimeException("AI 응답이 비어 있습니다.");
         }

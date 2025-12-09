@@ -17,10 +17,7 @@ import reactor.util.retry.Retry;
 public class OpenAIService {
     private final WebClient openAIClient;
 
-    @Value("${OPENAI_API_MODEL}")
-    private String model;
-
-    public Mono<String> getCompletion(String prompt) {
+    public Mono<String> getCompletion(String model, String prompt) {
         Map<String, Object> requestBody = Map.of(
                 "model", model,
                 "input", prompt
