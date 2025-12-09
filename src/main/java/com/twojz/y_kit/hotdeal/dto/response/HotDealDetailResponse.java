@@ -31,7 +31,7 @@ public class HotDealDetailResponse {
     private String address;
 
     @Schema(description = "이미지 URL", example = "https://example.com/hotdeal.jpg")
-    private String url;
+    private String imageUrl;
 
     @Schema(description = "위도", example = "37.5662952")
     private Double latitude;
@@ -90,7 +90,7 @@ public class HotDealDetailResponse {
                 .content(hotDeal.getContent())
                 .placeName(hotDeal.getPlaceName())
                 .address(hotDeal.getAddress())
-                .url(hotDeal.getUrl())
+                .imageUrl(hotDeal.getImageUrl())
                 .latitude(hotDeal.getLatitude())
                 .longitude(hotDeal.getLongitude())
                 .dealType(hotDeal.getDealType())

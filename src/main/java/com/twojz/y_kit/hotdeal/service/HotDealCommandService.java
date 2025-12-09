@@ -66,7 +66,7 @@ public class HotDealCommandService {
                 .latitude(request.getLatitude())
                 .longitude(request.getLongitude())
                 .address(request.getAddress())
-                .url(request.getUrl())
+                .imageUrl(request.getImageUrl())
                 .dealType(request.getDealType())
                 .category(request.getCategory())
                 .region(region)
@@ -111,7 +111,7 @@ public class HotDealCommandService {
                 request.getDealType(),
                 request.getCategory(),
                 region,
-                request.getUrl(),
+                request.getImageUrl(),
                 request.getLatitude(),
                 request.getLongitude(),
                 request.getAddress()

@@ -112,6 +112,8 @@ jobs:
             VWORLD_API_KEY=${{ secrets.VWORLD_API_KEY }}
             VWORLD_API_URL=${{ secrets.VWORLD_API_URL }}
             SERVICE_DOMAIN_URL=${{ secrets.SERVICE_DOMAIN_URL }}
+            UPLOAD_PATH=${{ secrets.UPLOAD_PATH }}
+            UPLOAD_BASE_URL=${{ secrets.UPLOAD_BASE_URL }}
             EOF
             
             echo "✅ config.env created"

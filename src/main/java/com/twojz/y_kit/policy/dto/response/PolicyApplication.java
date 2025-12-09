@@ -35,7 +35,7 @@ public class PolicyApplication {
         return PolicyApplication.builder()
                 .supportScaleLimit(entity.getSprtSclLmtYn())
                 .firstComeFirstServed(entity.getSprtArvlSqncYn())
-                .applicationPeriodType(entity.getAplyPrdSeCd() != null ? entity.getAplyPrdSeCd().name() : null)
+                .applicationPeriodType(entity.getAplyPrdSeCd() != null ? entity.getAplyPrdSeCd().getDescription() : null)
                 .applicationStartDate(entity.getAplyBgngYmd())
                 .applicationEndDate(entity.getAplyEndYmd())
                 .applicationMethod(entity.getPlcyAplyMthdCn())

@@ -5,6 +5,7 @@ import com.twojz.y_kit.user.auth.OAuth2SuccessHandler;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.Customizer;
@@ -36,7 +37,7 @@ public class SecurityConfig {
                         .requestMatchers(new AntPathRequestMatcher("/vendor/**")).denyAll()
                         .requestMatchers(new AntPathRequestMatcher("/api/vendor/**")).denyAll()
                         .requestMatchers(new AntPathRequestMatcher("/admin/vendor/**")).denyAll()
-                        .requestMatchers("/api/**", "/admin/**").permitAll()
+                        .requestMatchers("/api/**", "/admin/**", "/uploads/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**")
                         .permitAll()
                         .anyRequest().authenticated()

@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -36,8 +37,9 @@ public class HotDealUpdateRequest {
     @Schema(description = "카테고리", example = "ELECTRONICS")
     private HotDealCategory category;
 
+    @Setter
     @Schema(description = "이미지 URL", example = "https://example.com/new-image.png")
-    private String url;
+    private String imageUrl;
 
     @Schema(description = "위도", example = "37.5662952")
     private Double latitude;

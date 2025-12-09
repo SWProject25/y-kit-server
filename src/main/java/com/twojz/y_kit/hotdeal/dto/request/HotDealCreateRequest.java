@@ -10,6 +10,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -35,8 +36,9 @@ public class HotDealCreateRequest {
     @Schema(description = "가게 주소", example = "서울 마포구 와우산로 11길 45")
     private String address;
 
+    @Setter
     @Schema(description = "이미지 URL", example = "https://example.com/hotdeal.png")
-    private String url;
+    private String imageUrl;
 
     @NotNull(message = "딜 타입은 필수입니다.")
     @Schema(description = "딜 타입", example = "DISCOUNT")

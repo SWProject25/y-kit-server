@@ -41,8 +41,8 @@ public class PolicySyncService {
     private final PolicyRegionRepository policyRegionRepository;
     private final RegionRepository regionRepository;
     private final PolicyMapper mapper;
+    private final PolicyAiAnalysisService policyAiAnalysisService;
 
-    // ✅ 통계 클래스
     private static class SyncStatistics {
         int created = 0;
         int updated = 0;
@@ -70,6 +70,22 @@ public class PolicySyncService {
         }
     }
 
+    /**
+     * 배치 처리 결과 (통계 + 새 정책 목록)
+     */
+    private static class SyncResult {
+        SyncStatistics stats;
+        List<PolicyEntity> newPolicies;
+
+        SyncResult(SyncStatistics stats, List<PolicyEntity> newPolicies) {
+            this.stats = stats;
+            this.newPolicies = newPolicies;
+        }
+    }
+
+    /**
+     * 기본 정책 동기화 (AI 분석 없음)
+     */
     public void syncAllPolicies() {
         log.info("정책 동기화 시작");
         long startTime = System.currentTimeMillis();
@@ -84,7 +100,7 @@ public class PolicySyncService {
                 return;
             }
 
-            log.info("총 {}개 정책 동기화 시작", policies.size());
+            log.info("이 {}개 정책 동기화 시작", policies.size());
 
             int totalSize = policies.size();
             SyncStatistics totalStats = new SyncStatistics();
@@ -126,6 +142,86 @@ public class PolicySyncService {
             log.info("정책 동기화 완료 - 소요시간: {}초", duration / 1000);
             log.info(totalStats.toString());
             log.info("=".repeat(80));
+
+        } catch (Exception e) {
+            log.error("정책 동기화 중 오류 발생", e);
+            throw new RuntimeException("정책 동기화 실패", e);
+        }
+    }
+
+    /**
+     * AI 분석 포함한 정책 동기화 (스케줄러용)
+     */
+    public void syncAllPoliciesWithAi() {
+        log.info("정책 동기화 시작 (AI 분석 포함)");
+        long startTime = System.currentTimeMillis();
+
+        try {
+            // 1. 기본 정책 동기화
+            List<YouthPolicy> policies = youthPolicyClient.fetchAllPolicies()
+                    .timeout(Duration.ofMinutes(5))
+                    .block();
+
+            if (policies == null || policies.isEmpty()) {
+                log.warn("동기화할 정책이 없습니다.");
+                return;
+            }
+
+            log.info("이 {}개 정책 동기화 시작", policies.size());
+
+            int totalSize = policies.size();
+            SyncStatistics totalStats = new SyncStatistics();
+            List<PolicyEntity> newPolicies = new ArrayList<>();
+
+            // 2. 배치별 정책 동기화 (새 정책 추적)
+            for (int i = 0; i < totalSize; i += BATCH_SIZE) {
+                int end = Math.min(i + BATCH_SIZE, totalSize);
+                List<YouthPolicy> batch = policies.subList(i, end);
+
+                try {
+                    SyncResult result = processBatchWithTracking(batch);
+
+                    totalStats.created += result.stats.created;
+                    totalStats.updated += result.stats.updated;
+                    totalStats.unchanged += result.stats.unchanged;
+                    totalStats.failed += result.stats.failed;
+                    totalStats.categoryCreated += result.stats.categoryCreated;
+                    totalStats.categoryDeleted += result.stats.categoryDeleted;
+                    totalStats.keywordCreated += result.stats.keywordCreated;
+                    totalStats.keywordDeleted += result.stats.keywordDeleted;
+                    totalStats.regionCreated += result.stats.regionCreated;
+                    totalStats.regionDeleted += result.stats.regionDeleted;
+
+                    newPolicies.addAll(result.newPolicies);
+
+                    if ((i / BATCH_SIZE) % 10 == 0) {
+                        int processed = totalStats.created + totalStats.updated + totalStats.unchanged + totalStats.failed;
+                        log.info("진행 중: {}/{} - 생성: {}, 수정: {}, 변경없음: {}",
+                                processed, totalSize, totalStats.created, totalStats.updated, totalStats.unchanged);
+                    }
+                } catch (Exception e) {
+                    log.error("배치 처리 실패 (index: {}-{})", i, end, e);
+                    totalStats.failed += batch.size();
+                }
+            }
+
+            // 3. API에 없는 정책 비활성화
+            totalStats.deactivated = deactivateMissingPolicies(policies);
+
+            long syncDuration = System.currentTimeMillis() - startTime;
+            log.info("=".repeat(80));
+            log.info("정책 동기화 완료 - 소요시간: {}초", syncDuration / 1000);
+            log.info(totalStats.toString());
+            log.info("=".repeat(80));
+
+            // 4. 새로 생성된 정책에 대해 AI 분석 실행
+            if (!newPolicies.isEmpty()) {
+                log.info("새로 생성된 정책 {}개에 대해 AI 분석 시작", newPolicies.size());
+                processAiAnalysisForNewPolicies(newPolicies);
+            }
+
+            long totalDuration = System.currentTimeMillis() - startTime;
+            log.info("전체 작업 완료 - 총 소요시간: {}초", totalDuration / 1000);
 
         } catch (Exception e) {
             log.error("정책 동기화 중 오류 발생", e);
@@ -206,6 +302,107 @@ public class PolicySyncService {
         }
 
         return stats;
+    }
+
+    /**
+     * 새 정책 추적이 가능한 배치 처리
+     */
+    @Transactional
+    public SyncResult processBatchWithTracking(List<YouthPolicy> batch) {
+        SyncStatistics stats = new SyncStatistics();
+        List<PolicyEntity> newPolicies = new ArrayList<>();
+
+        Set<String> policyNos = batch.stream()
+                .map(YouthPolicy::getPlcyNo)
+                .collect(Collectors.toSet());
+
+        Map<String, PolicyEntity> existingPolicies = policyRepository
+                .findAllByPolicyNoIn(policyNos)
+                .stream()
+                .collect(Collectors.toMap(PolicyEntity::getPolicyNo, p -> p));
+
+        List<PolicyEntity> policyEntities = new ArrayList<>(existingPolicies.values());
+
+        Map<Long, List<PolicyCategoryMapping>> categoryMappingsMap =
+                policyCategoryMappingRepository.findByPolicyIn(policyEntities)
+                        .stream()
+                        .collect(Collectors.groupingBy(m -> m.getPolicy().getId()));
+
+        Map<Long, List<PolicyKeywordMapping>> keywordMappingsMap =
+                policyKeywordMappingRepository.findByPolicyIn(policyEntities)
+                        .stream()
+                        .collect(Collectors.groupingBy(m -> m.getPolicy().getId()));
+
+        Map<Long, List<PolicyRegion>> regionMappingsMap =
+                policyRegionRepository.findByPolicyIn(policyEntities)
+                        .stream()
+                        .collect(Collectors.groupingBy(m -> m.getPolicy().getId()));
+
+        Map<String, PolicyCategoryEntity> categoryCache = new HashMap<>();
+        Map<String, PolicyKeywordEntity> keywordCache = new HashMap<>();
+
+        for (YouthPolicy apiPolicy : batch) {
+            try {
+                PolicyEntity policy = existingPolicies.get(apiPolicy.getPlcyNo());
+                boolean isNew = policy == null;
+
+                if (isNew) {
+                    policy = policyRepository.save(PolicyEntity.builder()
+                            .policyNo(apiPolicy.getPlcyNo())
+                            .isActive(true)
+                            .build());
+                    existingPolicies.put(policy.getPolicyNo(), policy);
+                    newPolicies.add(policy);
+                    stats.created++;
+                }
+
+                policy.activate();
+
+                boolean hasChanges = updatePolicy(apiPolicy, policy,
+                        categoryMappingsMap.getOrDefault(policy.getId(), Collections.emptyList()),
+                        keywordMappingsMap.getOrDefault(policy.getId(), Collections.emptyList()),
+                        regionMappingsMap.getOrDefault(policy.getId(), Collections.emptyList()),
+                        categoryCache, keywordCache, stats);
+
+                if (!isNew) {
+                    if (hasChanges) {
+                        stats.updated++;
+                    } else {
+                        stats.unchanged++;
+                    }
+                }
+
+            } catch (Exception e) {
+                log.error("정책 저장 실패: {}", apiPolicy.getPlcyNo(), e);
+                stats.failed++;
+            }
+        }
+
+        return new SyncResult(stats, newPolicies);
+    }
+
+    /**
+     * 새 정책들에 대해 AI 분석 처리
+     */
+    private void processAiAnalysisForNewPolicies(List<PolicyEntity> newPolicies) {
+        int successCount = 0;
+        int failCount = 0;
+
+        for (PolicyEntity policy : newPolicies) {
+            try {
+                policyAiAnalysisService.processAiAnalysis(policy);
+                successCount++;
+
+                if (successCount % 10 == 0) {
+                    log.info("AI 분석 진행 중: {}/{}", successCount, newPolicies.size());
+                }
+            } catch (Exception e) {
+                log.error("AI 분석 실패 - policyNo: {}", policy.getPolicyNo(), e);
+                failCount++;
+            }
+        }
+
+        log.info("AI 분석 완료 - 성공: {}, 실패: {}", successCount, failCount);
     }
 
     private boolean updatePolicy(

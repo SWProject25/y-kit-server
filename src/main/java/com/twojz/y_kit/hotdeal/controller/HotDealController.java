@@ -1,7 +1,9 @@
 package com.twojz.y_kit.hotdeal.controller;
 
 import com.twojz.y_kit.global.dto.PageResponse;
+import com.twojz.y_kit.global.service.ImageUploadService;
 import com.twojz.y_kit.hotdeal.domain.entity.HotDealCategory;
+import com.twojz.y_kit.hotdeal.domain.entity.HotDealEntity;
 import com.twojz.y_kit.hotdeal.dto.request.*;
 import com.twojz.y_kit.hotdeal.dto.response.*;
 import com.twojz.y_kit.hotdeal.service.HotDealCommandService;
@@ -10,8 +12,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @Tag(name = "동네핫딜 API")
 @RestController
@@ -20,11 +24,20 @@ import org.springframework.web.bind.annotation.*;
 public class HotDealController {
     private final HotDealCommandService hotDealCommandService;
     private final HotDealFindService hotDealFindService;
+    private final ImageUploadService imageUploadService;
 
-    @PostMapping
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "핫딜 생성")
-    public Long createHotDeal(Authentication authentication, @RequestBody HotDealCreateRequest request) {
+    public Long createHotDeal(Authentication authentication,
+                              @RequestPart("data") HotDealCreateRequest request,
+                              @RequestPart(value = "image", required = false) MultipartFile image) {
         Long userId = extractUserId(authentication);
+
+        if (image != null && !image.isEmpty()) {
+            String imageUrl = imageUploadService.uploadImage(image, "hotdeal");
+            request.setImageUrl(imageUrl);
+        }
+
         return hotDealCommandService.createHotDeal(userId, request);
     }
 
@@ -51,10 +64,26 @@ public class HotDealController {
     }
 
 
-    @PutMapping("/{id}")
+    @PutMapping(value = "/{id}", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "핫딜 수정")
-    public void updateHotDeal(@PathVariable Long id, Authentication authentication, @RequestBody HotDealUpdateRequest request) {
+    public void updateHotDeal(
+            @PathVariable Long id,
+            Authentication authentication,
+            @RequestPart("data") HotDealUpdateRequest request,
+            @RequestPart(value = "image", required = false) MultipartFile image
+    ) {
         Long userId = extractUserId(authentication);
+
+        if (image != null && !image.isEmpty()) {
+            HotDealEntity hotDeal = hotDealFindService.findById(id);
+            if (hotDeal.getImageUrl() != null) {
+                imageUploadService.deleteImage(hotDeal.getImageUrl());
+            }
+
+            String imageUrl = imageUploadService.uploadImage(image, "hotdeal");
+            request.setImageUrl(imageUrl);
+        }
+
         hotDealCommandService.updateHotDeal(id, userId, request);
     }
 
@@ -62,6 +91,12 @@ public class HotDealController {
     @Operation(summary = "핫딜 삭제")
     public void deleteHotDeal(@PathVariable Long id, Authentication authentication) {
         Long userId = extractUserId(authentication);
+
+        HotDealEntity hotDeal = hotDealFindService.findById(id);
+        if (hotDeal.getImageUrl() != null) {
+            imageUploadService.deleteImage(hotDeal.getImageUrl());
+        }
+
         hotDealCommandService.deleteHotDeal(id, userId);
     }
 

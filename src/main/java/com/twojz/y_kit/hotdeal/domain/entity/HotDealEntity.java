@@ -43,7 +43,7 @@ public class HotDealEntity extends BaseEntity {
     private String placeName;
 
     @Column(columnDefinition = "TEXT")
-    private String url;
+    private String imageUrl;
 
     @Column(nullable = false)
     private Double latitude;
@@ -79,12 +79,12 @@ public class HotDealEntity extends BaseEntity {
     private List<HotDealCommentEntity> comments;
 
     @Builder
-    public HotDealEntity(UserEntity user, String title, String content, String placeName, String url, Double latitude, Double longitude, String address, DealType dealType, HotDealCategory category, Region region, LocalDateTime expiresAt) {
+    public HotDealEntity(UserEntity user, String title, String content, String placeName, String imageUrl, Double latitude, Double longitude, String address, DealType dealType, HotDealCategory category, Region region, LocalDateTime expiresAt) {
         this.user = user;
         this.title = title;
         this.content = content;
         this.placeName = placeName;
-        this.url = url;
+        this.imageUrl = imageUrl;
         this.latitude = latitude;
         this.longitude = longitude;
         this.address = address;
@@ -94,7 +94,7 @@ public class HotDealEntity extends BaseEntity {
         this.expiresAt = expiresAt;
     }
 
-    public void update(String title, String content, String placeName, LocalDateTime expiresAt, DealType dealType, HotDealCategory category, Region region, String url, Double latitude, Double longitude, String address) {
+    public void update(String title, String content, String placeName, LocalDateTime expiresAt, DealType dealType, HotDealCategory category, Region region, String imageUrl, Double latitude, Double longitude, String address) {
         this.title = title;
         this.content = content;
         this.placeName = placeName;
@@ -102,7 +102,7 @@ public class HotDealEntity extends BaseEntity {
         this.dealType = dealType;
         this.category = category;
         this.region = region;
-        this.url = url;
+        this.imageUrl = imageUrl;
         this.latitude = latitude;
         this.longitude = longitude;
         this.address = address;
