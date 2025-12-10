@@ -84,75 +84,9 @@ public class PolicySyncService {
     }
 
     /**
-     * 기본 정책 동기화 (AI 분석 없음)
+     * 정책 동기화
      */
     public void syncAllPolicies() {
-        log.info("정책 동기화 시작");
-        long startTime = System.currentTimeMillis();
-
-        try {
-            List<YouthPolicy> policies = youthPolicyClient.fetchAllPolicies()
-                    .timeout(Duration.ofMinutes(5))
-                    .block();
-
-            if (policies == null || policies.isEmpty()) {
-                log.warn("동기화할 정책이 없습니다.");
-                return;
-            }
-
-            log.info("이 {}개 정책 동기화 시작", policies.size());
-
-            int totalSize = policies.size();
-            SyncStatistics totalStats = new SyncStatistics();
-
-            for (int i = 0; i < totalSize; i += BATCH_SIZE) {
-                int end = Math.min(i + BATCH_SIZE, totalSize);
-                List<YouthPolicy> batch = policies.subList(i, end);
-
-                try {
-                    SyncStatistics batchStats = processBatch(batch);
-
-                    totalStats.created += batchStats.created;
-                    totalStats.updated += batchStats.updated;
-                    totalStats.unchanged += batchStats.unchanged;
-                    totalStats.failed += batchStats.failed;
-                    totalStats.categoryCreated += batchStats.categoryCreated;
-                    totalStats.categoryDeleted += batchStats.categoryDeleted;
-                    totalStats.keywordCreated += batchStats.keywordCreated;
-                    totalStats.keywordDeleted += batchStats.keywordDeleted;
-                    totalStats.regionCreated += batchStats.regionCreated;
-                    totalStats.regionDeleted += batchStats.regionDeleted;
-
-                    if ((i / BATCH_SIZE) % 10 == 0) {
-                        int processed = totalStats.created + totalStats.updated + totalStats.unchanged + totalStats.failed;
-                        log.info("진행 중: {}/{} - 생성: {}, 수정: {}, 변경없음: {}",
-                                processed, totalSize, totalStats.created, totalStats.updated, totalStats.unchanged);
-                    }
-                } catch (Exception e) {
-                    log.error("배치 처리 실패 (index: {}-{})", i, end, e);
-                    totalStats.failed += batch.size();
-                }
-            }
-
-            // API에 없는 정책 비활성화
-            totalStats.deactivated = deactivateMissingPolicies(policies);
-
-            long duration = System.currentTimeMillis() - startTime;
-            log.info("=".repeat(80));
-            log.info("정책 동기화 완료 - 소요시간: {}초", duration / 1000);
-            log.info(totalStats.toString());
-            log.info("=".repeat(80));
-
-        } catch (Exception e) {
-            log.error("정책 동기화 중 오류 발생", e);
-            throw new RuntimeException("정책 동기화 실패", e);
-        }
-    }
-
-    /**
-     * AI 분석 포함한 정책 동기화 (스케줄러용)
-     */
-    public void syncAllPoliciesWithAi() {
         log.info("정책 동기화 시작 (AI 분석 포함)");
         long startTime = System.currentTimeMillis();
 
@@ -179,7 +113,7 @@ public class PolicySyncService {
                 List<YouthPolicy> batch = policies.subList(i, end);
 
                 try {
-                    SyncResult result = processBatchWithTracking(batch);
+                    SyncResult result = processBatch(batch);
 
                     totalStats.created += result.stats.created;
                     totalStats.updated += result.stats.updated;
@@ -229,86 +163,11 @@ public class PolicySyncService {
         }
     }
 
-    @Transactional
-    public SyncStatistics processBatch(List<YouthPolicy> batch) {
-        SyncStatistics stats = new SyncStatistics();
-
-        // 1. 기존 정책 조회 (한 번에)
-        Set<String> policyNos = batch.stream()
-                .map(YouthPolicy::getPlcyNo)
-                .collect(Collectors.toSet());
-
-        Map<String, PolicyEntity> existingPolicies = policyRepository
-                .findAllByPolicyNoIn(policyNos)
-                .stream()
-                .collect(Collectors.toMap(PolicyEntity::getPolicyNo, p -> p));
-
-        // 2. 배치의 모든 매핑을 한 번에 조회 (N+1 방지)
-        List<PolicyEntity> policyEntities = new ArrayList<>(existingPolicies.values());
-
-        Map<Long, List<PolicyCategoryMapping>> categoryMappingsMap =
-                policyCategoryMappingRepository.findByPolicyIn(policyEntities)
-                        .stream()
-                        .collect(Collectors.groupingBy(m -> m.getPolicy().getId()));
-
-        Map<Long, List<PolicyKeywordMapping>> keywordMappingsMap =
-                policyKeywordMappingRepository.findByPolicyIn(policyEntities)
-                        .stream()
-                        .collect(Collectors.groupingBy(m -> m.getPolicy().getId()));
-
-        Map<Long, List<PolicyRegion>> regionMappingsMap =
-                policyRegionRepository.findByPolicyIn(policyEntities)
-                        .stream()
-                        .collect(Collectors.groupingBy(m -> m.getPolicy().getId()));
-
-        // 3. 카테고리/키워드 캐싱
-        Map<String, PolicyCategoryEntity> categoryCache = new HashMap<>();
-        Map<String, PolicyKeywordEntity> keywordCache = new HashMap<>();
-
-        for (YouthPolicy apiPolicy : batch) {
-            try {
-                PolicyEntity policy = existingPolicies.get(apiPolicy.getPlcyNo());
-                boolean isNew = policy == null;
-
-                if (isNew) {
-                    policy = policyRepository.save(PolicyEntity.builder()
-                            .policyNo(apiPolicy.getPlcyNo())
-                            .isActive(true)
-                            .build());
-                    existingPolicies.put(policy.getPolicyNo(), policy);
-                    stats.created++;
-                }
-
-                policy.activate();
-
-                boolean hasChanges = updatePolicy(apiPolicy, policy,
-                        categoryMappingsMap.getOrDefault(policy.getId(), Collections.emptyList()),
-                        keywordMappingsMap.getOrDefault(policy.getId(), Collections.emptyList()),
-                        regionMappingsMap.getOrDefault(policy.getId(), Collections.emptyList()),
-                        categoryCache, keywordCache, stats);
-
-                if (!isNew) {
-                    if (hasChanges) {
-                        stats.updated++;
-                    } else {
-                        stats.unchanged++;
-                    }
-                }
-
-            } catch (Exception e) {
-                log.error("정책 저장 실패: {}", apiPolicy.getPlcyNo(), e);
-                stats.failed++;
-            }
-        }
-
-        return stats;
-    }
-
     /**
      * 새 정책 추적이 가능한 배치 처리
      */
     @Transactional
-    public SyncResult processBatchWithTracking(List<YouthPolicy> batch) {
+    public SyncResult processBatch(List<YouthPolicy> batch) {
         SyncStatistics stats = new SyncStatistics();
         List<PolicyEntity> newPolicies = new ArrayList<>();
 
