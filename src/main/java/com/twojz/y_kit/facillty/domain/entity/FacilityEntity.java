@@ -17,7 +17,9 @@ import lombok.NoArgsConstructor;
         name = "facilities",
         indexes = {
                 @Index(name = "idx_facility_lat_lng", columnList = "latitude, longitude"),
-                @Index(name = "idx_facility_category", columnList = "category")
+                @Index(name = "idx_facility_category", columnList = "category"),
+                @Index(name = "idx_facility_category", columnList = "category"),
+                @Index(name = "idx_facility_updated_at", columnList = "updatedAt")
         }
 )
 @Getter
@@ -63,7 +65,6 @@ public class FacilityEntity extends BaseEntity {
     }
 
     public void update(FacilityEntity source) {
-        this.resourceNo = source.resourceNo;
         this.name = source.name;
         this.zipCode = source.zipCode;
         this.address = source.address;
