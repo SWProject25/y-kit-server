@@ -74,40 +74,6 @@ public class PolicyFindService {
     }
 
     /**
-     * 파라미터 기반 추천 정책 조회
-     */
-    public PageResponse<PolicyListResponse> getRecommendedPoliciesByParams(
-            Integer age,
-            String regionCode,
-            Long userId,
-            Pageable pageable
-    ) {
-        Page<PolicyEntity> policyPage = policyRepository.findRecommendedWithCategory(
-                age, regionCode, pageable
-        );
-
-        List<PolicyEntity> policies = policyPage.getContent();
-
-        if (!policies.isEmpty()) {
-            policyRepository.findWithCategories(policies);
-            policyRepository.findWithKeywords(policies);
-            policyRepository.findWithRegions(policies);
-        }
-
-        Map<Long, Boolean> bookmarkMap = getBookmarkMap(policies, userId);
-
-        List<PolicyListResponse> content = policies.stream()
-                .map(policy -> policyMapper.toListResponse(
-                        policy,
-                        bookmarkMap.getOrDefault(policy.getId(), false)
-                ))
-                .collect(Collectors.toList());
-
-        Page<PolicyListResponse> mappedPage = new PageImpl<>(content, pageable, policyPage.getTotalElements());
-        return new PageResponse<>(mappedPage);
-    }
-
-    /**
      * 사용자 정보 기반 추천 정책 조회 (전체 프로필 활용)
      */
     public PageResponse<PolicyListResponse> getRecommendedPoliciesByUser(Long userId, Pageable pageable) {

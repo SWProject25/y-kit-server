@@ -346,6 +346,7 @@ public interface PolicyRepository extends JpaRepository<PolicyEntity, Long> {
     // 추가 (AI 분석 있는 개수)
     @Query("SELECT COUNT(p) FROM PolicyEntity p WHERE p.aiAnalysis IS NOT NULL")
     long countByAiAnalysisIsNotNull();
+
     /**
      * 유사 정책 조회 (같은 카테고리 기반)
      */

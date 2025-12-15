@@ -107,6 +107,15 @@ public class UserDeviceService {
     private boolean updateExistingDevice(Long userId, String deviceName, String deviceToken) {
         return userDeviceRepository.findByUserIdAndDeviceToken(userId, deviceToken)
                 .map(device -> {
+                    boolean wasInactive = !device.isActive();
+
+                    // 비활성화된 디바이스를 재활성화하는 경우, 먼저 디바이스 제한 체크
+                    if (wasInactive) {
+                        UserEntity user = device.getUser();
+                        enforceDeviceLimit(user);
+                        log.info("🔄 비활성화된 디바이스 재활성화 - userId: {}, deviceName: {}", userId, deviceName);
+                    }
+
                     device.updateLoginInfo(deviceName, deviceToken);
                     return true;
                 })

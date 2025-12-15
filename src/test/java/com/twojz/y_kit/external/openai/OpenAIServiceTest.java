@@ -15,7 +15,7 @@ class OpenAIServiceTest {
     void shouldGetCompletionFromOpenAI() {
         String testPrompt = "안녕하세요";
 
-        Mono<String> resultMono = openAIService.getCompletion(testPrompt);
+        Mono<String> resultMono = openAIService.getCompletion("gpt-4o-mini", testPrompt);
 
         StepVerifier.create(resultMono)
                 .expectNextMatches(result -> {
