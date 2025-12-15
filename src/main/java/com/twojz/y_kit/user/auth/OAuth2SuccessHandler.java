@@ -5,6 +5,7 @@ import com.twojz.y_kit.user.entity.ProfileStatus;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.repository.UserRepository;
 import com.twojz.y_kit.user.service.UserNotificationService;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -31,50 +32,69 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
     @Value("${app.oauth2.redirect-url}")
     private String redirectUrl;
 
+    @PostConstruct
+    public void init() {
+        log.info("🚀 [OAuth2] OAuth2SuccessHandler 초기화 완료");
+        log.info("🚀 [OAuth2] redirectUrl: {}", redirectUrl);
+    }
+
     @Override
     @Transactional
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
                                         Authentication authentication) throws IOException {
+        log.info("🟢 [OAuth2] onAuthenticationSuccess 시작");
+        log.info("🟢 [OAuth2] redirectUrl 설정값: {}", redirectUrl);
 
-        DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
-        String email = extractEmail(oAuth2User);
+        try {
+            DefaultOAuth2User oAuth2User = (DefaultOAuth2User) authentication.getPrincipal();
+            log.info("🟢 [OAuth2] OAuth2User attributes: {}", oAuth2User.getAttributes());
 
-        Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
+            String email = extractEmail(oAuth2User);
+            log.info("🟢 [OAuth2] 추출된 이메일: {}", email);
 
-        // 회원가입이 안되어 있으면 → 회원가입 필요 상태로 리다이렉트
-        if (optionalUser.isEmpty()) {
-            log.info("미가입 사용자 - 회원가입 필요: {}", email);
+            Optional<UserEntity> optionalUser = userRepository.findByEmail(email);
 
-            String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
-                    .queryParam("needSignup", true)
-                    .queryParam("email", email)
-                    .build()
-                    .toUriString();
+            // 회원가입이 안되어 있으면 → 회원가입 필요 상태로 리다이렉트
+            if (optionalUser.isEmpty()) {
+                log.info("⚠️ [OAuth2] 미가입 사용자 - 회원가입 필요: {}", email);
 
-            getRedirectStrategy().sendRedirect(request, response, targetUrl);
-            return;
-        }
+                String targetUrl = UriComponentsBuilder.fromUriString(redirectUrl)
+                        .queryParam("needSignup", true)
+                        .queryParam("email", email)
+                        .build()
+                        .toUriString();
+
+                log.info("🟢 [OAuth2] 회원가입 페이지로 리다이렉트: {}", targetUrl);
+                getRedirectStrategy().sendRedirect(request, response, targetUrl);
+                return;
+            }
 
         UserEntity user = optionalUser.get();
+        log.info("🟢 [OAuth2] 사용자 조회 성공 - userId: {}, email: {}, profileStatus: {}",
+                user.getId(), user.getEmail(), user.getProfileStatus());
 
         // 신규 가입 여부 확인 (createdAt과 updatedAt이 같으면 신규 가입)
         boolean isNewUser = user.getCreatedAt().equals(user.getUpdatedAt());
+        log.info("🟢 [OAuth2] 신규 가입 여부: {}", isNewUser);
 
         // JWT 생성
         String accessToken = jwtTokenProvider.createAccessToken(user.getId(), user.getEmail(), user.getRole().name());
         String refreshToken = jwtTokenProvider.createRefreshToken(user.getId());
+        log.info("🟢 [OAuth2] JWT 토큰 생성 완료");
 
         // 신규 가입 시에만 알림 전송
         if (isNewUser) {
             try {
+                log.info("🟢 [OAuth2] 신규 가입자 알림 전송 시작");
                 userNotificationService.sendWelcomeNotification(user);
 
                 if (user.getProfileStatus() != ProfileStatus.COMPLETED
                         && user.getProfileStatus() != ProfileStatus.SKIPPED) {
                     userNotificationService.sendProfileCompleteReminder(user);
                 }
+                log.info("🟢 [OAuth2] 신규 가입자 알림 전송 완료");
             } catch (Exception e) {
-                log.error("알림 전송 실패", e);
+                log.error("❌ [OAuth2] 알림 전송 실패", e);
             }
         }
 
@@ -88,7 +108,13 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 .build()
                 .toUriString();
 
+        log.info("🟢 [OAuth2] 최종 리다이렉트 URL: {}", targetUrl);
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
+        log.info("🟢 [OAuth2] onAuthenticationSuccess 완료");
+        } catch (Exception e) {
+            log.error("❌ [OAuth2] onAuthenticationSuccess 실패", e);
+            throw e;
+        }
     }
 
     @SuppressWarnings("unchecked")

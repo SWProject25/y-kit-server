@@ -2,9 +2,11 @@ package com.twojz.y_kit.global.security;
 
 import com.twojz.y_kit.user.service.CustomOAuth2UserService;
 import com.twojz.y_kit.user.auth.OAuth2SuccessHandler;
+import jakarta.annotation.PostConstruct;
 import java.util.Arrays;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +21,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+@Slf4j
 @Configuration
 @EnableWebSecurity
 @RequiredArgsConstructor
@@ -26,6 +29,17 @@ public class SecurityConfig {
 
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+
+    @Value("${spring.security.oauth2.client.registration.kakao.client-id:NOT_SET}")
+    private String kakaoClientId;
+
+    @PostConstruct
+    public void init() {
+        log.info("🔐 [Security] SecurityConfig 초기화");
+        log.info("🔐 [Security] Kakao Client ID: {}", kakaoClientId.substring(0, Math.min(10, kakaoClientId.length())) + "...");
+        log.info("🔐 [Security] CustomOAuth2UserService: {}", customOAuth2UserService != null ? "주입됨" : "NULL");
+        log.info("🔐 [Security] OAuth2SuccessHandler: {}", oAuth2SuccessHandler != null ? "주입됨" : "NULL");
+    }
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
