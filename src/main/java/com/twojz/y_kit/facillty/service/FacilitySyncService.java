@@ -31,7 +31,7 @@ public class FacilitySyncService {
     /**
      * 매일 밤 12시에 자동 동기화 실행
      */
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 2 * * *")
     public void scheduledSync() {
         log.info("스케줄러 시작: 매일 자정 시설 동기화");
         fetchAllFacilitiesAsync();

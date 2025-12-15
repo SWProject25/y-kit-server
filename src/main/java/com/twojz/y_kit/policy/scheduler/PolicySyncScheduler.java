@@ -17,7 +17,7 @@ public class PolicySyncScheduler {
      * cron: 초 분 시 일 월 요일
      * "0 0 0 * * *" = 매일 자정 (00:00:00)
      */
-    @Scheduled(cron = "0 0 0 * * *")
+    @Scheduled(cron = "0 0 2 * * *")
     public void syncPoliciesDaily() {
         log.info("========================================");
         log.info("일일 정책 동기화 스케줄러 시작");
