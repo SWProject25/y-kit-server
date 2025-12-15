@@ -99,7 +99,6 @@ jobs:
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             KAKAO_CLIENT_ID=${{ secrets.KAKAO_CLIENT_ID }}
             KAKAO_CLIENT_SECRET=${{ secrets.KAKAO_CLIENT_SECRET }}
-            KAKAO_REDIRECT_URI=${{ secrets.KAKAO_REDIRECT_URI }}
             APP_OAUTH2_REDIRECT_URL=${{ secrets.OAUTH2_REDIRECT_URL }}
             FIREBASE_CONFIG_PATH=/app/service-account.json
             OPENAI_API_BASE_URL=${{ secrets.OPENAI_API_BASE_URL }}
