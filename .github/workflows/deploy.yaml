@@ -144,7 +144,12 @@ jobs:
             echo "🔄 Restarting Docker Compose..."
             docker compose down
             docker compose up -d --force-recreate
-            
+
             echo "🎉 Deployment Complete!"
             echo "📋 Checking container status..."
             docker compose ps
+
+            # 환경 변수 확인 (디버그)
+            echo "🔍 Checking environment variables in container..."
+            sleep 5
+            docker exec server env | grep -E "KAKAO|OAUTH2" || echo "⚠️ OAuth2 환경 변수 없음"
