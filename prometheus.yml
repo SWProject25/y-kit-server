@@ -1,0 +1,15 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+
+  # 내 로컬의 메트릭을 수집하고 싶을 때 활성화
+  # - job_name: 'my-app'
+  #   metrics_path: '/actuator/prometheus' # 스프링 기준
+  #   static_configs:
+  #     - targets: ['host.docker.internal:8080']
