@@ -1,0 +1,45 @@
+version: "3.8"
+
+services:
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana-provisioning:/etc/grafana/provisioning
+      - ./grafana-dashboard:/dashboard
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - --web.enable-remote-write-receiver
+      - --enable-feature=native-histograms
+      - --config.file=/etc/prometheus/prometheus.yml
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:9090/-/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  k6:
+    image: grafana/k6
+    container_name: k6
+    volumes:
+      - ./k6-scripts:/scripts
+    command: run -o experimental-prometheus-rw /scripts/${K6_SCRIPT:-global-search-test.js}
+    environment:
+      - K6_PROMETHEUS_RW_SERVER_URL=http://prometheus:9090/api/v1/write
+      - K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      prometheus:
+        condition: service_healthy
