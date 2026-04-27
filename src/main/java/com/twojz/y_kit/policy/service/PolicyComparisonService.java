@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PolicyComparisonService {
     private final OpenAIService openAIService;
     private final PolicyFindService policyFindService;
+    private final PolicyDetailFindService policyDetailFindService;
     private final UserFindService userFindService;
     private final ObjectMapper objectMapper;
 
@@ -110,10 +111,11 @@ public class PolicyComparisonService {
     }
 
     private String buildPolicyContent(List<PolicyEntity> policies) {
+        var detailMap = policyDetailFindService.findMapByPolicies(policies);
         StringBuilder sb = new StringBuilder("[\n");
         for (int i = 0; i < policies.size(); i++) {
             PolicyEntity p = policies.get(i);
-            PolicyDetailEntity d = p.getDetail();
+            PolicyDetailEntity d = detailMap.get(p.getId());
             if (d == null) continue;
 
             sb.append("  {\n")

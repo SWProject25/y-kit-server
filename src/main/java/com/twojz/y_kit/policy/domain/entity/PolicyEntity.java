@@ -5,8 +5,6 @@ import com.twojz.y_kit.policy.domain.AiAnalysisConverter;
 import com.twojz.y_kit.policy.domain.vo.AiAnalysis;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import lombok.*;
 
 @Getter
@@ -31,28 +29,6 @@ public class PolicyEntity extends BaseEntity {
     private AiAnalysis aiAnalysis;
 
     private LocalDateTime aiGeneratedAt;
-
-    // 양방향 관계 추가
-    @OneToOne(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private PolicyDetailEntity detail;
-
-    @OneToOne(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private PolicyApplicationEntity application;
-
-    @OneToOne(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private PolicyQualificationEntity qualification;
-
-    @OneToOne(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
-    private PolicyDocumentEntity document;
-
-    @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PolicyCategoryMapping> categoryMappings = new ArrayList<>();
-
-    @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PolicyKeywordMapping> keywordMappings = new ArrayList<>();
-
-    @OneToMany(mappedBy = "policy", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<PolicyRegion> regions = new ArrayList<>();
 
     @Builder
     public PolicyEntity(String policyNo, Boolean isActive) {
