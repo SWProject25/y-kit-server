@@ -2,24 +2,39 @@ package com.twojz.y_kit.policy.service;
 
 import com.twojz.y_kit.external.policy.client.YouthPolicyClient;
 import com.twojz.y_kit.external.policy.dto.YouthPolicy;
-import com.twojz.y_kit.policy.domain.entity.*;
 import com.twojz.y_kit.policy.domain.dto.PolicyApplicationDto;
 import com.twojz.y_kit.policy.domain.dto.PolicyDetailDto;
 import com.twojz.y_kit.policy.domain.dto.PolicyQualificationDto;
+import com.twojz.y_kit.policy.domain.entity.PolicyApplicationEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyCategoryEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyCategoryMapping;
+import com.twojz.y_kit.policy.domain.entity.PolicyDetailEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyDocumentEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyKeywordEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyKeywordMapping;
+import com.twojz.y_kit.policy.domain.entity.PolicyQualificationEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyRegion;
 import com.twojz.y_kit.policy.domain.vo.DocumentParsed;
-import com.twojz.y_kit.policy.repository.*;
 import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.region.repository.RegionRepository;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-
-import java.time.Duration;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -29,16 +44,26 @@ public class PolicySyncService {
     private final String reg = "\\s*(,|및)\\s*";
 
     private final YouthPolicyClient youthPolicyClient;
-    private final PolicyRepository policyRepository;
-    private final PolicyDetailRepository policyDetailRepository;
-    private final PolicyApplicationRepository policyApplicationRepository;
-    private final PolicyQualificationRepository policyQualificationRepository;
-    private final PolicyDocumentRepository policyDocumentRepository;
-    private final PolicyCategoryRepository policyCategoryRepository;
-    private final PolicyCategoryMappingRepository policyCategoryMappingRepository;
-    private final PolicyKeywordRepository policyKeywordRepository;
-    private final PolicyKeywordMappingRepository policyKeywordMappingRepository;
-    private final PolicyRegionRepository policyRegionRepository;
+    private final PolicyEntityFindService policyEntityFindService;
+    private final PolicyEntityCommandService policyEntityCommandService;
+    private final PolicyDetailFindService policyDetailFindService;
+    private final PolicyDetailCommandService policyDetailCommandService;
+    private final PolicyApplicationFindService policyApplicationFindService;
+    private final PolicyApplicationCommandService policyApplicationCommandService;
+    private final PolicyQualificationFindService policyQualificationFindService;
+    private final PolicyQualificationCommandService policyQualificationCommandService;
+    private final PolicyDocumentFindService policyDocumentFindService;
+    private final PolicyDocumentCommandService policyDocumentCommandService;
+    private final PolicyCategoryFindService policyCategoryFindService;
+    private final PolicyCategoryCommandService policyCategoryCommandService;
+    private final PolicyCategoryMappingFindService policyCategoryMappingFindService;
+    private final PolicyCategoryMappingCommandService policyCategoryMappingCommandService;
+    private final PolicyKeywordFindService policyKeywordFindService;
+    private final PolicyKeywordCommandService policyKeywordCommandService;
+    private final PolicyKeywordMappingFindService policyKeywordMappingFindService;
+    private final PolicyKeywordMappingCommandService policyKeywordMappingCommandService;
+    private final PolicyRegionFindService policyRegionFindService;
+    private final PolicyRegionCommandService policyRegionCommandService;
     private final RegionRepository regionRepository;
     private final PolicyMapper mapper;
     private final PolicyAiAnalysisService policyAiAnalysisService;
@@ -175,27 +200,21 @@ public class PolicySyncService {
                 .map(YouthPolicy::getPlcyNo)
                 .collect(Collectors.toSet());
 
-        Map<String, PolicyEntity> existingPolicies = policyRepository
-                .findAllByPolicyNoIn(policyNos)
+        Map<String, PolicyEntity> existingPolicies = policyEntityFindService
+                .findAllByPolicyNos(policyNos)
                 .stream()
                 .collect(Collectors.toMap(PolicyEntity::getPolicyNo, p -> p));
 
         List<PolicyEntity> policyEntities = new ArrayList<>(existingPolicies.values());
 
         Map<Long, List<PolicyCategoryMapping>> categoryMappingsMap =
-                policyCategoryMappingRepository.findByPolicyIn(policyEntities)
-                        .stream()
-                        .collect(Collectors.groupingBy(m -> m.getPolicy().getId()));
+                policyCategoryMappingFindService.findMapByPolicies(policyEntities);
 
         Map<Long, List<PolicyKeywordMapping>> keywordMappingsMap =
-                policyKeywordMappingRepository.findByPolicyIn(policyEntities)
-                        .stream()
-                        .collect(Collectors.groupingBy(m -> m.getPolicy().getId()));
+                policyKeywordMappingFindService.findMapByPolicies(policyEntities);
 
         Map<Long, List<PolicyRegion>> regionMappingsMap =
-                policyRegionRepository.findByPolicyIn(policyEntities)
-                        .stream()
-                        .collect(Collectors.groupingBy(m -> m.getPolicy().getId()));
+                policyRegionFindService.findMapByPolicies(policyEntities);
 
         Map<String, PolicyCategoryEntity> categoryCache = new HashMap<>();
         Map<String, PolicyKeywordEntity> keywordCache = new HashMap<>();
@@ -206,7 +225,7 @@ public class PolicySyncService {
                 boolean isNew = policy == null;
 
                 if (isNew) {
-                    policy = policyRepository.save(PolicyEntity.builder()
+                    policy = policyEntityCommandService.save(PolicyEntity.builder()
                             .policyNo(apiPolicy.getPlcyNo())
                             .isActive(true)
                             .build());
@@ -292,63 +311,60 @@ public class PolicySyncService {
     }
 
     private boolean updateOrCreateDetail(PolicyEntity policy, PolicyDetailDto dto) {
-        PolicyDetailEntity detail = policyDetailRepository.findByPolicy(policy)
-                .orElseGet(() -> PolicyDetailEntity.builder().policy(policy).build());
-
-        boolean isNew = detail.getId() == null;
-        detail.updateFromApi(dto);
-
+        PolicyDetailEntity detail = policyDetailFindService.findNullableByPolicy(policy);
+        boolean isNew = detail == null;
         if (isNew) {
-            policyDetailRepository.save(detail);
+            detail = PolicyDetailEntity.builder().policy(policy).build();
         }
 
+        detail.updateFromApi(dto);
+        if (isNew) {
+            policyDetailCommandService.save(detail);
+        }
         return isNew;
     }
 
     private boolean updateOrCreateApplication(PolicyEntity policy, PolicyApplicationDto dto) {
-        PolicyApplicationEntity app = policyApplicationRepository.findByPolicy(policy)
-                .orElseGet(() -> PolicyApplicationEntity.builder().policy(policy).build());
-
-        boolean isNew = app.getId() == null;
-        app.updateFromApi(dto);
-
+        PolicyApplicationEntity application = policyApplicationFindService.findNullableByPolicy(policy);
+        boolean isNew = application == null;
         if (isNew) {
-            policyApplicationRepository.save(app);
+            application = PolicyApplicationEntity.builder().policy(policy).build();
         }
 
+        application.updateFromApi(dto);
+        if (isNew) {
+            policyApplicationCommandService.save(application);
+        }
         return isNew;
     }
 
     private boolean updateOrCreateQualification(PolicyEntity policy, PolicyQualificationDto dto) {
-        PolicyQualificationEntity qual = policyQualificationRepository.findByPolicy(policy)
-                .orElseGet(() -> PolicyQualificationEntity.builder().policy(policy).build());
-
-        boolean isNew = qual.getId() == null;
-        qual.updateFromApi(dto);
-
+        PolicyQualificationEntity qualification = policyQualificationFindService.findNullableByPolicy(policy);
+        boolean isNew = qualification == null;
         if (isNew) {
-            policyQualificationRepository.save(qual);
+            qualification = PolicyQualificationEntity.builder().policy(policy).build();
         }
 
+        qualification.updateFromApi(dto);
+        if (isNew) {
+            policyQualificationCommandService.save(qualification);
+        }
         return isNew;
     }
 
     private boolean updateOrCreateDocument(PolicyEntity policy, String original) {
         if (isEmptyDocument(original)) return false;
+        PolicyDocumentEntity document = policyDocumentFindService.findNullableByPolicy(policy);
+        boolean isNew = document == null;
+        if (isNew) {
+            document = PolicyDocumentEntity.builder().policy(policy).build();
+        }
 
-        PolicyDocumentEntity doc = policyDocumentRepository.findByPolicy(policy)
-                .orElseGet(() -> PolicyDocumentEntity.builder()
-                        .policy(policy)
-                        .build());
-
-        boolean isNew = doc.getId() == null;
-
-        if (isNew || !Objects.equals(doc.getDocumentsOriginal(), original)) {
-            doc.updateOriginal(original);
+        if (isNew || !java.util.Objects.equals(document.getDocumentsOriginal(), original)) {
+            document.updateOriginal(original);
             DocumentParsed parsed = DocumentPreprocessor.parse(original);
-            doc.updateParsed(parsed);
-
-            policyDocumentRepository.save(doc);
+            document.updateParsed(parsed);
+            policyDocumentCommandService.save(document);
             return true;
         }
 
@@ -409,15 +425,10 @@ public class PolicySyncService {
             return false;
         }
 
-        if (!existingMappings.isEmpty()) {
-            policyCategoryMappingRepository.deleteAll(existingMappings);
-            stats.categoryDeleted += existingMappings.size();
-        }
-
-        if (!newMappings.isEmpty()) {
-            policyCategoryMappingRepository.saveAll(newMappings);
-            stats.categoryCreated += newMappings.size();
-        }
+        stats.categoryDeleted += existingMappings.size();
+        stats.categoryCreated += newMappings.size();
+        policyCategoryMappingCommandService.deleteAll(existingMappings);
+        policyCategoryMappingCommandService.saveAll(newMappings);
 
         return true;
     }
@@ -458,7 +469,7 @@ public class PolicySyncService {
 
         if (!toDelete.isEmpty()) {
             toDelete.forEach(m -> m.getKeyword().decreaseUsageCount());
-            policyKeywordMappingRepository.deleteAll(toDelete);
+            policyKeywordMappingCommandService.deleteAll(toDelete);
             stats.keywordDeleted += toDelete.size();
         }
 
@@ -473,11 +484,46 @@ public class PolicySyncService {
                                 .build();
                     })
                     .toList();
-            policyKeywordMappingRepository.saveAll(toAdd);
+            policyKeywordMappingCommandService.saveAll(toAdd);
             stats.keywordCreated += toAdd.size();
         }
 
         return true;
+    }
+
+    private PolicyCategoryEntity findOrCreateCategoryWithCache(
+            String name,
+            int level,
+            PolicyCategoryEntity parent,
+            Map<String, PolicyCategoryEntity> cache
+    ) {
+        String cacheKey = name + "_" + level;
+        return cache.computeIfAbsent(cacheKey, key ->
+                policyCategoryFindService.findByNameAndLevel(name, level)
+                        .orElseGet(() -> policyCategoryCommandService.save(
+                                PolicyCategoryEntity.builder()
+                                        .name(name)
+                                        .level(level)
+                                        .parent(parent)
+                                        .isActive(true)
+                                        .build()
+                        ))
+        );
+    }
+
+    private PolicyKeywordEntity findOrCreateKeywordWithCache(
+            String keywordText,
+            Map<String, PolicyKeywordEntity> cache
+    ) {
+        return cache.computeIfAbsent(keywordText, key ->
+                policyKeywordFindService.findByKeyword(keywordText)
+                        .orElseGet(() -> policyKeywordCommandService.save(
+                                PolicyKeywordEntity.builder()
+                                        .keyword(keywordText)
+                                        .usageCount(0)
+                                        .build()
+                        ))
+        );
     }
 
     private boolean updateRegionMappings(
@@ -515,7 +561,7 @@ public class PolicySyncService {
         }
 
         if (!toDelete.isEmpty()) {
-            policyRegionRepository.deleteAll(toDelete);
+            policyRegionCommandService.deleteAll(toDelete);
             stats.regionDeleted += toDelete.size();
         }
 
@@ -527,46 +573,11 @@ public class PolicySyncService {
                             .region(region)
                             .build())
                     .toList();
-            policyRegionRepository.saveAll(toAdd);
+            policyRegionCommandService.saveAll(toAdd);
             stats.regionCreated += toAdd.size();
         }
 
         return true;
-    }
-
-    private PolicyCategoryEntity findOrCreateCategoryWithCache(
-            String name,
-            int level,
-            PolicyCategoryEntity parent,
-            Map<String, PolicyCategoryEntity> cache) {
-
-        String cacheKey = name + "_" + level;
-        return cache.computeIfAbsent(cacheKey, k ->
-                policyCategoryRepository.findByNameAndLevel(name, level)
-                        .orElseGet(() -> policyCategoryRepository.save(
-                                PolicyCategoryEntity.builder()
-                                        .name(name)
-                                        .level(level)
-                                        .parent(parent)
-                                        .isActive(true)
-                                        .build()
-                        ))
-        );
-    }
-
-    private PolicyKeywordEntity findOrCreateKeywordWithCache(
-            String keywordText,
-            Map<String, PolicyKeywordEntity> cache) {
-
-        return cache.computeIfAbsent(keywordText, k ->
-                policyKeywordRepository.findByKeyword(keywordText)
-                        .orElseGet(() -> policyKeywordRepository.save(
-                                PolicyKeywordEntity.builder()
-                                        .keyword(keywordText)
-                                        .usageCount(0)
-                                        .build()
-                        ))
-        );
     }
 
     @Transactional
@@ -575,7 +586,7 @@ public class PolicySyncService {
                 .map(YouthPolicy::getPlcyNo)
                 .collect(Collectors.toSet());
 
-        List<PolicyEntity> activePolicies = policyRepository.findAllByIsActiveTrue();
+        List<PolicyEntity> activePolicies = policyEntityFindService.findAllActiveEntities();
 
         List<PolicyEntity> toDeactivate = activePolicies.stream()
                 .filter(policy -> !apiPolicyNos.contains(policy.getPolicyNo()))
@@ -583,7 +594,7 @@ public class PolicySyncService {
                 .toList();
 
         if (!toDeactivate.isEmpty()) {
-            policyRepository.saveAll(toDeactivate);
+            policyEntityCommandService.saveAll(toDeactivate);
             log.info("API에 없는 정책 {}개 비활성화 완료", toDeactivate.size());
         }
 

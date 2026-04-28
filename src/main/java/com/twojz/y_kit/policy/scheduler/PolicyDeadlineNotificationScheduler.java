@@ -2,8 +2,8 @@ package com.twojz.y_kit.policy.scheduler;
 
 import com.twojz.y_kit.notification.entity.NotificationType;
 import com.twojz.y_kit.notification.service.NotificationService;
-import com.twojz.y_kit.policy.domain.entity.PolicyNotificationEntity;
-import com.twojz.y_kit.policy.repository.PolicyNotificationRepository;
+import com.twojz.y_kit.policy.repository.PolicyNotificationQueryRepository.PendingPolicyNotification;
+import com.twojz.y_kit.policy.service.PolicyNotificationFindService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,7 +17,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class PolicyDeadlineNotificationScheduler {
-    private final PolicyNotificationRepository policyNotificationRepository;
+    private final PolicyNotificationFindService policyNotificationFindService;
     private final NotificationService notificationService;
 
     /**
@@ -35,8 +35,8 @@ public class PolicyDeadlineNotificationScheduler {
             log.info("📅 마감일 체크: {}", deadlineDate);
 
             // 마감 7일 전인 정책들 중 알림 미발송된 것 조회
-            List<PolicyNotificationEntity> pendingNotifications =
-                    policyNotificationRepository.findPendingNotificationsByDeadline(deadlineDate);
+            List<PendingPolicyNotification> pendingNotifications =
+                    policyNotificationFindService.findPendingNotificationsByDeadline(deadlineDate);
 
             if (pendingNotifications.isEmpty()) {
                 log.info("ℹ️ 발송할 마감 알림이 없습니다.");
@@ -48,9 +48,10 @@ public class PolicyDeadlineNotificationScheduler {
             int successCount = 0;
             int failCount = 0;
 
-            for (PolicyNotificationEntity notification : pendingNotifications) {
+            for (PendingPolicyNotification pendingNotification : pendingNotifications) {
+                var notification = pendingNotification.notification();
                 try {
-                    String policyName = notification.getPolicy().getDetail().getPlcyNm();
+                    String policyName = pendingNotification.policyName();
                     String title = "⏰ 정책 마감 임박 안내";
                     String body = String.format("'%s' 정책이 일주일 후 마감됩니다. 서둘러 신청하세요!", policyName);
                     String deepLink = "/policies/" + notification.getPolicy().getId();

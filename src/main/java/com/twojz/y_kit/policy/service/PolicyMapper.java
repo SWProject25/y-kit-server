@@ -10,8 +10,11 @@ import com.twojz.y_kit.policy.domain.entity.PolicyApplicationEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyCategoryEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyCategoryMapping;
 import com.twojz.y_kit.policy.domain.entity.PolicyDetailEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyDocumentEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyKeywordMapping;
 import com.twojz.y_kit.policy.domain.entity.PolicyQualificationEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyRegion;
 import com.twojz.y_kit.policy.domain.enumType.*;
 import com.twojz.y_kit.policy.dto.response.AiAnalysisInfo;
 import com.twojz.y_kit.policy.dto.response.CategoryInfo;
@@ -101,16 +104,21 @@ public class PolicyMapper {
     /**
      * Entity -> 응답 DTO
      */
-    public PolicyListResponse toListResponse(PolicyEntity entity, boolean isBookmarked) {
-        PolicyDetailEntity detail = entity.getDetail();
-        PolicyApplicationEntity application = entity.getApplication();
-        PolicyQualificationEntity qualification = entity.getQualification();
+    public PolicyListResponse toListResponse(
+            PolicyEntity entity,
+            PolicyDetailEntity detail,
+            PolicyApplicationEntity application,
+            PolicyQualificationEntity qualification,
+            List<PolicyCategoryMapping> categoryMappings,
+            List<PolicyKeywordMapping> keywordMappings,
+            List<PolicyRegion> regions,
+            boolean isBookmarked) {
 
         // 카테고리 추출
         String largeCategory = null;
         String mediumCategory = null;
-        if (entity.getCategoryMappings() != null) {
-            for (PolicyCategoryMapping mapping : entity.getCategoryMappings()) {
+        if (categoryMappings != null) {
+            for (PolicyCategoryMapping mapping : categoryMappings) {
                 PolicyCategoryEntity category = mapping.getCategory();
                 if (category.getLevel() == 1) {
                     largeCategory = category.getName();
@@ -121,15 +129,15 @@ public class PolicyMapper {
         }
 
         // 키워드 추출
-        List<String> keywords = entity.getKeywordMappings() != null ?
-                entity.getKeywordMappings().stream()
+        List<String> keywords = keywordMappings != null ?
+                keywordMappings.stream()
                         .map(mapping -> mapping.getKeyword().getKeyword())
                         .collect(Collectors.toList()) :
                 new ArrayList<>();
 
         // 지역 추출
-        List<String> regions = entity.getRegions() != null ?
-                entity.getRegions().stream()
+        List<String> regionNames = regions != null ?
+                regions.stream()
                         .map(policyRegion -> policyRegion.getRegion().getName())
                         .collect(Collectors.toList()) :
                 new ArrayList<>();
@@ -148,7 +156,7 @@ public class PolicyMapper {
                 .minAge(qualification != null ? qualification.getSprtTrgtMinAge() : null)
                 .maxAge(qualification != null ? qualification.getSprtTrgtMaxAge() : null)
                 .keywords(keywords)
-                .regions(regions)
+                .regions(regionNames)
                 .viewCount(entity.getViewCount())
                 .bookmarkCount(entity.getBookmarkCount())
                 .applicationCount(entity.getApplicationCount())
@@ -157,18 +165,25 @@ public class PolicyMapper {
                 .build();
     }
 
-
-
-    public PolicyDetailResponse toDetailResponse(PolicyEntity entity, boolean isBookmarked) {
+    public PolicyDetailResponse toDetailResponse(
+            PolicyEntity entity,
+            PolicyDetailEntity detail,
+            PolicyApplicationEntity application,
+            PolicyQualificationEntity qualification,
+            PolicyDocumentEntity document,
+            List<PolicyCategoryMapping> categoryMappings,
+            List<PolicyKeywordMapping> keywordMappings,
+            List<PolicyRegion> regions,
+            boolean isBookmarked) {
         return PolicyDetailResponse.builder()
                 .basicInfo(PolicyBasicInfo.from(entity))
-                .detail(PolicyDetail.from(entity.getDetail()))
-                .application(PolicyApplication.from(entity.getApplication()))
-                .qualification(PolicyQualification.from(entity.getQualification()))
-                .document(PolicyDocument.from(entity.getDocument()))
-                .categories(CategoryInfo.from(entity.getCategoryMappings()))
-                .keywords(toKeywords(entity.getKeywordMappings()))
-                .regions(RegionInfo.from(entity.getRegions()))
+                .detail(PolicyDetail.from(detail))
+                .application(PolicyApplication.from(application))
+                .qualification(PolicyQualification.from(qualification))
+                .document(PolicyDocument.from(document))
+                .categories(CategoryInfo.from(categoryMappings))
+                .keywords(toKeywords(keywordMappings))
+                .regions(RegionInfo.from(regions))
                 .aiAnalysis(AiAnalysisInfo.from(entity))
                 .isBookmarked(isBookmarked)
                 .build();

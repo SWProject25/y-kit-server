@@ -1,6 +1,7 @@
 package com.twojz.y_kit.policy.dto.response;
 
 import com.twojz.y_kit.policy.domain.entity.PolicyNotificationEntity;
+import com.twojz.y_kit.policy.repository.PolicyNotificationQueryRepository.PolicyNotificationSummary;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.time.LocalDate;
 import lombok.AllArgsConstructor;
@@ -35,11 +36,19 @@ public class PolicyNotificationResponse {
     public static PolicyNotificationResponse from(PolicyNotificationEntity entity) {
         return PolicyNotificationResponse.builder()
                 .policyId(entity.getPolicy().getId())
-                .policyName(entity.getPolicy().getDetail().getPlcyNm())
-                .summary(entity.getPolicy().getDetail().getPlcyExplnCn())
-                .applicationDeadlineDate(entity.getPolicy().getApplication().getAplyEndYmd())
                 .createdAt(entity.getCreatedAt())
                 .notificationSent(entity.isNotificationSent())
+                .build();
+    }
+
+    public static PolicyNotificationResponse from(PolicyNotificationSummary summary) {
+        return PolicyNotificationResponse.builder()
+                .policyId(summary.policyId())
+                .policyName(summary.policyName())
+                .summary(summary.summary())
+                .applicationDeadlineDate(summary.applicationDeadlineDate())
+                .createdAt(summary.createdAt())
+                .notificationSent(summary.notificationSent())
                 .build();
     }
 }
