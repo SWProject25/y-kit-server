@@ -21,7 +21,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -70,7 +69,7 @@ public class PolicyFindService {
     public PolicyDetailResponse getPolicyDetail(Long policyId, Long userId) {
         PolicyEntity policy = policyEntityFindService.findById(policyId);
 
-        PolicyDetailEntity detail = policyDetailFindService.findNullableByPolicy(policy);
+        PolicyDetailEntity detail = policyDetailFindService.findByPolicyOrThrow(policy);
         PolicyApplicationEntity application = policyApplicationFindService.findNullableByPolicy(policy);
         PolicyQualificationEntity qualification = policyQualificationFindService.findNullableByPolicy(policy);
         PolicyDocumentEntity document = policyDocumentFindService.findNullableByPolicy(policy);

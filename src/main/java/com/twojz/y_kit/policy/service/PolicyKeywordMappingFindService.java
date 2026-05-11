@@ -25,7 +25,10 @@ public class PolicyKeywordMappingFindService {
         if (policies == null || policies.isEmpty()) {
             return Map.of();
         }
-        return policyKeywordMappingRepository.findByPolicyIn(List.copyOf(policies)).stream()
+        List<Long> policyIds = policies.stream()
+                .map(PolicyEntity::getId)
+                .toList();
+        return policyKeywordMappingRepository.findByPolicyIdIn(policyIds).stream()
                 .collect(Collectors.groupingBy(mapping -> mapping.getPolicy().getId()));
     }
 }

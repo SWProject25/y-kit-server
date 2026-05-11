@@ -28,7 +28,7 @@ public class PolicyBookmarkFindService {
         return policyBookmarkRepository.findBookmarkedPolicyIdsByUserAndPolicyIds(user, policyIds);
     }
 
-    public List<PolicyBookmarkEntity> findByUserOrderByCreatedAtDesc(UserEntity user) {
-        return policyBookmarkRepository.findByUserOrderByCreatedAtDesc(user);
+    public List<PolicyBookmarkEntity> findByUserWithDetailOrderByCreatedAtDesc(UserEntity user) {
+        return policyBookmarkRepository.findByUserWithDetailOrderByCreatedAtDesc(user);
     }
 }

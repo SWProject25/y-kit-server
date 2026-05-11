@@ -2,6 +2,7 @@ package com.twojz.y_kit.policy.service;
 
 import com.twojz.y_kit.policy.domain.entity.PolicyDetailEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
+import java.util.List;
 import com.twojz.y_kit.policy.repository.PolicyDetailRepository;
 import java.util.Collection;
 import java.util.Map;
@@ -21,11 +22,19 @@ public class PolicyDetailFindService {
         return policyDetailRepository.findByPolicy(policy).orElse(null);
     }
 
+    public PolicyDetailEntity findByPolicyOrThrow(PolicyEntity policy) {
+        return policyDetailRepository.findByPolicy(policy)
+                .orElseThrow(() -> new IllegalArgumentException("정책 상세 정보를 찾을 수 없습니다. policyId=" + policy.getId()));
+    }
+
     public Map<Long, PolicyDetailEntity> findMapByPolicies(Collection<PolicyEntity> policies) {
         if (policies == null || policies.isEmpty()) {
             return Map.of();
         }
-        return policyDetailRepository.findByPolicyIn(policies).stream()
+        List<Long> policyIds = policies.stream()
+                .map(PolicyEntity::getId)
+                .toList();
+        return policyDetailRepository.findByPolicyIdIn(policyIds).stream()
                 .collect(Collectors.toMap(detail -> detail.getPolicy().getId(), Function.identity()));
     }
 }

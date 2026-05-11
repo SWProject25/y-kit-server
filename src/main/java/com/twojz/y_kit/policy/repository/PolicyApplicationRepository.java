@@ -6,9 +6,12 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 public interface PolicyApplicationRepository extends JpaRepository<PolicyApplicationEntity, Long> {
     Optional<PolicyApplicationEntity> findByPolicy(PolicyEntity policy);
-    List<PolicyApplicationEntity> findByPolicyIn(Collection<PolicyEntity> policies);
+    @Query("SELECT pa FROM PolicyApplicationEntity pa WHERE pa.policy.id IN :policyIds")
+    List<PolicyApplicationEntity> findByPolicyIdIn(@Param("policyIds") Collection<Long> policyIds);
     void deleteByPolicy(PolicyEntity policy);
 }

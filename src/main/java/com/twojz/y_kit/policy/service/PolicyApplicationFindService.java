@@ -2,6 +2,7 @@ package com.twojz.y_kit.policy.service;
 
 import com.twojz.y_kit.policy.domain.entity.PolicyApplicationEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
+import java.util.List;
 import com.twojz.y_kit.policy.repository.PolicyApplicationRepository;
 import java.util.Collection;
 import java.util.Map;
@@ -25,7 +26,10 @@ public class PolicyApplicationFindService {
         if (policies == null || policies.isEmpty()) {
             return Map.of();
         }
-        return policyApplicationRepository.findByPolicyIn(policies).stream()
+        List<Long> policyIds = policies.stream()
+                .map(PolicyEntity::getId)
+                .toList();
+        return policyApplicationRepository.findByPolicyIdIn(policyIds).stream()
                 .collect(Collectors.toMap(application -> application.getPolicy().getId(), Function.identity()));
     }
 }

@@ -13,8 +13,8 @@ public interface PolicyCategoryMappingRepository extends JpaRepository<PolicyCat
 
     @Query("SELECT m FROM PolicyCategoryMapping m " +
             "JOIN FETCH m.category " +
-            "WHERE m.policy IN :policies")
-    List<PolicyCategoryMapping> findByPolicyIn(@Param("policies") List<PolicyEntity> policies);
+            "WHERE m.policy.id IN :policyIds")
+    List<PolicyCategoryMapping> findByPolicyIdIn(@Param("policyIds") List<Long> policyIds);
 
     void deleteByPolicy(PolicyEntity policy);
 }

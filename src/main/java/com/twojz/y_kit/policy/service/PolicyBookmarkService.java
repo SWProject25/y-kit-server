@@ -134,7 +134,7 @@ public class PolicyBookmarkService {
     @Transactional(readOnly = true)
     public List<PolicyListResponse> getMyBookmarks(Long userId) {
         UserEntity user = userFindService.findUser(userId);
-        List<PolicyBookmarkEntity> bookmarks = policyBookmarkFindService.findByUserOrderByCreatedAtDesc(user);
+        List<PolicyBookmarkEntity> bookmarks = policyBookmarkFindService.findByUserWithDetailOrderByCreatedAtDesc(user);
         List<PolicyEntity> policies = bookmarks.stream()
                 .map(PolicyBookmarkEntity::getPolicy)
                 .toList();

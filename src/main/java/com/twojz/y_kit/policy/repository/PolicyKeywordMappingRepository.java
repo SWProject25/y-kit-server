@@ -19,7 +19,6 @@ public interface PolicyKeywordMappingRepository extends JpaRepository<PolicyKeyw
 
     @Query("SELECT m FROM PolicyKeywordMapping m " +
             "JOIN FETCH m.keyword " +
-            "WHERE m.policy IN :policies")
-    List<PolicyKeywordMapping> findByPolicyIn(@Param("policies") List<PolicyEntity> policies);
+            "WHERE m.policy.id IN :policyIds")
+    List<PolicyKeywordMapping> findByPolicyIdIn(@Param("policyIds") List<Long> policyIds);
 }
-

@@ -33,14 +33,6 @@ public class PolicyNotificationResponse {
     @Schema(description = "알림 발송 여부")
     private boolean notificationSent;
 
-    public static PolicyNotificationResponse from(PolicyNotificationEntity entity) {
-        return PolicyNotificationResponse.builder()
-                .policyId(entity.getPolicy().getId())
-                .createdAt(entity.getCreatedAt())
-                .notificationSent(entity.isNotificationSent())
-                .build();
-    }
-
     public static PolicyNotificationResponse from(PolicyNotificationSummary summary) {
         return PolicyNotificationResponse.builder()
                 .policyId(summary.policyId())

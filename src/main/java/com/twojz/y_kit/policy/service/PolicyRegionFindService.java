@@ -25,7 +25,10 @@ public class PolicyRegionFindService {
         if (policies == null || policies.isEmpty()) {
             return Map.of();
         }
-        return policyRegionRepository.findByPolicyIn(List.copyOf(policies)).stream()
+        List<Long> policyIds = policies.stream()
+                .map(PolicyEntity::getId)
+                .toList();
+        return policyRegionRepository.findByPolicyIdIn(policyIds).stream()
                 .collect(Collectors.groupingBy(region -> region.getPolicy().getId()));
     }
 }

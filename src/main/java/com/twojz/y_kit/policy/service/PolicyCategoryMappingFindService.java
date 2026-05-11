@@ -25,7 +25,10 @@ public class PolicyCategoryMappingFindService {
         if (policies == null || policies.isEmpty()) {
             return Map.of();
         }
-        return policyCategoryMappingRepository.findByPolicyIn(List.copyOf(policies)).stream()
+        List<Long> policyIds = policies.stream()
+                .map(PolicyEntity::getId)
+                .toList();
+        return policyCategoryMappingRepository.findByPolicyIdIn(policyIds).stream()
                 .collect(Collectors.groupingBy(mapping -> mapping.getPolicy().getId()));
     }
 }
