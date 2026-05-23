@@ -16,6 +16,14 @@ import com.twojz.y_kit.policy.domain.entity.PolicyKeywordMapping;
 import com.twojz.y_kit.policy.domain.entity.PolicyQualificationEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyRegion;
 import com.twojz.y_kit.policy.domain.vo.DocumentParsed;
+import com.twojz.y_kit.policy.service.persistence.PolicyApplicationPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyCategoryPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyDetailPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyDocumentPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyEntityPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyKeywordPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyQualificationPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyRegionPersistenceService;
 import com.twojz.y_kit.region.entity.Region;
 import com.twojz.y_kit.region.repository.RegionRepository;
 import java.time.Duration;
@@ -44,26 +52,14 @@ public class PolicySyncService {
     private final String reg = "\\s*(,|및)\\s*";
 
     private final YouthPolicyClient youthPolicyClient;
-    private final PolicyEntityFindService policyEntityFindService;
-    private final PolicyEntityCommandService policyEntityCommandService;
-    private final PolicyDetailFindService policyDetailFindService;
-    private final PolicyDetailCommandService policyDetailCommandService;
-    private final PolicyApplicationFindService policyApplicationFindService;
-    private final PolicyApplicationCommandService policyApplicationCommandService;
-    private final PolicyQualificationFindService policyQualificationFindService;
-    private final PolicyQualificationCommandService policyQualificationCommandService;
-    private final PolicyDocumentFindService policyDocumentFindService;
-    private final PolicyDocumentCommandService policyDocumentCommandService;
-    private final PolicyCategoryFindService policyCategoryFindService;
-    private final PolicyCategoryCommandService policyCategoryCommandService;
-    private final PolicyCategoryMappingFindService policyCategoryMappingFindService;
-    private final PolicyCategoryMappingCommandService policyCategoryMappingCommandService;
-    private final PolicyKeywordFindService policyKeywordFindService;
-    private final PolicyKeywordCommandService policyKeywordCommandService;
-    private final PolicyKeywordMappingFindService policyKeywordMappingFindService;
-    private final PolicyKeywordMappingCommandService policyKeywordMappingCommandService;
-    private final PolicyRegionFindService policyRegionFindService;
-    private final PolicyRegionCommandService policyRegionCommandService;
+    private final PolicyEntityPersistenceService policyEntityPersistenceService;
+    private final PolicyDetailPersistenceService policyDetailPersistenceService;
+    private final PolicyApplicationPersistenceService policyApplicationPersistenceService;
+    private final PolicyQualificationPersistenceService policyQualificationPersistenceService;
+    private final PolicyDocumentPersistenceService policyDocumentPersistenceService;
+    private final PolicyCategoryPersistenceService policyCategoryPersistenceService;
+    private final PolicyKeywordPersistenceService policyKeywordPersistenceService;
+    private final PolicyRegionPersistenceService policyRegionPersistenceService;
     private final RegionRepository regionRepository;
     private final PolicyMapper mapper;
     private final PolicyAiAnalysisService policyAiAnalysisService;
@@ -118,7 +114,7 @@ public class PolicySyncService {
                 .map(YouthPolicy::getPlcyNo)
                 .collect(Collectors.toSet());
 
-        Map<String, PolicyEntity> existingPolicies = policyEntityFindService
+        Map<String, PolicyEntity> existingPolicies = policyEntityPersistenceService
                 .findAllByPolicyNos(policyNos)
                 .stream()
                 .collect(Collectors.toMap(PolicyEntity::getPolicyNo, p -> p));
@@ -126,13 +122,13 @@ public class PolicySyncService {
         List<PolicyEntity> policyEntities = new ArrayList<>(existingPolicies.values());
 
         Map<Long, List<PolicyCategoryMapping>> categoryMappingsMap =
-                policyCategoryMappingFindService.findMapByPolicies(policyEntities);
+                policyCategoryPersistenceService.findMappingMapByPolicies(policyEntities);
 
         Map<Long, List<PolicyKeywordMapping>> keywordMappingsMap =
-                policyKeywordMappingFindService.findMapByPolicies(policyEntities);
+                policyKeywordPersistenceService.findMappingMapByPolicies(policyEntities);
 
         Map<Long, List<PolicyRegion>> regionMappingsMap =
-                policyRegionFindService.findMapByPolicies(policyEntities);
+                policyRegionPersistenceService.findMapByPolicies(policyEntities);
 
         Map<String, PolicyCategoryEntity> categoryCache = new HashMap<>();
         Map<String, PolicyKeywordEntity> keywordCache = new HashMap<>();
@@ -143,7 +139,7 @@ public class PolicySyncService {
                 boolean isNew = policy == null;
 
                 if (isNew) {
-                    policy = policyEntityCommandService.save(PolicyEntity.builder()
+                    policy = policyEntityPersistenceService.save(PolicyEntity.builder()
                             .policyNo(apiPolicy.getPlcyNo())
                             .isActive(true)
                             .build());
@@ -207,7 +203,7 @@ public class PolicySyncService {
     }
 
     private boolean updateOrCreateDetail(PolicyEntity policy, PolicyDetailDto dto) {
-        PolicyDetailEntity detail = policyDetailFindService.findNullableByPolicy(policy);
+        PolicyDetailEntity detail = policyDetailPersistenceService.findNullableByPolicy(policy);
         boolean isNew = detail == null;
         if (isNew) {
             detail = PolicyDetailEntity.builder().policy(policy).build();
@@ -215,13 +211,13 @@ public class PolicySyncService {
 
         detail.updateFromApi(dto);
         if (isNew) {
-            policyDetailCommandService.save(detail);
+            policyDetailPersistenceService.save(detail);
         }
         return isNew;
     }
 
     private boolean updateOrCreateApplication(PolicyEntity policy, PolicyApplicationDto dto) {
-        PolicyApplicationEntity application = policyApplicationFindService.findNullableByPolicy(policy);
+        PolicyApplicationEntity application = policyApplicationPersistenceService.findNullableByPolicy(policy);
         boolean isNew = application == null;
         if (isNew) {
             application = PolicyApplicationEntity.builder().policy(policy).build();
@@ -229,13 +225,13 @@ public class PolicySyncService {
 
         application.updateFromApi(dto);
         if (isNew) {
-            policyApplicationCommandService.save(application);
+            policyApplicationPersistenceService.save(application);
         }
         return isNew;
     }
 
     private boolean updateOrCreateQualification(PolicyEntity policy, PolicyQualificationDto dto) {
-        PolicyQualificationEntity qualification = policyQualificationFindService.findNullableByPolicy(policy);
+        PolicyQualificationEntity qualification = policyQualificationPersistenceService.findNullableByPolicy(policy);
         boolean isNew = qualification == null;
         if (isNew) {
             qualification = PolicyQualificationEntity.builder().policy(policy).build();
@@ -243,14 +239,14 @@ public class PolicySyncService {
 
         qualification.updateFromApi(dto);
         if (isNew) {
-            policyQualificationCommandService.save(qualification);
+            policyQualificationPersistenceService.save(qualification);
         }
         return isNew;
     }
 
     private boolean updateOrCreateDocument(PolicyEntity policy, String original) {
         if (isEmptyDocument(original)) return false;
-        PolicyDocumentEntity document = policyDocumentFindService.findNullableByPolicy(policy);
+        PolicyDocumentEntity document = policyDocumentPersistenceService.findNullableByPolicy(policy);
         boolean isNew = document == null;
         if (isNew) {
             document = PolicyDocumentEntity.builder().policy(policy).build();
@@ -260,7 +256,7 @@ public class PolicySyncService {
             document.updateOriginal(original);
             DocumentParsed parsed = DocumentPreprocessor.parse(original);
             document.updateParsed(parsed);
-            policyDocumentCommandService.save(document);
+            policyDocumentPersistenceService.save(document);
             return true;
         }
 
@@ -320,8 +316,8 @@ public class PolicySyncService {
             return false;
         }
 
-        policyCategoryMappingCommandService.deleteAll(existingMappings);
-        policyCategoryMappingCommandService.saveAll(newMappings);
+        policyCategoryPersistenceService.deleteMappings(existingMappings);
+        policyCategoryPersistenceService.saveMappings(newMappings);
 
         return true;
     }
@@ -361,7 +357,7 @@ public class PolicySyncService {
 
         if (!toDelete.isEmpty()) {
             toDelete.forEach(m -> m.getKeyword().decreaseUsageCount());
-            policyKeywordMappingCommandService.deleteAll(toDelete);
+            policyKeywordPersistenceService.deleteMappings(toDelete);
         }
 
         if (!toAddKeywords.isEmpty()) {
@@ -375,7 +371,7 @@ public class PolicySyncService {
                                 .build();
                     })
                     .toList();
-            policyKeywordMappingCommandService.saveAll(toAdd);
+            policyKeywordPersistenceService.saveMappings(toAdd);
         }
 
         return true;
@@ -389,8 +385,8 @@ public class PolicySyncService {
     ) {
         String cacheKey = name + "_" + level;
         return cache.computeIfAbsent(cacheKey, key ->
-                policyCategoryFindService.findByNameAndLevel(name, level)
-                        .orElseGet(() -> policyCategoryCommandService.save(
+                policyCategoryPersistenceService.findByNameAndLevel(name, level)
+                        .orElseGet(() -> policyCategoryPersistenceService.save(
                                 PolicyCategoryEntity.builder()
                                         .name(name)
                                         .level(level)
@@ -406,8 +402,8 @@ public class PolicySyncService {
             Map<String, PolicyKeywordEntity> cache
     ) {
         return cache.computeIfAbsent(keywordText, key ->
-                policyKeywordFindService.findByKeyword(keywordText)
-                        .orElseGet(() -> policyKeywordCommandService.save(
+                policyKeywordPersistenceService.findByKeyword(keywordText)
+                        .orElseGet(() -> policyKeywordPersistenceService.save(
                                 PolicyKeywordEntity.builder()
                                         .keyword(keywordText)
                                         .usageCount(0)
@@ -450,7 +446,7 @@ public class PolicySyncService {
         }
 
         if (!toDelete.isEmpty()) {
-            policyRegionCommandService.deleteAll(toDelete);
+            policyRegionPersistenceService.deleteAll(toDelete);
         }
 
         if (!toAddIds.isEmpty()) {
@@ -461,7 +457,7 @@ public class PolicySyncService {
                             .region(region)
                             .build())
                     .toList();
-            policyRegionCommandService.saveAll(toAdd);
+            policyRegionPersistenceService.saveAll(toAdd);
         }
 
         return true;
@@ -473,7 +469,7 @@ public class PolicySyncService {
                 .map(YouthPolicy::getPlcyNo)
                 .collect(Collectors.toSet());
 
-        List<PolicyEntity> activePolicies = policyEntityFindService.findAllActiveEntities();
+        List<PolicyEntity> activePolicies = policyEntityPersistenceService.findAllActiveEntities();
 
         List<PolicyEntity> toDeactivate = activePolicies.stream()
                 .filter(policy -> !apiPolicyNos.contains(policy.getPolicyNo()))
@@ -481,7 +477,7 @@ public class PolicySyncService {
                 .toList();
 
         if (!toDeactivate.isEmpty()) {
-            policyEntityCommandService.saveAll(toDeactivate);
+            policyEntityPersistenceService.saveAll(toDeactivate);
         }
 
         return toDeactivate.size();

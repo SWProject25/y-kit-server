@@ -1,4 +1,4 @@
-package com.twojz.y_kit.policy.service;
+package com.twojz.y_kit.policy.service.persistence;
 
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyRegion;
@@ -14,7 +14,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class PolicyRegionFindService {
+public class PolicyRegionPersistenceService {
+
     private final PolicyRegionRepository policyRegionRepository;
 
     public List<PolicyRegion> findByPolicy(PolicyEntity policy) {
@@ -30,5 +31,19 @@ public class PolicyRegionFindService {
                 .toList();
         return policyRegionRepository.findByPolicyIdIn(policyIds).stream()
                 .collect(Collectors.groupingBy(region -> region.getPolicy().getId()));
+    }
+
+    @Transactional
+    public void deleteAll(List<PolicyRegion> mappings) {
+        if (!mappings.isEmpty()) {
+            policyRegionRepository.deleteAll(mappings);
+        }
+    }
+
+    @Transactional
+    public void saveAll(List<PolicyRegion> mappings) {
+        if (!mappings.isEmpty()) {
+            policyRegionRepository.saveAll(mappings);
+        }
     }
 }

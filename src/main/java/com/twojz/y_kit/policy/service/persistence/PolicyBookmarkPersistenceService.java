@@ -1,4 +1,4 @@
-package com.twojz.y_kit.policy.service;
+package com.twojz.y_kit.policy.service.persistence;
 
 import com.twojz.y_kit.policy.domain.entity.PolicyBookmarkEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
@@ -13,7 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class PolicyBookmarkFindService {
+public class PolicyBookmarkPersistenceService {
+
     private final PolicyBookmarkRepository policyBookmarkRepository;
 
     public boolean existsByPolicyAndUser(PolicyEntity policy, UserEntity user) {
@@ -30,5 +31,20 @@ public class PolicyBookmarkFindService {
 
     public List<PolicyBookmarkEntity> findByUserWithDetailOrderByCreatedAtDesc(UserEntity user) {
         return policyBookmarkRepository.findByUserWithDetailOrderByCreatedAtDesc(user);
+    }
+
+    @Transactional
+    public PolicyBookmarkEntity save(PolicyBookmarkEntity bookmark) {
+        return policyBookmarkRepository.save(bookmark);
+    }
+
+    @Transactional
+    public void delete(PolicyBookmarkEntity bookmark) {
+        policyBookmarkRepository.delete(bookmark);
+    }
+
+    @Transactional
+    public void deleteByUser(UserEntity user) {
+        policyBookmarkRepository.deleteByUser(user);
     }
 }

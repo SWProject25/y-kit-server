@@ -5,6 +5,7 @@ import com.twojz.y_kit.external.openai.OpenAIService;
 import com.twojz.y_kit.policy.domain.entity.PolicyDetailEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
 import com.twojz.y_kit.policy.dto.response.PolicyComparisonResponse;
+import com.twojz.y_kit.policy.service.persistence.PolicyDetailPersistenceService;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.UserFindService;
 import java.time.LocalDate;
@@ -23,7 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class PolicyComparisonService {
     private final OpenAIService openAIService;
     private final PolicyFindService policyFindService;
-    private final PolicyDetailFindService policyDetailFindService;
+    private final PolicyDetailPersistenceService policyDetailPersistenceService;
     private final UserFindService userFindService;
     private final ObjectMapper objectMapper;
 
@@ -111,7 +112,7 @@ public class PolicyComparisonService {
     }
 
     private String buildPolicyContent(List<PolicyEntity> policies) {
-        var detailMap = policyDetailFindService.findMapByPolicies(policies);
+        var detailMap = policyDetailPersistenceService.findMapByPolicies(policies);
         StringBuilder sb = new StringBuilder("[\n");
         for (int i = 0; i < policies.size(); i++) {
             PolicyEntity p = policies.get(i);

@@ -1,10 +1,11 @@
-package com.twojz.y_kit.policy.service;
+package com.twojz.y_kit.policy.service.persistence;
 
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
 import com.twojz.y_kit.policy.domain.enumType.EducationLevel;
 import com.twojz.y_kit.policy.domain.enumType.EmploymentStatus;
 import com.twojz.y_kit.policy.domain.enumType.MajorField;
 import com.twojz.y_kit.policy.repository.PolicyRepository;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class PolicyEntityFindService {
+public class PolicyEntityPersistenceService {
+
     private final PolicyRepository policyRepository;
 
     public PolicyEntity findById(Long id) {
@@ -59,7 +61,7 @@ public class PolicyEntityFindService {
         return policyRepository.findPopularByViewCount(pageable);
     }
 
-    public Page<PolicyEntity> findDeadlineSoon(java.time.LocalDate today, Pageable pageable) {
+    public Page<PolicyEntity> findDeadlineSoon(LocalDate today, Pageable pageable) {
         return policyRepository.findDeadlineSoon(today, pageable);
     }
 
@@ -76,15 +78,13 @@ public class PolicyEntityFindService {
         return policyRepository.findSimilarByCategory(policyId, limit);
     }
 
-    public Page<PolicyEntity> findPoliciesWithoutAiAnalysis(Pageable pageable) {
-        return policyRepository.findAllByAiAnalysisIsNull(pageable);
+    @Transactional
+    public PolicyEntity save(PolicyEntity policy) {
+        return policyRepository.save(policy);
     }
 
-    public long countPoliciesWithoutAiAnalysis() {
-        return policyRepository.countByAiAnalysisIsNull();
-    }
-
-    public long countPoliciesWithAiAnalysis() {
-        return policyRepository.countByAiAnalysisIsNotNull();
+    @Transactional
+    public List<PolicyEntity> saveAll(List<PolicyEntity> policies) {
+        return policyRepository.saveAll(policies);
     }
 }

@@ -1,10 +1,10 @@
-package com.twojz.y_kit.policy.service;
+package com.twojz.y_kit.policy.service.persistence;
 
 import com.twojz.y_kit.policy.domain.entity.PolicyDetailEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
-import java.util.List;
 import com.twojz.y_kit.policy.repository.PolicyDetailRepository;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -15,7 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class PolicyDetailFindService {
+public class PolicyDetailPersistenceService {
+
     private final PolicyDetailRepository policyDetailRepository;
 
     public PolicyDetailEntity findNullableByPolicy(PolicyEntity policy) {
@@ -36,5 +37,10 @@ public class PolicyDetailFindService {
                 .toList();
         return policyDetailRepository.findByPolicyIdIn(policyIds).stream()
                 .collect(Collectors.toMap(detail -> detail.getPolicy().getId(), Function.identity()));
+    }
+
+    @Transactional
+    public PolicyDetailEntity save(PolicyDetailEntity detail) {
+        return policyDetailRepository.save(detail);
     }
 }

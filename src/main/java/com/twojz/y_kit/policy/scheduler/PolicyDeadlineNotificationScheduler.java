@@ -3,7 +3,7 @@ package com.twojz.y_kit.policy.scheduler;
 import com.twojz.y_kit.notification.entity.NotificationType;
 import com.twojz.y_kit.notification.service.NotificationService;
 import com.twojz.y_kit.policy.repository.PolicyNotificationQueryRepository.PendingPolicyNotification;
-import com.twojz.y_kit.policy.service.PolicyNotificationFindService;
+import com.twojz.y_kit.policy.service.persistence.PolicyNotificationPersistenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -17,7 +17,7 @@ import java.util.List;
 @Component
 @RequiredArgsConstructor
 public class PolicyDeadlineNotificationScheduler {
-    private final PolicyNotificationFindService policyNotificationFindService;
+    private final PolicyNotificationPersistenceService policyNotificationPersistenceService;
     private final NotificationService notificationService;
 
     /**
@@ -36,7 +36,7 @@ public class PolicyDeadlineNotificationScheduler {
 
             // 마감 7일 전인 정책들 중 알림 미발송된 것 조회
             List<PendingPolicyNotification> pendingNotifications =
-                    policyNotificationFindService.findPendingNotificationsByDeadline(deadlineDate);
+                    policyNotificationPersistenceService.findPendingNotificationsByDeadline(deadlineDate);
 
             if (pendingNotifications.isEmpty()) {
                 log.info("ℹ️ 발송할 마감 알림이 없습니다.");

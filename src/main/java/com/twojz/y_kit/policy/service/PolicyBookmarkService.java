@@ -11,6 +11,15 @@ import com.twojz.y_kit.policy.domain.entity.PolicyQualificationEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyRegion;
 import com.twojz.y_kit.policy.dto.response.PolicyListResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyNotificationResponse;
+import com.twojz.y_kit.policy.service.persistence.PolicyApplicationPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyBookmarkPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyCategoryPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyDetailPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyEntityPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyKeywordPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyNotificationPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyQualificationPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyRegionPersistenceService;
 import java.util.Map;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.UserFindService;
@@ -25,17 +34,15 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 @Transactional
 public class PolicyBookmarkService {
-    private final PolicyEntityFindService policyEntityFindService;
-    private final PolicyDetailFindService policyDetailFindService;
-    private final PolicyApplicationFindService policyApplicationFindService;
-    private final PolicyQualificationFindService policyQualificationFindService;
-    private final PolicyCategoryMappingFindService policyCategoryMappingFindService;
-    private final PolicyKeywordMappingFindService policyKeywordMappingFindService;
-    private final PolicyRegionFindService policyRegionFindService;
-    private final PolicyBookmarkFindService policyBookmarkFindService;
-    private final PolicyBookmarkCommandService policyBookmarkCommandService;
-    private final PolicyNotificationFindService policyNotificationFindService;
-    private final PolicyNotificationCommandService policyNotificationCommandService;
+    private final PolicyEntityPersistenceService policyEntityPersistenceService;
+    private final PolicyDetailPersistenceService policyDetailPersistenceService;
+    private final PolicyApplicationPersistenceService policyApplicationPersistenceService;
+    private final PolicyQualificationPersistenceService policyQualificationPersistenceService;
+    private final PolicyCategoryPersistenceService policyCategoryPersistenceService;
+    private final PolicyKeywordPersistenceService policyKeywordPersistenceService;
+    private final PolicyRegionPersistenceService policyRegionPersistenceService;
+    private final PolicyBookmarkPersistenceService policyBookmarkPersistenceService;
+    private final PolicyNotificationPersistenceService policyNotificationPersistenceService;
     private final UserFindService userFindService;
     private final PolicyMapper policyMapper;
 
@@ -43,15 +50,15 @@ public class PolicyBookmarkService {
      * 정책 북마크 토글
      */
     public void toggleBookmark(Long policyId, Long userId) {
-        PolicyEntity policy = policyEntityFindService.findById(policyId);
+        PolicyEntity policy = policyEntityPersistenceService.findById(policyId);
         UserEntity user = userFindService.findUser(userId);
 
-        boolean exists = policyBookmarkFindService.existsByPolicyAndUser(policy, user);
+        boolean exists = policyBookmarkPersistenceService.existsByPolicyAndUser(policy, user);
 
         if (exists) {
-            policyBookmarkFindService.findByPolicyAndUser(policy, user)
+            policyBookmarkPersistenceService.findByPolicyAndUser(policy, user)
                     .ifPresent(bookmark -> {
-                        policyBookmarkCommandService.delete(bookmark);
+                        policyBookmarkPersistenceService.delete(bookmark);
                         policy.decreaseBookmarkCount();
                     });
         } else {
@@ -59,7 +66,7 @@ public class PolicyBookmarkService {
                     .policy(policy)
                     .user(user)
                     .build();
-            policyBookmarkCommandService.save(bookmark);
+            policyBookmarkPersistenceService.save(bookmark);
             policy.increaseBookmarkCount();
         }
     }
@@ -68,13 +75,13 @@ public class PolicyBookmarkService {
      * 정책 알림 신청 토글
      */
     public void toggleNotification(Long policyId, Long userId) {
-        PolicyEntity policy = policyEntityFindService.findById(policyId);
+        PolicyEntity policy = policyEntityPersistenceService.findById(policyId);
         UserEntity user = userFindService.findUser(userId);
 
-        policyNotificationFindService.findByPolicyAndUser(policy, user)
+        policyNotificationPersistenceService.findByPolicyAndUser(policy, user)
                 .ifPresentOrElse(
                         notification -> {
-                            policyNotificationCommandService.delete(notification);
+                            policyNotificationPersistenceService.delete(notification);
                             log.info("정책 알림 신청 취소 - policyId: {}, userId: {}", policyId, userId);
                         },
                         () -> {
@@ -82,7 +89,7 @@ public class PolicyBookmarkService {
                                     .policy(policy)
                                     .user(user)
                                     .build();
-                            policyNotificationCommandService.save(notification);
+                            policyNotificationPersistenceService.save(notification);
                             log.info("정책 알림 신청 완료 - policyId: {}, userId: {}", policyId, userId);
                         }
                 );
@@ -93,9 +100,9 @@ public class PolicyBookmarkService {
      */
     @Transactional(readOnly = true)
     public boolean isBookmarked(Long policyId, Long userId) {
-        PolicyEntity policy = policyEntityFindService.findById(policyId);
+        PolicyEntity policy = policyEntityPersistenceService.findById(policyId);
         UserEntity user = userFindService.findUser(userId);
-        return policyBookmarkFindService.existsByPolicyAndUser(policy, user);
+        return policyBookmarkPersistenceService.existsByPolicyAndUser(policy, user);
     }
 
     /**
@@ -103,9 +110,9 @@ public class PolicyBookmarkService {
      */
     @Transactional(readOnly = true)
     public boolean isNotificationEnabled(Long policyId, Long userId) {
-        PolicyEntity policy = policyEntityFindService.findById(policyId);
+        PolicyEntity policy = policyEntityPersistenceService.findById(policyId);
         UserEntity user = userFindService.findUser(userId);
-        return policyNotificationFindService.existsByPolicyAndUser(policy, user);
+        return policyNotificationPersistenceService.existsByPolicyAndUser(policy, user);
     }
 
     /**
@@ -114,17 +121,17 @@ public class PolicyBookmarkService {
     @Transactional(readOnly = true)
     public List<PolicyNotificationResponse> getMyNotifications(Long userId) {
         UserEntity user = userFindService.findUser(userId);
-        return policyNotificationFindService.findMyNotificationResponses(user);
+        return policyNotificationPersistenceService.findMyNotificationResponses(user);
     }
 
     /**
      * 정책 알림 신청 삭제 (by policyId)
      */
     public void cancelNotification(Long policyId, Long userId) {
-        PolicyEntity policy = policyEntityFindService.findById(policyId);
+        PolicyEntity policy = policyEntityPersistenceService.findById(policyId);
         UserEntity user = userFindService.findUser(userId);
 
-        policyNotificationCommandService.deleteByPolicyAndUser(policy, user);
+        policyNotificationPersistenceService.deleteByPolicyAndUser(policy, user);
         log.info("정책 알림 신청 삭제 완료 - policyId: {}, userId: {}", policyId, userId);
     }
 
@@ -134,17 +141,17 @@ public class PolicyBookmarkService {
     @Transactional(readOnly = true)
     public List<PolicyListResponse> getMyBookmarks(Long userId) {
         UserEntity user = userFindService.findUser(userId);
-        List<PolicyBookmarkEntity> bookmarks = policyBookmarkFindService.findByUserWithDetailOrderByCreatedAtDesc(user);
+        List<PolicyBookmarkEntity> bookmarks = policyBookmarkPersistenceService.findByUserWithDetailOrderByCreatedAtDesc(user);
         List<PolicyEntity> policies = bookmarks.stream()
                 .map(PolicyBookmarkEntity::getPolicy)
                 .toList();
 
-        Map<Long, PolicyDetailEntity> detailMap = policyDetailFindService.findMapByPolicies(policies);
-        Map<Long, PolicyApplicationEntity> applicationMap = policyApplicationFindService.findMapByPolicies(policies);
-        Map<Long, PolicyQualificationEntity> qualificationMap = policyQualificationFindService.findMapByPolicies(policies);
-        Map<Long, List<PolicyCategoryMapping>> categoryMap = policyCategoryMappingFindService.findMapByPolicies(policies);
-        Map<Long, List<PolicyKeywordMapping>> keywordMap = policyKeywordMappingFindService.findMapByPolicies(policies);
-        Map<Long, List<PolicyRegion>> regionMap = policyRegionFindService.findMapByPolicies(policies);
+        Map<Long, PolicyDetailEntity> detailMap = policyDetailPersistenceService.findMapByPolicies(policies);
+        Map<Long, PolicyApplicationEntity> applicationMap = policyApplicationPersistenceService.findMapByPolicies(policies);
+        Map<Long, PolicyQualificationEntity> qualificationMap = policyQualificationPersistenceService.findMapByPolicies(policies);
+        Map<Long, List<PolicyCategoryMapping>> categoryMap = policyCategoryPersistenceService.findMappingMapByPolicies(policies);
+        Map<Long, List<PolicyKeywordMapping>> keywordMap = policyKeywordPersistenceService.findMappingMapByPolicies(policies);
+        Map<Long, List<PolicyRegion>> regionMap = policyRegionPersistenceService.findMapByPolicies(policies);
 
         return bookmarks.stream()
                 .map(PolicyBookmarkEntity::getPolicy)
