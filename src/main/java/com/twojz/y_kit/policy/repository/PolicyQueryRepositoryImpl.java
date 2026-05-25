@@ -41,15 +41,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
     public Page<PolicyEntity> findAllActive(Pageable pageable) {
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(p.isActive.isTrue())
+                .distinct()
                 .orderBy(p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(p.isActive.isTrue());
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -66,15 +69,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
 
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where)
+                .distinct()
                 .orderBy(p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where);
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -87,15 +93,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
 
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where)
+                .distinct()
                 .orderBy(p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where);
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -112,15 +121,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
 
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where)
+                .distinct()
                 .orderBy(p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where);
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -133,15 +145,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
 
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where)
+                .distinct()
                 .orderBy(p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where);
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -158,15 +173,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
 
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where)
+                .distinct()
                 .orderBy(p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where);
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -180,15 +198,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
 
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where)
+                .distinct()
                 .orderBy(p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where);
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -227,15 +248,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
 
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where)
+                .distinct()
                 .orderBy(p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where);
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -245,15 +269,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
     public Page<PolicyEntity> findPopularByViewCount(Pageable pageable) {
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(p.isActive.isTrue())
+                .distinct()
                 .orderBy(p.viewCount.desc(), p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(p.isActive.isTrue());
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -263,15 +290,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
     public Page<PolicyEntity> findPopularByBookmarkCount(Pageable pageable) {
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(p.isActive.isTrue())
+                .distinct()
                 .orderBy(p.bookmarkCount.desc(), p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(p.isActive.isTrue());
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);
@@ -282,10 +312,12 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
         // 마감일 기준 정렬이 필요하므로 PolicyApplicationEntity JOIN
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .join(a).on(a.policy.id.eq(p.id))
                 .where(p.isActive.isTrue()
                         .and(a.aplyBgngYmd.loe(today))
                         .and(a.aplyEndYmd.goe(today)))
+                .distinct()
                 .orderBy(a.aplyEndYmd.asc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -294,6 +326,7 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
         JPAQuery<Long> countQuery = queryFactory
                 .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .join(a).on(a.policy.id.eq(p.id))
                 .where(p.isActive.isTrue()
                         .and(a.aplyBgngYmd.loe(today))
@@ -318,6 +351,7 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
 
         return queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .join(cm2).on(cm2.policy.id.eq(p.id))
                 .where(p.isActive.isTrue()
                         .and(p.id.ne(policyId))
@@ -365,15 +399,18 @@ public class PolicyQueryRepositoryImpl implements PolicyQueryRepository {
 
         List<PolicyEntity> content = queryFactory
                 .selectFrom(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where)
+                .distinct()
                 .orderBy(p.createdAt.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory
-                .select(p.count())
+                .select(p.countDistinct())
                 .from(p)
+                .join(d).on(d.policy.id.eq(p.id))
                 .where(where);
 
         return PageableExecutionUtils.getPage(content, pageable, countQuery::fetchOne);

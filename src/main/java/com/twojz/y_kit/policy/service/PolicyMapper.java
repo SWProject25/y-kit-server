@@ -1,41 +1,16 @@
 package com.twojz.y_kit.policy.service;
 
-import static com.twojz.y_kit.policy.dto.response.PolicyDetailResponse.toKeywords;
-
 import com.twojz.y_kit.external.policy.dto.YouthPolicy;
 import com.twojz.y_kit.policy.domain.dto.PolicyApplicationDto;
 import com.twojz.y_kit.policy.domain.dto.PolicyDetailDto;
 import com.twojz.y_kit.policy.domain.dto.PolicyQualificationDto;
-import com.twojz.y_kit.policy.domain.entity.PolicyApplicationEntity;
-import com.twojz.y_kit.policy.domain.entity.PolicyCategoryEntity;
-import com.twojz.y_kit.policy.domain.entity.PolicyCategoryMapping;
-import com.twojz.y_kit.policy.domain.entity.PolicyDetailEntity;
-import com.twojz.y_kit.policy.domain.entity.PolicyDocumentEntity;
-import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
-import com.twojz.y_kit.policy.domain.entity.PolicyKeywordMapping;
-import com.twojz.y_kit.policy.domain.entity.PolicyQualificationEntity;
-import com.twojz.y_kit.policy.domain.entity.PolicyRegion;
 import com.twojz.y_kit.policy.domain.enumType.*;
-import com.twojz.y_kit.policy.dto.response.AiAnalysisInfo;
-import com.twojz.y_kit.policy.dto.response.CategoryInfo;
-import com.twojz.y_kit.policy.dto.response.PolicyApplication;
-import com.twojz.y_kit.policy.dto.response.PolicyBasicInfo;
-import com.twojz.y_kit.policy.dto.response.PolicyDetail;
-import com.twojz.y_kit.policy.dto.response.PolicyDetailResponse;
-import com.twojz.y_kit.policy.dto.response.PolicyDocument;
-import com.twojz.y_kit.policy.dto.response.PolicyListResponse;
-import com.twojz.y_kit.policy.dto.response.PolicyQualification;
-import com.twojz.y_kit.policy.dto.response.RegionInfo;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
@@ -99,118 +74,6 @@ public class PolicyMapper {
                 .sBizCd(SpecializedRequirement.fromCode(src.getSBizCd()))
                 .addAplyQlfcCndCn(src.getAddAplyQlfcCndCn())
                 .build();
-    }
-
-    /**
-     * Entity -> 응답 DTO
-     */
-    public PolicyListResponse toListResponse(
-            PolicyEntity entity,
-            PolicyDetailEntity detail,
-            PolicyApplicationEntity application,
-            PolicyQualificationEntity qualification,
-            List<PolicyCategoryMapping> categoryMappings,
-            List<PolicyKeywordMapping> keywordMappings,
-            List<PolicyRegion> regions,
-            boolean isBookmarked) {
-
-        // 카테고리 추출
-        String largeCategory = null;
-        String mediumCategory = null;
-        if (categoryMappings != null) {
-            for (PolicyCategoryMapping mapping : categoryMappings) {
-                PolicyCategoryEntity category = mapping.getCategory();
-                if (category.getLevel() == 1) {
-                    largeCategory = category.getName();
-                } else if (category.getLevel() == 2) {
-                    mediumCategory = category.getName();
-                }
-            }
-        }
-
-        // 키워드 추출
-        List<String> keywords = keywordMappings != null ?
-                keywordMappings.stream()
-                        .map(mapping -> mapping.getKeyword().getKeyword())
-                        .collect(Collectors.toList()) :
-                new ArrayList<>();
-
-        // 지역 추출
-        List<String> regionNames = regions != null ?
-                regions.stream()
-                        .map(policyRegion -> policyRegion.getRegion().getName())
-                        .collect(Collectors.toList()) :
-                new ArrayList<>();
-
-        return PolicyListResponse.builder()
-                .policyId(entity.getId())
-                .policyNo(entity.getPolicyNo())
-                .policyName(detail != null ? detail.getPlcyNm() : null)
-                .summary(detail != null ? truncate(detail.getPlcyExplnCn()) : null)
-                .largeCategory(largeCategory)
-                .mediumCategory(mediumCategory)
-                .isApplicationAvailable(isApplicationAvailable(application))
-                .applicationStartDate(application != null ? application.getAplyBgngYmd() : null)
-                .applicationEndDate(application != null ? application.getAplyEndYmd() : null)
-                .supervisingInstitution(detail != null ? detail.getSprvsnInstCdNm() : null)
-                .minAge(qualification != null ? qualification.getSprtTrgtMinAge() : null)
-                .maxAge(qualification != null ? qualification.getSprtTrgtMaxAge() : null)
-                .keywords(keywords)
-                .regions(regionNames)
-                .viewCount(entity.getViewCount())
-                .bookmarkCount(entity.getBookmarkCount())
-                .applicationCount(entity.getApplicationCount())
-                .isBookmarked(isBookmarked)
-                .createdAt(entity.getCreatedAt())
-                .build();
-    }
-
-    public PolicyDetailResponse toDetailResponse(
-            PolicyEntity entity,
-            PolicyDetailEntity detail,
-            PolicyApplicationEntity application,
-            PolicyQualificationEntity qualification,
-            PolicyDocumentEntity document,
-            List<PolicyCategoryMapping> categoryMappings,
-            List<PolicyKeywordMapping> keywordMappings,
-            List<PolicyRegion> regions,
-            boolean isBookmarked) {
-        return PolicyDetailResponse.builder()
-                .basicInfo(PolicyBasicInfo.from(entity))
-                .detail(PolicyDetail.from(detail))
-                .application(PolicyApplication.from(application))
-                .qualification(PolicyQualification.from(qualification))
-                .document(PolicyDocument.from(document))
-                .categories(CategoryInfo.from(categoryMappings))
-                .keywords(toKeywords(keywordMappings))
-                .regions(RegionInfo.from(regions))
-                .aiAnalysis(AiAnalysisInfo.from(entity))
-                .isBookmarked(isBookmarked)
-                .build();
-    }
-
-
-
-    /**
-     * Util 메서드
-     */
-    private Boolean isApplicationAvailable(PolicyApplicationEntity application) {
-        if (application == null || application.getAplyBgngYmd() == null || application.getAplyEndYmd() == null) {
-            return false;
-        }
-
-        LocalDate today = LocalDate.now();
-        return !today.isBefore(application.getAplyBgngYmd()) && !today.isAfter(application.getAplyEndYmd());
-    }
-
-    private String truncate(String text) {
-        if (text == null) {
-            return null;
-        }
-        if (text.length() <= 100) {
-            return text;
-        }
-        return text.substring(0, 100) + "...";
     }
 
     private LocalDate parseDate(String dateStr) {

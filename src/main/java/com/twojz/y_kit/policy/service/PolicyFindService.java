@@ -13,6 +13,15 @@ import com.twojz.y_kit.policy.dto.response.PolicyCategoryResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyDetailResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyKeywordResponse;
 import com.twojz.y_kit.policy.dto.response.PolicyListResponse;
+import com.twojz.y_kit.policy.service.persistence.PolicyApplicationPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyBookmarkPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyCategoryPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyDetailPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyDocumentPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyEntityPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyKeywordPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyQualificationPersistenceService;
+import com.twojz.y_kit.policy.service.persistence.PolicyRegionPersistenceService;
 import com.twojz.y_kit.user.entity.ProfileStatus;
 import com.twojz.y_kit.user.entity.UserEntity;
 import com.twojz.y_kit.user.service.UserFindService;
@@ -21,7 +30,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,54 +47,51 @@ import scala.collection.Seq;
 @Transactional(readOnly = true)
 public class PolicyFindService {
 
-    private final PolicyEntityFindService policyEntityFindService;
-    private final PolicyDetailFindService policyDetailFindService;
-    private final PolicyApplicationFindService policyApplicationFindService;
-    private final PolicyQualificationFindService policyQualificationFindService;
-    private final PolicyDocumentFindService policyDocumentFindService;
-    private final PolicyCategoryMappingFindService policyCategoryMappingFindService;
-    private final PolicyKeywordMappingFindService policyKeywordMappingFindService;
-    private final PolicyRegionFindService policyRegionFindService;
-    private final PolicyMapper policyMapper;
-    private final PolicyCategoryFindService policyCategoryFindService;
-    private final PolicyKeywordFindService policyKeywordFindService;
-    private final PolicyBookmarkFindService policyBookmarkFindService;
+    private final PolicyEntityPersistenceService policyEntityPersistenceService;
+    private final PolicyDetailPersistenceService policyDetailPersistenceService;
+    private final PolicyApplicationPersistenceService policyApplicationPersistenceService;
+    private final PolicyQualificationPersistenceService policyQualificationPersistenceService;
+    private final PolicyDocumentPersistenceService policyDocumentPersistenceService;
+    private final PolicyCategoryPersistenceService policyCategoryPersistenceService;
+    private final PolicyKeywordPersistenceService policyKeywordPersistenceService;
+    private final PolicyRegionPersistenceService policyRegionPersistenceService;
+    private final PolicyBookmarkPersistenceService policyBookmarkPersistenceService;
     private final UserFindService userFindService;
 
     public List<PolicyEntity> getPoliciesByIds(List<Long> ids) {
-        return policyEntityFindService.findByIds(ids);
+        return policyEntityPersistenceService.findByIds(ids);
     }
 
     public PolicyEntity getPolicyById(Long id) {
-        return policyEntityFindService.findById(id);
+        return policyEntityPersistenceService.findById(id);
     }
 
     public PageResponse<PolicyListResponse> getPolicyList(Long userId, Pageable pageable) {
-        Page<PolicyEntity> policyPage = policyEntityFindService.findAllActive(pageable);
+        Page<PolicyEntity> policyPage = policyEntityPersistenceService.findAllActive(pageable);
         return convertToPageResponse(policyPage, userId);
     }
 
     @Transactional
     public PolicyDetailResponse getPolicyDetail(Long policyId, Long userId) {
-        PolicyEntity policy = policyEntityFindService.findById(policyId);
+        PolicyEntity policy = policyEntityPersistenceService.findById(policyId);
 
-        PolicyDetailEntity detail = policyDetailFindService.findNullableByPolicy(policy);
-        PolicyApplicationEntity application = policyApplicationFindService.findNullableByPolicy(policy);
-        PolicyQualificationEntity qualification = policyQualificationFindService.findNullableByPolicy(policy);
-        PolicyDocumentEntity document = policyDocumentFindService.findNullableByPolicy(policy);
-        List<PolicyCategoryMapping> categoryMappings = policyCategoryMappingFindService.findByPolicy(policy);
-        List<PolicyKeywordMapping> keywordMappings = policyKeywordMappingFindService.findByPolicy(policy);
-        List<PolicyRegion> regions = policyRegionFindService.findByPolicy(policy);
+        PolicyDetailEntity detail = policyDetailPersistenceService.findByPolicyOrThrow(policy);
+        PolicyApplicationEntity application = policyApplicationPersistenceService.findNullableByPolicy(policy);
+        PolicyQualificationEntity qualification = policyQualificationPersistenceService.findNullableByPolicy(policy);
+        PolicyDocumentEntity document = policyDocumentPersistenceService.findNullableByPolicy(policy);
+        List<PolicyCategoryMapping> categoryMappings = policyCategoryPersistenceService.findMappingsByPolicy(policy);
+        List<PolicyKeywordMapping> keywordMappings = policyKeywordPersistenceService.findMappingsByPolicy(policy);
+        List<PolicyRegion> regions = policyRegionPersistenceService.findByPolicy(policy);
 
         policy.increaseViewCount();
 
         boolean isBookmarked = false;
         if (userId != null) {
             UserEntity user = userFindService.findUser(userId);
-            isBookmarked = policyBookmarkFindService.existsByPolicyAndUser(policy, user);
+            isBookmarked = policyBookmarkPersistenceService.existsByPolicyAndUser(policy, user);
         }
 
-        return policyMapper.toDetailResponse(
+        return PolicyDetailResponse.from(
                 policy, detail, application, qualification, document,
                 categoryMappings, keywordMappings, regions, isBookmarked);
     }
@@ -101,7 +106,7 @@ public class PolicyFindService {
             throw new IllegalStateException("프로필 정보가 완료되지 않았습니다.");
         }
 
-        Page<PolicyEntity> policyPage = policyEntityFindService.findRecommendedWithProfile(
+        Page<PolicyEntity> policyPage = policyEntityPersistenceService.findRecommendedWithProfile(
                 user.calculateAge(),
                 user.getRegion().getCode(),
                 user.getEmploymentStatus(),
@@ -120,9 +125,9 @@ public class PolicyFindService {
         Page<PolicyEntity> policyPage;
 
         if ("bookmarkCount".equals(sortBy)) {
-            policyPage = policyEntityFindService.findPopularByBookmarkCount(pageable);
+            policyPage = policyEntityPersistenceService.findPopularByBookmarkCount(pageable);
         } else {
-            policyPage = policyEntityFindService.findPopularByViewCount(pageable);
+            policyPage = policyEntityPersistenceService.findPopularByViewCount(pageable);
         }
 
         return convertToPageResponse(policyPage, userId);
@@ -133,7 +138,7 @@ public class PolicyFindService {
      */
     public PageResponse<PolicyListResponse> getDeadlineSoonPolicies(Long userId, Pageable pageable) {
         LocalDate today = LocalDate.now();
-        Page<PolicyEntity> policyPage = policyEntityFindService.findDeadlineSoon(today, pageable);
+        Page<PolicyEntity> policyPage = policyEntityPersistenceService.findDeadlineSoon(today, pageable);
         return convertToPageResponse(policyPage, userId);
     }
 
@@ -141,7 +146,7 @@ public class PolicyFindService {
      * 모든 정책 카테고리 조회
      */
     public List<PolicyCategoryResponse> getAllCategories() {
-        return policyCategoryFindService.findAllActive()
+        return policyCategoryPersistenceService.findAllActive()
                 .stream()
                 .map(category -> PolicyCategoryResponse.builder()
                         .id(category.getId())
@@ -157,7 +162,7 @@ public class PolicyFindService {
      * 모든 정책 키워드 조회 (사용빈도 높은 순 상위 50개)
      */
     public List<PolicyKeywordResponse> getAllKeywords() {
-        return policyKeywordFindService.findTop50ByUsageCount()
+        return policyKeywordPersistenceService.findTop50ByUsageCount()
                 .stream()
                 .map(keyword -> PolicyKeywordResponse.builder()
                         .id(keyword.getId())
@@ -184,7 +189,7 @@ public class PolicyFindService {
                 ? extractKeywords(keyword)
                 : List.of();
 
-        Page<PolicyEntity> policyPage = policyEntityFindService.searchPolicies(
+        Page<PolicyEntity> policyPage = policyEntityPersistenceService.searchPolicies(
                 categoryIds, keywordIds, extractedKeywords, pageable);
 
         return convertToPageResponse(policyPage, userId);
@@ -194,7 +199,7 @@ public class PolicyFindService {
      * 유사 정책 조회 (같은 카테고리 기반)
      */
     public List<PolicyListResponse> getSimilarPolicies(Long policyId, Long userId, int limit) {
-        List<PolicyEntity> similarPolicies = policyEntityFindService.findSimilarByCategory(policyId, limit);
+        List<PolicyEntity> similarPolicies = policyEntityPersistenceService.findSimilarByCategory(policyId, limit);
 
         if (similarPolicies.isEmpty()) {
             return List.of();
@@ -206,7 +211,7 @@ public class PolicyFindService {
         return similarPolicies.stream()
                 .map(policy -> {
                     Long id = policy.getId();
-                    return policyMapper.toListResponse(
+                    return PolicyListResponse.from(
                             policy,
                             maps.details().get(id),
                             maps.applications().get(id),
@@ -231,7 +236,7 @@ public class PolicyFindService {
 
         Page<PolicyListResponse> mappedPage = policyPage.map(policy -> {
             Long id = policy.getId();
-            return policyMapper.toListResponse(
+            return PolicyListResponse.from(
                     policy,
                     maps.details().get(id),
                     maps.applications().get(id),
@@ -249,12 +254,12 @@ public class PolicyFindService {
      * 정책 목록에 대한 연관 엔티티를 일괄 조회 (N+1 방지)
      */
     private RelatedPolicyMaps fetchRelatedMaps(List<PolicyEntity> policies) {
-        Map<Long, PolicyDetailEntity> detailMap = policyDetailFindService.findMapByPolicies(policies);
-        Map<Long, PolicyApplicationEntity> applicationMap = policyApplicationFindService.findMapByPolicies(policies);
-        Map<Long, PolicyQualificationEntity> qualificationMap = policyQualificationFindService.findMapByPolicies(policies);
-        Map<Long, List<PolicyCategoryMapping>> categoryMap = policyCategoryMappingFindService.findMapByPolicies(policies);
-        Map<Long, List<PolicyKeywordMapping>> keywordMap = policyKeywordMappingFindService.findMapByPolicies(policies);
-        Map<Long, List<PolicyRegion>> regionMap = policyRegionFindService.findMapByPolicies(policies);
+        Map<Long, PolicyDetailEntity> detailMap = policyDetailPersistenceService.findMapByPolicies(policies);
+        Map<Long, PolicyApplicationEntity> applicationMap = policyApplicationPersistenceService.findMapByPolicies(policies);
+        Map<Long, PolicyQualificationEntity> qualificationMap = policyQualificationPersistenceService.findMapByPolicies(policies);
+        Map<Long, List<PolicyCategoryMapping>> categoryMap = policyCategoryPersistenceService.findMappingMapByPolicies(policies);
+        Map<Long, List<PolicyKeywordMapping>> keywordMap = policyKeywordPersistenceService.findMappingMapByPolicies(policies);
+        Map<Long, List<PolicyRegion>> regionMap = policyRegionPersistenceService.findMapByPolicies(policies);
 
         return new RelatedPolicyMaps(detailMap, applicationMap, qualificationMap,
                 categoryMap, keywordMap, regionMap);
@@ -277,7 +282,7 @@ public class PolicyFindService {
                 .map(PolicyEntity::getId)
                 .toList();
 
-        Set<Long> bookmarkedPolicyIds = new HashSet<>(policyBookmarkFindService
+        Set<Long> bookmarkedPolicyIds = new HashSet<>(policyBookmarkPersistenceService
                 .findBookmarkedPolicyIdsByUserAndPolicyIds(user, policyIds));
 
         return policies.stream()
