@@ -44,7 +44,6 @@ public class PolicyBookmarkService {
     private final PolicyBookmarkPersistenceService policyBookmarkPersistenceService;
     private final PolicyNotificationPersistenceService policyNotificationPersistenceService;
     private final UserFindService userFindService;
-    private final PolicyMapper policyMapper;
 
     /**
      * 정책 북마크 토글
@@ -155,7 +154,7 @@ public class PolicyBookmarkService {
 
         return bookmarks.stream()
                 .map(PolicyBookmarkEntity::getPolicy)
-                .map(policy -> policyMapper.toListResponse(
+                .map(policy -> PolicyListResponse.from(
                         policy,
                         detailMap.get(policy.getId()),
                         applicationMap.get(policy.getId()),

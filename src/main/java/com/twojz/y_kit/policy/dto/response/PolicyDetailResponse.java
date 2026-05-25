@@ -1,7 +1,14 @@
 package com.twojz.y_kit.policy.dto.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.twojz.y_kit.policy.domain.entity.PolicyApplicationEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyCategoryMapping;
+import com.twojz.y_kit.policy.domain.entity.PolicyDetailEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyDocumentEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyEntity;
 import com.twojz.y_kit.policy.domain.entity.PolicyKeywordMapping;
+import com.twojz.y_kit.policy.domain.entity.PolicyQualificationEntity;
+import com.twojz.y_kit.policy.domain.entity.PolicyRegion;
 import io.swagger.v3.oas.annotations.media.Schema;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,6 +53,31 @@ public class PolicyDetailResponse {
     @Schema(description = "북마크 여부")
     @JsonProperty("isBookmarked")
     private boolean isBookmarked;
+
+    public static PolicyDetailResponse from(
+            PolicyEntity entity,
+            PolicyDetailEntity detail,
+            PolicyApplicationEntity application,
+            PolicyQualificationEntity qualification,
+            PolicyDocumentEntity document,
+            List<PolicyCategoryMapping> categoryMappings,
+            List<PolicyKeywordMapping> keywordMappings,
+            List<PolicyRegion> regions,
+            boolean isBookmarked
+    ) {
+        return PolicyDetailResponse.builder()
+                .basicInfo(PolicyBasicInfo.from(entity))
+                .detail(PolicyDetail.from(detail))
+                .application(PolicyApplication.from(application))
+                .qualification(PolicyQualification.from(qualification))
+                .document(PolicyDocument.from(document))
+                .categories(CategoryInfo.from(categoryMappings))
+                .keywords(toKeywords(keywordMappings))
+                .regions(RegionInfo.from(regions))
+                .aiAnalysis(AiAnalysisInfo.from(entity))
+                .isBookmarked(isBookmarked)
+                .build();
+    }
 
     public static List<String> toKeywords(List<PolicyKeywordMapping> mappings) {
         if (mappings == null) {

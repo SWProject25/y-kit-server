@@ -55,7 +55,6 @@ public class PolicyFindService {
     private final PolicyCategoryPersistenceService policyCategoryPersistenceService;
     private final PolicyKeywordPersistenceService policyKeywordPersistenceService;
     private final PolicyRegionPersistenceService policyRegionPersistenceService;
-    private final PolicyMapper policyMapper;
     private final PolicyBookmarkPersistenceService policyBookmarkPersistenceService;
     private final UserFindService userFindService;
 
@@ -92,7 +91,7 @@ public class PolicyFindService {
             isBookmarked = policyBookmarkPersistenceService.existsByPolicyAndUser(policy, user);
         }
 
-        return policyMapper.toDetailResponse(
+        return PolicyDetailResponse.from(
                 policy, detail, application, qualification, document,
                 categoryMappings, keywordMappings, regions, isBookmarked);
     }
@@ -212,7 +211,7 @@ public class PolicyFindService {
         return similarPolicies.stream()
                 .map(policy -> {
                     Long id = policy.getId();
-                    return policyMapper.toListResponse(
+                    return PolicyListResponse.from(
                             policy,
                             maps.details().get(id),
                             maps.applications().get(id),
@@ -237,7 +236,7 @@ public class PolicyFindService {
 
         Page<PolicyListResponse> mappedPage = policyPage.map(policy -> {
             Long id = policy.getId();
-            return policyMapper.toListResponse(
+            return PolicyListResponse.from(
                     policy,
                     maps.details().get(id),
                     maps.applications().get(id),
